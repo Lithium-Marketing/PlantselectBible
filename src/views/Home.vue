@@ -1,11 +1,32 @@
 <template>
 	<div class="home">
-		<div v-if="loading">
-			Loading...
-		</div>
-		<table class="product" v-else>
+		<ul class="pagination">
+			<li>
+				<button @click="productPage = 0" :disabled="productPage===0">&lt;&lt;</button>
+			</li>
+
+			<li>
+				<button @click="productPage = productPage-1" :disabled="productPage===0">&lt;</button>
+			</li>
+
+			<li>
+				<button @click="productPage = productPage" :disabled="productPage === productPage+p">
+					{{ productPage + 1 }}/{{productPageLen}}
+				</button>
+			</li>
+
+			<li>
+				<button @click="productPage = productPage+1" :disabled="productPage>=productPageLen-1">&gt;</button>
+			</li>
+
+			<li>
+				<button @click="productPage = productPageLen-1" :disabled="productPage>=productPageLen-1">&gt;&gt;</button>
+			</li>
+		</ul>
+		<table class="product">
 			<tr>
 				<th></th>
+				<th>Code</th>
 				<th>Variete</th>
 				<th>Format</th>
 				<th>Inv.</th>
@@ -23,11 +44,32 @@
 				<th>{{ pastTitle['years_pastV1'] }}</th>
 				<th>{{ pastTitle['years_pastV2'] }}</th>
 			</tr>
+			<tr>
+				<th></th>
+				<th></th>
+				<th><input v-model="variSearch"></th>
+				<th></th>
+				<th></th>
+				<th></th>
+				<th></th>
+				<th></th>
+				<th></th>
+				<th></th>
+				<th></th>
+				<th></th>
+				<th></th>
+				<th></th>
+				<th></th>
+				<th></th>
+				<th></th>
+				<th></th>
+			</tr>
 			<template v-for="(prod,val) in products" :key="val">
 				<tr :class="[prod.Color]">
 					<td>
 						<button @click="load(prod.ID)">load</button>
 					</td>
+					<td>{{ prod.Code }}</td>
 					<td>{{ prod.Variete }}</td>
 					<td>{{ prod.Format }}</td>
 					<td :class="{'red': prod.Quantite<0}">{{ prod.Quantite }}</td>
@@ -47,7 +89,29 @@
 				</tr>
 			</template>
 		</table>
+		<ul class="pagination">
+			<li>
+				<button @click="productPage = 0" :disabled="productPage===0">&lt;&lt;</button>
+			</li>
 
+			<li>
+				<button @click="productPage = productPage-1" :disabled="productPage===0">&lt;</button>
+			</li>
+
+			<li>
+				<button @click="productPage = productPage" :disabled="productPage === productPage+p">
+					{{ productPage + 1 }}/{{productPageLen}}
+				</button>
+			</li>
+
+			<li>
+				<button @click="productPage = productPage+1" :disabled="productPage>=productPageLen-1">&gt;</button>
+			</li>
+
+			<li>
+				<button @click="productPage = productPageLen-1" :disabled="productPage>=productPageLen-1">&gt;&gt;</button>
+			</li>
+		</ul>
 	</div>
 </template>
 
@@ -64,7 +128,6 @@ export default defineComponent({
 	},
 	setup() {
 		const store = useStore();
-		store.dispatch('refreshProducts');
 
 		const year = moment().add(7, 'M').year();
 		const pastTitle = {
@@ -82,16 +145,38 @@ export default defineComponent({
 			years_pastV2: "Vendant " + (year - 2),
 		};
 
+		const variSearch = ref("");
+
+		const allProducts = computed(() => {
+			const prod = Object.values(store.state.products);
+
+			if (variSearch.value === "")
+				return prod;
+
+			const match = new RegExp(variSearch.value.toLowerCase())
+			return prod.filter((prod: any) => {
+				return match.test(prod.Variete?.toLowerCase())
+			});
+		});
+		const productPage = ref(0);
+		const len = 50;
+
+		watch([variSearch], () => productPage.value = 0)
+
 		return {
 			load(ID) {
 				store.dispatch('load', ID)
 			},
 
-			products: computed(() => store.state.products),
+			products: computed(() => allProducts.value.slice(len * productPage.value, len * (productPage.value + 1))),
 			oas: computed(() => store.state.oas),
 			loading: computed(() => store.state.loading),
 
 			pastTitle,
+			productPage,
+			productPageLen: computed(() => Math.ceil(allProducts.value.length / len)),
+
+			variSearch,
 
 			money(val) {
 				return val ? (parseFloat(val).toFixed(2) + "$") : "-";
@@ -137,6 +222,8 @@ function setupScroll(loadMorePosts) {
 
 <style scoped lang="scss">
 .product {
+	table-layout: fixed;
+
 	.red {
 		background-color: #ff000085;
 	}
@@ -165,4 +252,20 @@ function setupScroll(loadMorePosts) {
 .product td {
 	white-space: nowrap;
 }
+
+.pagination {
+	list-style: none;
+	display: flex;
+	justify-content: center;
+	button{
+		padding: .5rem;
+		margin: .2rem;
+		font-size: 1.3rem;
+
+		&:not(:disabled){
+			cursor: pointer;
+		}
+	}
+}
+
 </style>

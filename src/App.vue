@@ -4,13 +4,39 @@
 		|
 		<router-link to="/about">About</router-link>
 	</div>
-	<router-view v-slot="{ Component }">
+	<div v-if="loading">
+		Loading...
+	</div>
+	<router-view v-slot="{ Component }" v-else>
 		<keep-alive>
 			<component :is="Component" />
 		</keep-alive>
 	</router-view>
 
 </template>
+
+<script>
+
+import {computed, defineComponent} from "vue";
+import HelloWorld from "@/components/HelloWorld";
+import {useStore} from "vuex";
+
+export default defineComponent({
+	name: 'Home',
+	components: {
+		HelloWorld,
+	},
+	setup() {
+		const store = useStore();
+		store.dispatch('refreshProducts');
+
+		return {
+			loading: computed(() => store.state.loading),
+		};
+	}
+});
+
+</script>
 
 <style lang="scss">
 #app {
