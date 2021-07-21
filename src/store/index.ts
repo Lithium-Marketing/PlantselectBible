@@ -25,7 +25,13 @@ export default createStore({
         }
     },
     actions: {
-        refreshProducts(context) {
+        load(context, payload) {
+            console.log(payload);
+        },
+        refreshProducts(context, payload) {
+            if (Object.entries(context.state.products).length && !payload)
+                return;
+            
             context.commit("loading", true);
             conn.query(req1(), (err, result) => {
                 if (err)
