@@ -1,0 +1,47 @@
+
+body {
+	button {
+		padding: .5rem;
+		margin: .2rem;
+		font-size: 1rem;
+		
+		outline: none;
+		
+		&:not(:disabled) {
+			cursor: pointer;
+		}
+	}
+	
+	.red {
+		background-color: #ff000085;
+	}
+	
+	.yellow {
+		background-color: #ffff0085;
+	}
+	
+	.green {
+		background-color: #00800085;
+	}
+	
+	.blue {
+		background-color: #0000ff85;
+	}
+	
+	.violet {
+		background-color: #ee82ee85;
+	}
+	
+	.grey {
+		background-color: #80808085;
+	}
+}
+
+
+.skinA {
+	button {
+		&.btnConfirm {
+			background-color: lightsteelblue;
+		}
+	}
+}

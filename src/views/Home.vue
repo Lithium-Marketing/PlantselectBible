@@ -1,188 +1,84 @@
 <template>
 	<div class="home">
-		<ul class="pagination">
-			<li>
-				<button @click="productPage = 0" :disabled="productPage===0">&lt;&lt;</button>
-			</li>
-
-			<li>
-				<button @click="productPage = productPage-1" :disabled="productPage===0">&lt;</button>
-			</li>
-
-			<li>
-				<button @click="productPage = productPage" :disabled="productPage === productPage+p">
-					{{ productPage + 1 }}/{{productPageLen}}
-				</button>
-			</li>
-
-			<li>
-				<button @click="productPage = productPage+1" :disabled="productPage>=productPageLen-1">&gt;</button>
-			</li>
-
-			<li>
-				<button @click="productPage = productPageLen-1" :disabled="productPage>=productPageLen-1">&gt;&gt;</button>
-			</li>
-		</ul>
-		<table class="product">
+		<div class="op">
+			<ButtonConfirm @action="refresh">Rafraîchir les données</ButtonConfirm>
+			<ButtonConfirm @action="save">Sauvegarder les changements</ButtonConfirm>
+			<ButtonConfirm @action="annule">Annuler les changements</ButtonConfirm>
+		</div>
+		<table>
 			<tr>
-				<th></th>
-				<th>Code</th>
-				<th>Variete</th>
-				<th>Format</th>
-				<th>Inv.</th>
-				<th>reservation</th>
-				<th>{{ pastTitle['years_pastM0'] }}</th>
-				<th>{{ pastTitle['years_pastM1'] }}</th>
-				<th>{{ pastTitle['years_pastM2'] }}</th>
-				<th>{{ pastTitle['years_pastVe0'] }}</th>
-				<th>{{ pastTitle['years_pastVe1'] }}</th>
-				<th>{{ pastTitle['years_pastVe2'] }}</th>
-				<th>{{ pastTitle['years_pastA0'] }}</th>
-				<th>{{ pastTitle['years_pastA1'] }}</th>
-				<th>{{ pastTitle['years_pastA2'] }}</th>
-				<th>{{ pastTitle['years_pastV0'] }}</th>
-				<th>{{ pastTitle['years_pastV1'] }}</th>
-				<th>{{ pastTitle['years_pastV2'] }}</th>
+				<td>Nombre de produit:</td>
+				<td>{{ productsLen }}</td>
 			</tr>
 			<tr>
-				<th></th>
-				<th></th>
-				<th><input v-model="variSearch"></th>
-				<th></th>
-				<th></th>
-				<th></th>
-				<th></th>
-				<th></th>
-				<th></th>
-				<th></th>
-				<th></th>
-				<th></th>
-				<th></th>
-				<th></th>
-				<th></th>
-				<th></th>
-				<th></th>
-				<th></th>
+				<td>Nombre de OA:</td>
+				<td>{{ oasLen }}</td>
 			</tr>
-			<template v-for="(prod,val) in products" :key="val">
-				<tr :class="[prod.Color]">
-					<td>
-						<button @click="load(prod.ID)">load</button>
-					</td>
-					<td>{{ prod.Code }}</td>
-					<td>{{ prod.Variete }}</td>
-					<td>{{ prod.Format }}</td>
-					<td :class="{'red': prod.Quantite<0}">{{ prod.Quantite }}</td>
-					<td>{{ value(prod.reservation) }}</td>
-					<td>{{ value(prod.years_pastM0) }}</td>
-					<td>{{ value(prod.years_pastM1) }}</td>
-					<td>{{ value(prod.years_pastM2) }}</td>
-					<td>{{ value(prod.years_pastVe0) }}</td>
-					<td>{{ value(prod.years_pastVe1) }}</td>
-					<td>{{ value(prod.years_pastVe2) }}</td>
-					<td>{{ value(prod.years_pastA0) }}</td>
-					<td>{{ value(prod.years_pastA1) }}</td>
-					<td>{{ value(prod.years_pastA2) }}</td>
-					<td>{{ money(prod.years_pastV0) }}</td>
-					<td>{{ money(prod.years_pastV1) }}</td>
-					<td>{{ money(prod.years_pastV2) }}</td>
-				</tr>
-			</template>
+			<tr>
+				<td>Nombre de Changement:</td>
+				<td>{{ changesLen }}</td>
+			</tr>
 		</table>
-		<ul class="pagination">
-			<li>
-				<button @click="productPage = 0" :disabled="productPage===0">&lt;&lt;</button>
-			</li>
-
-			<li>
-				<button @click="productPage = productPage-1" :disabled="productPage===0">&lt;</button>
-			</li>
-
-			<li>
-				<button @click="productPage = productPage" :disabled="productPage === productPage+p">
-					{{ productPage + 1 }}/{{productPageLen}}
-				</button>
-			</li>
-
-			<li>
-				<button @click="productPage = productPage+1" :disabled="productPage>=productPageLen-1">&gt;</button>
-			</li>
-
-			<li>
-				<button @click="productPage = productPageLen-1" :disabled="productPage>=productPageLen-1">&gt;&gt;</button>
-			</li>
-		</ul>
+		<table>
+			<tr>
+				<td>Elements par page:</td>
+				<td><select v-model="ipp">
+					<option v-for="n in 10" :value="n*10">{{ n * 10 }}</option>
+				</select></td>
+			</tr>
+			<tr>
+				<td>Chaine de connexion:</td>
+				<td><input v-model="mysqlLogin"></td>
+			</tr>
+		</table>
 	</div>
 </template>
 
-<script lang="ts">
+<script>
 import {defineComponent, ref, computed, onMounted, onUnmounted, watch} from 'vue';
-import HelloWorld from '@/components/HelloWorld.vue';
 import {useStore} from "vuex";
 import moment from "moment";
+import ButtonConfirm from "@/components/ButtonConfirm";
 
 export default defineComponent({
 	name: 'Home',
-	components: {
-		HelloWorld,
-	},
+	components: {ButtonConfirm},
 	setup() {
 		const store = useStore();
 
 		const year = moment().add(7, 'M').year();
-		const pastTitle = {
-			years_pastM0: "Mort " + year,
-			years_pastM1: "Mort " + (year - 1),
-			years_pastM2: "Mort " + (year - 2),
-			years_pastVe0: "Vente " + year,
-			years_pastVe1: "Vente " + (year - 1),
-			years_pastVe2: "Vente " + (year - 2),
-			years_pastA0: "Achat " + year,
-			years_pastA1: "Achat " + (year - 1),
-			years_pastA2: "Achat " + (year - 2),
-			years_pastV0: "Vendant " + year,
-			years_pastV1: "Vendant " + (year - 1),
-			years_pastV2: "Vendant " + (year - 2),
-		};
-
-		const variSearch = ref("");
-
-		const allProducts = computed(() => {
-			const prod = Object.values(store.state.products);
-
-			if (variSearch.value === "")
-				return prod;
-
-			const match = new RegExp(variSearch.value.toLowerCase())
-			return prod.filter((prod: any) => {
-				return match.test(prod.Variete?.toLowerCase())
-			});
-		});
-		const productPage = ref(0);
-		const len = 50;
-
-		watch([variSearch], () => productPage.value = 0)
 
 		return {
-			load(ID) {
-				store.dispatch('load', ID)
+			productsLen: computed(() => Object.entries(store.state.products).length),
+			oasLen: computed(() => Object.entries(store.state.oas).length),
+			changesLen: computed(() => Object.entries(store.state.changes).length),
+
+			ipp: computed({
+				get() {
+					return store.state.settings.ipp;
+				},
+				set(val) {
+					store.commit('ipp', val);
+				}
+			}),
+			mysqlLogin: computed({
+				get() {
+					return JSON.stringify(store.state.mysqlLogin);
+				},
+				set(val) {
+					store.commit('mysqlLogin', JSON.parse(val));
+				}
+			}),
+
+			refresh() {
+				store.dispatch('refresh', true);
 			},
+			save() {
 
-			products: computed(() => allProducts.value.slice(len * productPage.value, len * (productPage.value + 1))),
-			oas: computed(() => store.state.oas),
-			loading: computed(() => store.state.loading),
-
-			pastTitle,
-			productPage,
-			productPageLen: computed(() => Math.ceil(allProducts.value.length / len)),
-
-			variSearch,
-
-			money(val) {
-				return val ? (parseFloat(val).toFixed(2) + "$") : "-";
 			},
-			value(val) {
-				return val ? val : "-";
+			annule() {
+
+
 			}
 		};
 	}
@@ -221,49 +117,28 @@ function setupScroll(loadMorePosts) {
 </script>
 
 <style scoped lang="scss">
-.product {
-	table-layout: fixed;
 
-	.red {
-		background-color: #ff000085;
-	}
-
-	.yellow {
-		background-color: #ffff0085;
-	}
-
-	.green {
-		background-color: #00800085;
-	}
-
-	.blue {
-		background-color: #0000ff85;
-	}
-
-	.violet {
-		background-color: #ee82ee85;
-	}
-
-	.grey {
-		background-color: #80808085;
-	}
-}
-
-.product td {
-	white-space: nowrap;
-}
-
-.pagination {
-	list-style: none;
+.home {
 	display: flex;
+	flex-direction: column;
 	justify-content: center;
-	button{
-		padding: .5rem;
-		margin: .2rem;
-		font-size: 1.3rem;
+	align-items: center;
 
-		&:not(:disabled){
-			cursor: pointer;
+	.msg {
+		font-size: 1.3rem;
+		font-weight: bold;
+		padding-bottom: 1rem;
+	}
+
+	.op {
+		display: flex;
+		justify-content: center;
+		gap: 1rem;
+
+		width: 100%;
+		padding: 1rem;
+
+		button {
 		}
 	}
 }

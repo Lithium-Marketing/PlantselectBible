@@ -4,7 +4,10 @@ import {app, protocol, BrowserWindow} from 'electron'
 import {createProtocol} from 'vue-cli-plugin-electron-builder/lib'
 import installExtension, {VUEJS3_DEVTOOLS} from 'electron-devtools-installer'
 import {autoUpdater} from "electron-updater"
-import * as path from "path";
+
+import {initialize} from "@electron/remote/main";
+
+initialize();
 
 const isDevelopment = process.env.NODE_ENV !== 'production'
 
@@ -23,7 +26,8 @@ async function createWindow() {
             // Use pluginOptions.nodeIntegration, leave this alone
             // See nklayman.github.io/vue-cli-plugin-electron-builder/guide/security.html#node-integration for more info
             nodeIntegration: true,
-            contextIsolation: false
+            contextIsolation: false,
+            enableRemoteModule: true
         }
     })
     
@@ -34,10 +38,10 @@ async function createWindow() {
     } else {
         createProtocol('app')
         // Load the index.html when not in development
-        win.loadURL('app://./index.html#');
+        await win.loadURL('app://./index.html#');
         autoUpdater.autoDownload = true;
         autoUpdater.autoInstallOnAppQuit = true;
-        checkUpdate();
+        await checkUpdate();
     }
 }
 
@@ -86,8 +90,8 @@ if (isDevelopment) {
     }
 }
 
-function checkUpdate() {
-    autoUpdater.checkForUpdatesAndNotify().then(() => {
-        setTimeout(checkUpdate, 1000 * 60 * 60);
-    });
+async function checkUpdate() {
+    const result = await autoUpdater.checkForUpdatesAndNotify();
+    
+    setTimeout(checkUpdate, 1000 * 60 * 60);
 }
