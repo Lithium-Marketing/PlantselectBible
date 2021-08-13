@@ -28,3 +28,4 @@ jobs:
           github_token: ${{ secrets.github_token }}
           release: true
           use_vue_cli: true
+          args: -- --win nsis
