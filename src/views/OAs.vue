@@ -27,13 +27,13 @@
 			<template v-for="(oa,val) in oas" :key="val">
 				<tr :class="[oa.Color]">
 					<td>
-						<button @click="load(oa.ID)">load</button>
+						<button @click="$load(oa.ID,oa.Produit_ID)">load</button>
 					</td>
 					<td>{{ oa.ID }}</td>
 					<td>{{ oa.Variete }}</td>
 					<td>{{ oa.Inv }}</td>
 					<td>{{ oa.Fournisseur }}</td>
-					<td>{{ date(oa.Date_reception) }}</td>
+					<td>{{ $date(oa.Date_reception) }}</td>
 					<td>{{ oa.sem_fini }}</td>
 					<td>{{ oa.Quantite_produire }}</td>
 					<td>{{ oa.Quantite_recevoir }}</td>
@@ -61,22 +61,6 @@ export default defineComponent({
 	setup() {
 		const store = useStore();
 
-		const year = moment().add(7, 'M').year();
-		const pastTitle = {
-			years_pastM0: "Mort " + year,
-			years_pastM1: "Mort " + (year - 1),
-			years_pastM2: "Mort " + (year - 2),
-			years_pastVe0: "Vente " + year,
-			years_pastVe1: "Vente " + (year - 1),
-			years_pastVe2: "Vente " + (year - 2),
-			years_pastA0: "Achat " + year,
-			years_pastA1: "Achat " + (year - 1),
-			years_pastA2: "Achat " + (year - 2),
-			years_pastV0: "Vendant " + year,
-			years_pastV1: "Vendant " + (year - 1),
-			years_pastV2: "Vendant " + (year - 2),
-		};
-
 		const products = computed(() => store.state.products);
 
 		const allOAs = computed(() => {
@@ -101,29 +85,12 @@ export default defineComponent({
 		//watch([variSearch], () => productPage.value = 0)
 
 		return {
-			load(ID) {
-
-			},
-
 			oas: computed(() => allOAs.value.slice(len.value * page.value, len.value * (page.value + 1))),
 			products,
 			loading: computed(() => store.state.loading),
 
-			pastTitle,
 			page,
 			len: computed(() => Math.ceil(allOAs.value.length / len.value)),
-
-			money(val) {
-				return val ? (parseFloat(val).toFixed(2) + "$") : "-";
-			},
-			value(val) {
-				return val ? val : "-";
-			},
-			date(val) {
-				if (!val)
-					return "-";
-				return moment.unix(val).format('lll')
-			}
 		};
 	}
 });

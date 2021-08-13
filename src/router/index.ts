@@ -2,12 +2,23 @@ import {createRouter, createWebHistory, RouteRecordRaw} from 'vue-router'
 import Home from '../views/Home.vue'
 import Products from "@/views/Products.vue";
 import OAs from "@/views/OAs.vue";
+import ViewA from "@/views/ViewA.vue";
+import Edit from "@/views/Edit.vue";
+import Tools from "@/views/Tools.vue";
 
 const routes: Array<RouteRecordRaw> = [
     {
         path: '/',
         name: 'Home',
         component: Home
+    }, {
+        path: '/edit',
+        name: 'Edit',
+        component: Edit
+    }, {
+        path: '/viewA',
+        name: 'ViewA',
+        component: ViewA
     }, {
         path: '/products',
         name: 'Products',
@@ -16,6 +27,10 @@ const routes: Array<RouteRecordRaw> = [
         path: '/oas',
         name: 'OAs',
         component: OAs
+    }, {
+        path: '/tools',
+        name: 'Tools',
+        component: Tools
     }, {
         path: '/about',
         name: 'About',

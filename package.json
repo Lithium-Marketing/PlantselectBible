@@ -1,11 +1,12 @@
 {
   "name": "plantselect_bible",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "private": true,
   "scripts": {
     "serve": "vue-cli-service serve",
     "build": "vue-cli-service build",
     "electron:build": "vue-cli-service electron:build",
+    "electron:publish": "npm run electron:build -- -p always",
     "electron:serve": "vue-cli-service electron:serve",
     "postinstall": "electron-builder install-app-deps",
     "postuninstall": "electron-builder install-app-deps"
@@ -20,10 +21,10 @@
     "electron-updater": "^4.3.9",
     "moment": "^2.29.1",
     "mysql2": "^2.2.5",
-    "vue": "^3.0.0",
-    "vue-router": "^4.0.0-0",
+    "vue": "^3.2.2",
+    "vue-router": "^4.0.11",
     "vue-virtual-scroller": "^2.0.0-alpha.1",
-    "vuex": "^4.0.0-0"
+    "vuex": "^4.0.2"
   },
   "devDependencies": {
     "@types/electron-devtools-installer": "^2.2.0",
@@ -32,7 +33,7 @@
     "@vue/cli-plugin-typescript": "~4.5.0",
     "@vue/cli-plugin-vuex": "~4.5.0",
     "@vue/cli-service": "~4.5.0",
-    "@vue/compiler-sfc": "^3.0.0",
+    "@vue/compiler-sfc": "^3.2.2",
     "electron": "^12.0.15",
     "electron-devtools-installer": "^3.1.0",
     "sass": "^1.26.5",

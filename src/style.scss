@@ -1,7 +1,7 @@
 
 body {
 	button {
-		padding: .5rem;
+		padding: .5rem 1rem;
 		margin: .2rem;
 		font-size: 1rem;
 		
@@ -40,6 +40,15 @@ body {
 
 .skinA {
 	button {
+		border:none;
+		border-radius: 5px;
+		background-color: #8daa26;
+		color: #fff;
+		
+		&:disabled{
+			opacity: .6;
+		}
+		
 		&.btnConfirm {
 			background-color: lightsteelblue;
 		}

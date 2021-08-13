@@ -9,18 +9,18 @@
 				<th>Format</th>
 				<th>Inv.</th>
 				<th>reservation</th>
-				<th>{{ pastTitle['years_pastM0'] }}</th>
-				<th>{{ pastTitle['years_pastM1'] }}</th>
-				<th>{{ pastTitle['years_pastM2'] }}</th>
-				<th>{{ pastTitle['years_pastVe0'] }}</th>
-				<th>{{ pastTitle['years_pastVe1'] }}</th>
-				<th>{{ pastTitle['years_pastVe2'] }}</th>
-				<th>{{ pastTitle['years_pastA0'] }}</th>
-				<th>{{ pastTitle['years_pastA1'] }}</th>
-				<th>{{ pastTitle['years_pastA2'] }}</th>
-				<th>{{ pastTitle['years_pastV0'] }}</th>
-				<th>{{ pastTitle['years_pastV1'] }}</th>
-				<th>{{ pastTitle['years_pastV2'] }}</th>
+				<th>{{ $pastTitle.years_pastM0 }}</th>
+				<th>{{ $pastTitle.years_pastM1 }}</th>
+				<th>{{ $pastTitle.years_pastM2 }}</th>
+				<th>{{ $pastTitle.years_pastVe0 }}</th>
+				<th>{{ $pastTitle.years_pastVe1 }}</th>
+				<th>{{ $pastTitle.years_pastVe2 }}</th>
+				<th>{{ $pastTitle.years_pastA0 }}</th>
+				<th>{{ $pastTitle.years_pastA1 }}</th>
+				<th>{{ $pastTitle.years_pastA2 }}</th>
+				<th>{{ $pastTitle.years_pastV0 }}</th>
+				<th>{{ $pastTitle.years_pastV1 }}</th>
+				<th>{{ $pastTitle.years_pastV2 }}</th>
 			</tr>
 			<tr>
 				<th></th>
@@ -45,25 +45,25 @@
 			<template v-for="(prod,val) in products" :key="val">
 				<tr :class="[prod.Color]">
 					<td>
-						<button @click="load(prod.ID)">load</button>
+						<button @click="$load(undefined,prod.ID)">load</button>
 					</td>
 					<td>{{ prod.Code }}</td>
 					<td>{{ prod.Variete }}</td>
 					<td>{{ prod.Format }}</td>
 					<td :class="{'red': prod.Quantite<0}">{{ prod.Quantite }}</td>
-					<td>{{ value(prod.reservation) }}</td>
-					<td>{{ value(prod.years_pastM0) }}</td>
-					<td>{{ value(prod.years_pastM1) }}</td>
-					<td>{{ value(prod.years_pastM2) }}</td>
-					<td>{{ value(prod.years_pastVe0) }}</td>
-					<td>{{ value(prod.years_pastVe1) }}</td>
-					<td>{{ value(prod.years_pastVe2) }}</td>
-					<td>{{ value(prod.years_pastA0) }}</td>
-					<td>{{ value(prod.years_pastA1) }}</td>
-					<td>{{ value(prod.years_pastA2) }}</td>
-					<td>{{ money(prod.years_pastV0) }}</td>
-					<td>{{ money(prod.years_pastV1) }}</td>
-					<td>{{ money(prod.years_pastV2) }}</td>
+					<td>{{ $value(prod.reservation) }}</td>
+					<td>{{ $value(prod.years_pastM0) }}</td>
+					<td>{{ $value(prod.years_pastM1) }}</td>
+					<td>{{ $value(prod.years_pastM2) }}</td>
+					<td>{{ $value(prod.years_pastVe0) }}</td>
+					<td>{{ $value(prod.years_pastVe1) }}</td>
+					<td>{{ $value(prod.years_pastVe2) }}</td>
+					<td>{{ $value(prod.years_pastA0) }}</td>
+					<td>{{ $value(prod.years_pastA1) }}</td>
+					<td>{{ $value(prod.years_pastA2) }}</td>
+					<td>{{ $money(prod.years_pastV0) }}</td>
+					<td>{{ $money(prod.years_pastV1) }}</td>
+					<td>{{ $money(prod.years_pastV2) }}</td>
 				</tr>
 			</template>
 		</table>
@@ -72,10 +72,9 @@
 </template>
 
 <script lang="ts">
-import {defineComponent, ref, computed, onMounted, onUnmounted, watch} from 'vue';
+import {computed, defineComponent, ref, watch} from 'vue';
 import HelloWorld from '@/components/HelloWorld.vue';
 import {useStore} from "vuex";
-import moment from "moment";
 import Pagination from "@/components/Pagination.vue";
 
 export default defineComponent({
@@ -86,22 +85,6 @@ export default defineComponent({
 	},
 	setup() {
 		const store = useStore();
-
-		const year = moment().add(7, 'M').year();
-		const pastTitle = {
-			years_pastM0: "Mort " + year,
-			years_pastM1: "Mort " + (year - 1),
-			years_pastM2: "Mort " + (year - 2),
-			years_pastVe0: "Vente " + year,
-			years_pastVe1: "Vente " + (year - 1),
-			years_pastVe2: "Vente " + (year - 2),
-			years_pastA0: "Achat " + year,
-			years_pastA1: "Achat " + (year - 1),
-			years_pastA2: "Achat " + (year - 2),
-			years_pastV0: "Vendant " + year,
-			years_pastV1: "Vendant " + (year - 1),
-			years_pastV2: "Vendant " + (year - 2),
-		};
 
 		const variSearch = ref("");
 
@@ -117,31 +100,20 @@ export default defineComponent({
 			});
 		});
 		const productPage = ref(0);
-		const len = computed(()=>store.state.settings.ipp);
+		const len = computed(() => store.state.settings.ipp);
 
 		watch([variSearch], () => productPage.value = 0)
 
 		return {
-			load(ID) {
-				store.dispatch('load', ID)
-			},
-
 			products: computed(() => allProducts.value.slice(len.value * productPage.value, len.value * (productPage.value + 1))),
 			oas: computed(() => store.state.oas),
 			loading: computed(() => store.state.loading),
 
-			pastTitle,
 			productPage,
 			productPageLen: computed(() => Math.ceil(allProducts.value.length / len.value)),
 
 			variSearch,
 
-			money(val) {
-				return val ? (parseFloat(val).toFixed(2) + "$") : "-";
-			},
-			value(val) {
-				return val ? val : "-";
-			}
 		};
 	}
 });

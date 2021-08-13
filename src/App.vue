@@ -2,9 +2,15 @@
 	<div id="nav">
 		<router-link to="/">Home</router-link>
 		<span>|</span>
+		<router-link to="/viewA">View A</router-link>
+		<span>|</span>
 		<router-link to="/products">Produits</router-link>
 		<span>|</span>
 		<router-link to="/oas">OAs</router-link>
+		<span>|</span>
+		<router-link to="/edit">Edit</router-link>
+		<span>|</span>
+		<router-link to="/tools">Tools</router-link>
 		<span>|</span>
 		<router-link to="/about">About</router-link>
 		<span>|</span>
@@ -73,6 +79,8 @@ export default defineComponent({
 	> span {
 		padding-right: .3rem;
 		padding-left: .3rem;
+		font-weight: bolder;
+		font-size: 1.2rem;
 	}
 
 	a {

@@ -1,13 +1,13 @@
 import {createStore} from 'vuex'
 
-import mysql from 'mysql2'
+import mysql from 'mysql2/promise'
 
-const conn = mysql.createPool({
+/*const conn = mysql.createPool({
     database: "lithweb_crm_plantselect",
     user: "lithweb_pl_bible",
     password: "CAkdCI@HU6s?",
     host: "plantselect.lithiumwebsolutions.com"
-});
+});*/
 
 
 export default createStore({
@@ -16,16 +16,25 @@ export default createStore({
             loading: false,
         },
         
+        editState: {
+            oaID: -1,
+            prodID: -1,
+            tab: 'product'
+        },
+        
         mysqlLogin: {
-            database: "lithweb_crm_plantselect",
-            user: "lithweb_pl_bible",
-            password: "CAkdCI@HU6s?",
-            host: "plantselect.lithiumwebsolutions.com"
+            database: "",
+            user: "",
+            password: "",
+            host: ""
         },
         
         products: {},//key is products.ID
         oas: {},//key is oa.ID
-        oasByProduct: {},//key ia products.ID value is array of oa.ID
+        //oasByProduct: {},//key ia products.ID value is array of oa.ID
+        
+        prices: {},
+        priceTitles: {},
         
         changes: {},//key is generated ID for operation
         
@@ -37,14 +46,27 @@ export default createStore({
     mutations: {
         setProducts(state, payload) {
             state.products = payload;
-            console.log(Object.entries(payload).length);
+            console.log("products", Object.entries(payload).length);
         },
         setOAs(state, payload) {
             state.oas = payload;
-            console.log(Object.entries(payload).length);
+            console.log("oas", Object.entries(payload).length);
+        },
+        setPrices(state, payload) {
+            state.prices = payload;
+            console.log("prices", Object.entries(payload).length);
+        },
+        setPriceTitles(state, payload) {
+            state.priceTitles = payload;
+            console.log("priceTitles", Object.entries(payload).length);
         },
         _loading(state, payload) {
             state._.loading = !!payload;
+        },
+        load(state, payload) {
+            state.editState.prodID = payload.prodID >= 0 ? payload.prodID : -1;
+            state.editState.oaID = payload.oaID >= 0 ? payload.oaID : -1;
+            state.editState.tab = payload.tab
         },
         log(state, payload) {
             state.logs.push(payload?.toString());
@@ -57,6 +79,73 @@ export default createStore({
         mysqlLogin(state, payload) {
             state.mysqlLogin = payload
         },
+        
+        modification(state, payload) {
+            const resourceKey = payload.resource;
+            const key = payload.key;
+            const field = payload.field;
+            const newValue = payload.value;
+            const sql = payload.sql;
+            const text = payload.text;
+            
+            if (key) {
+                const oldValue = state[resourceKey][key][field];
+                if (oldValue == newValue)
+                    return;
+                state[resourceKey][key] = {
+                    ...state[resourceKey][key],
+                    [field]: newValue
+                };
+                
+                const changeId = [resourceKey, key, field].join(".");
+                state.changes[changeId] = {
+                    sql,
+                    resourceKey, key, field, text,
+                    oldValue, newValue
+                };
+            } else {
+                state.changes[Date.now()] = {
+                    sql,
+                    resourceKey, field, text,
+                    newValue
+                };
+            }
+            
+        },
+        modificationsRaw(state, payload) {
+            for (const mod of payload) {
+                const resourceKey = mod.resource;
+                const key = mod.key;
+                const field = mod.field;
+                const newValue = mod.value;
+                const sql = mod.sql;
+                const text = mod.text;
+                const changeId = mod.changeId;
+                
+                if (key && state[resourceKey][key][field] == newValue)
+                    continue;
+                
+                state.changes[changeId] = {
+                    sql,
+                    resourceKey, field, text,
+                    newValue
+                };
+                
+                if (key) {
+                    const oldValue = state[resourceKey][key][field];
+                    state[resourceKey][key] = {
+                        ...state[resourceKey][key],
+                        [field]: newValue
+                    };
+                    
+                    state.changes[changeId].key = key;
+                    state.changes[changeId].oldValue = oldValue;
+                }
+            }
+        },
+        clearMod(state) {
+            state.changes = {};
+        }
     },
     actions: {
         log(context, payload) {
@@ -65,41 +154,111 @@ export default createStore({
         load(context, payload) {
             console.log(payload);
         },
-        refresh(context, payload) {
+        
+        async applyMod(context, payload) {
+            const connection = await mysql.createConnection(context.state.mysqlLogin)
+            
+            try {
+                await connection.beginTransaction()
+                const queryPromises = []
+                
+                Object.values(context.state.changes).forEach((query: any) => {
+                    queryPromises.push(connection.query(query.sql))
+                })
+                const results = await Promise.all(queryPromises)
+                await connection.commit()
+                context.commit("clearMod")
+                await connection.end()
+                return results
+            } catch (err) {
+                await connection.rollback()
+                await connection.end()
+                return Promise.reject(err)
+            }
+        },
+        
+        async refresh(context, payload) {
             if (Object.entries(context.state.products).length && !payload)
                 return;
             
-            let ended = 2;
+            const conn = await mysql.createPool(context.state.mysqlLogin)
             
+            context.commit("clearMod")
             context.commit("_loading", true);
-            conn.query(req1(), (err, result) => {
-                if (err)
-                    throw err;
+            
+            const promises = [];
+            
+            promises.push(conn.query(req1()).then(result => {
                 const products: any = {};
-                for (const p of result as any[]) {
+                for (const p of result[0] as any[]) {
                     products[p.ID.toString()] = p;
                 }
                 context.commit('setProducts', products);
-                if (--ended <= 0)
-                    context.commit("_loading", false);
-            });
+            }).catch(e => {
+                console.error(e);
+            }));
             
-            conn.query(reqOA(), (err, result) => {
-                if (err)
-                    throw err;
+            promises.push(conn.query(reqOA()).then(result => {
                 const oas: any = {};
-                for (const p of result as any[]) {
-                    
+                for (const p of result[0] as any[]) {
+                    p.years_pastC0O = p.years_pastC0;
                     oas[p.ID.toString()] = p;
                 }
                 context.commit('setOAs', oas);
-                if (--ended <= 0)
-                    context.commit("_loading", false);
-            })
+            }).catch(e => {
+                console.error(e);
+            }));
+            
+            promises.push(conn.query(reqPrices()).then(result => {
+                const prices: any = {};
+                for (const p of result[0] as any[]) {
+                    p.PrixO = p.Prix;
+                    prices[p.ID.toString()] = p;
+                }
+                context.commit('setPrices', prices);
+            }).catch(e => {
+                console.error(e);
+            }));
+            
+            promises.push(conn.query(reqPricesTitle()).then(result => {
+                const prices: any = {};
+                for (const p of result[0] as any[]) {
+                    prices[p.ID.toString()] = p;
+                }
+                context.commit('setPriceTitles', prices);
+            }).catch(e => {
+                console.error(e);
+            }));
+            
+            await Promise.all(promises);
+            await conn.end()
+            
+            context.commit("_loading", false);
         }
     }
 })
 
+function reqPricesTitle() {
+    return "SELECT ID,Titre FROM prix ORDER BY Position DESC";
+}
+
+function reqPrices() {
+    let query = "SELECT ";
+    const fields = {
+        produits_prix: ["ID", "Prix", "Prix_ID", "Produit_ID"]
+    };
+    const froms = [
+        "produits_prix"
+    ];
+    
+    query += Object.entries(fields).flatMap(e => {
+        return e[1].map(a => e[0] + '.' + a);
+    }).join(',');
+    
+    query += " FROM " + froms.join(" LEFT JOIN ");
+    
+    return query;
+}
 
 function reqOA() {
     let query = "SELECT ";
