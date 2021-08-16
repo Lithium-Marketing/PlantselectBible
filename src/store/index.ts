@@ -122,8 +122,19 @@ export default createStore({
                 const text = mod.text;
                 const changeId = mod.changeId;
                 
-                if (key && state[resourceKey][key][field] == newValue)
-                    continue;
+                if (key) {
+                    if (state[resourceKey][key][field] == newValue) {
+                        continue;
+                    } else if (state[resourceKey][key][field + "O"] == newValue) {
+                        state[resourceKey][key] = {
+                            ...state[resourceKey][key],
+                            [field]: newValue
+                        };
+                        if (state.changes[changeId])
+                            delete state.changes[changeId];
+                        continue
+                    }
+                }
                 
                 state.changes[changeId] = {
                     sql,
@@ -191,6 +202,7 @@ export default createStore({
             promises.push(conn.query(req1()).then(result => {
                 const products: any = {};
                 for (const p of result[0] as any[]) {
+                    p.years_pastV0O = p.years_pastV0;
                     products[p.ID.toString()] = p;
                 }
                 context.commit('setProducts', products);

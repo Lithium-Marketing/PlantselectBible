@@ -39,9 +39,9 @@
 					<td>{{ oa.product.Format }}</td>
 					<td>{{ oa.pw }}</td>
 					<td>{{ oa.ID }}</td>
-					<td>{{ $value(oa.years_pastC0) }}</td>
+					<td><TableInput :modelValue="oa.years_pastC0" :original="oa.years_pastC0O" @update:modelValue="upCost($event,oa)"/></td>
 					<td>{{ $value(oa.years_pastT0) }}</td>
-					<td>{{ $value(oa.product.years_pastV0) }}</td>
+					<td><TableInput :modelValue="oa.product.years_pastV0" :original="oa.product.years_pastV0O" @update:modelValue="upPrice($event,oa.product)"/></td>
 					<td>{{ $value(oa.years_pastC1) }}</td>
 					<td>{{ $value(oa.years_pastT1) }}</td>
 					<td>{{ $value(oa.product.years_pastV1) }}</td>
@@ -71,15 +71,19 @@ import HelloWorld from '@/components/HelloWorld.vue';
 import {useStore} from "vuex";
 import Pagination from "@/components/Pagination.vue";
 import {useRouter} from "vue-router";
+import TableInput from "@/components/TableInput.vue";
+import {Modifications} from "@/Modifications";
 
 export default defineComponent({
 	name: 'ViewA',
 	components: {
+		TableInput,
 		Pagination,
 		HelloWorld,
 	},
 	setup() {
 		const store = useStore();
+		const modifications = new Modifications(store);
 		const router = useRouter();
 
 		const allOAs = computed(() => {
@@ -133,7 +137,23 @@ export default defineComponent({
 			page,
 			len: computed(() => Math.ceil(allOAs.value.length / len.value)),
 
-
+			upCost(val,oa){
+				modifications.setCost({
+					OA_ID: oa.ID,
+					val
+				});
+				modifications.commit();
+			},
+			upPrice(val, product) {
+				console.log(product);//TODO find price
+				// modifications.setPrice({
+				// 	key: price.ID,
+				// 	val,
+				// 	Prix_ID: price.Prix_ID,
+				// 	Produit_ID: price.Produit_ID
+				// });
+				// modifications.commit();
+			},
 		};
 	}
 });

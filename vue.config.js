@@ -4,6 +4,7 @@ module.exports = {
 			//preload: 'src/preload.js',
 			nodeIntegration:true,
 			publish: ['github']
+			
 		}
 	}
 };
