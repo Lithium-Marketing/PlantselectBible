@@ -70,7 +70,6 @@ import {computed, defineComponent, ref} from 'vue';
 import HelloWorld from '@/components/HelloWorld.vue';
 import {useStore} from "vuex";
 import Pagination from "@/components/Pagination.vue";
-import {useRouter} from "vue-router";
 import TableInput from "@/components/TableInput.vue";
 import {Modifications} from "@/Modifications";
 
@@ -84,7 +83,6 @@ export default defineComponent({
 	setup() {
 		const store = useStore();
 		const modifications = new Modifications(store);
-		const router = useRouter();
 
 		const allOAs = computed(() => {
 			const oas = store.state.oas;
@@ -145,14 +143,15 @@ export default defineComponent({
 				modifications.commit();
 			},
 			upPrice(val, product) {
-				console.log(product);//TODO find price
-				// modifications.setPrice({
-				// 	key: price.ID,
-				// 	val,
-				// 	Prix_ID: price.Prix_ID,
-				// 	Produit_ID: price.Produit_ID
-				// });
-				// modifications.commit();
+				console.log(product,modifications.getMainPrice(),modifications.getMainPrice(product.ID));
+
+				modifications.setPrice({
+					key: modifications.getMainPrice(product.ID).ID,
+					val,
+					Prix_ID: modifications.getMainPrice().ID,
+					Produit_ID: product.ID
+				},true);
+				modifications.commit();
 			},
 		};
 	}

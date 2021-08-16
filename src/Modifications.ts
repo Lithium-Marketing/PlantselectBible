@@ -45,6 +45,8 @@ export class Modifications {
         this.store = store;
     }
     
+    //methods
+    
     start(cb: () => boolean, autoCommit = true) {
         const job = new Job(cb);
         job.start().then(() => {
@@ -60,7 +62,7 @@ export class Modifications {
             value
         } = mod;
         
-        const changeId = key ? [resource, key, field].join(".") : Date.now();
+        const changeId = mod.changeId || (key ? [resource, key, field].join(".") : Date.now());
         
         this.mods.push({
             changeId,
@@ -75,9 +77,32 @@ export class Modifications {
         this.mods.length = 0;
     }
     
+    //helper
+    
+    /**
+     * return main priceTitle unless prodId is provided. Then the main price of the product will be returned;
+     * @param prodID
+     */
+    getMainPrice(prodID?: number | string) {
+        if (prodID === undefined)
+            return this.store.state.priceTitles[1]
+        
+        const prices = Object.values(this.store.state.prices as { [k: string]: any }).filter(p => {
+            return p.Produit_ID == prodID && p.Prix_ID == this.store.state.priceTitles[1].ID;
+        });
+        
+        if (!prices.length)
+            return undefined;
+        
+        if (prices.length !== 1)
+            throw new Error(JSON.stringify(prices));
+        
+        return prices[0];
+    }
+    
     //actions
     
-    setPrice(payload: { val: any; key: string | number; Prix_ID: string | number; Produit_ID: string | number; }) {
+    setPrice(payload: { val: any; key: string | number; Prix_ID: string | number; Produit_ID: string | number; }, vendant: boolean = false) {
         let val = payload.val;
         val = Math.ceil((val * 100) / 5) * 5 / 100;//ceil to 5 cent
         val = val.toFixed(2);
@@ -85,8 +110,8 @@ export class Modifications {
         const price = this.store.state.prices[payload.key];
         if (!price) {
             this.add({
-                resource: "prices",
-                field: "Prix",
+                resource: vendant ? "products" : "prices",
+                field: vendant ? "years_pastV0" : "Prix",
                 value: val,
                 sql: `INSERT INTO produits_prix (
 					                                Prix, Prix_ID, Produit_ID, Visible
@@ -98,9 +123,10 @@ export class Modifications {
             })
         } else {
             this.add({
-                resource: "prices",
-                key: price.ID,
-                field: "Prix",
+                resource: vendant ? "products" : "prices",
+                field: vendant ? "years_pastV0" : "Prix",
+                key: vendant ? payload.Produit_ID : price.ID,
+                changeId: ["prices", price.ID, "Prix"].join("."),
                 value: val,
                 sql: `UPDATE produits_prix
 				      SET Prix=${val}
