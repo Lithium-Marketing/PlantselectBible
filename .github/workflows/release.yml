@@ -9,7 +9,7 @@ jobs:
 
     strategy:
       matrix:
-        os: [ubuntu-latest]
+        os: [windows-latest]
 
     steps:
       - name: Check out Git repository
@@ -28,3 +28,4 @@ jobs:
           github_token: ${{ secrets.github_token }}
           release: true
           use_vue_cli: true
+          args: -- --win nsis
