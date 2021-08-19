@@ -1,7 +1,8 @@
 <template>
 	<div class="home">
 		<Pagination v-model:page="page" v-model:len="len"/>
-		<table class="product">
+		<table class="product" ref="tableRef">
+			<thead>
 			<tr>
 				<th></th>
 				<th>Produit</th>
@@ -31,18 +32,24 @@
 			</tr>
 			<tr>
 			</tr>
+			</thead>
+			<tbody>
 			<template v-for="(oa,val) in oas" :key="val">
-				<tr :class="[oa.Color]">
+				<tr :class="[oa.product.Color]" :data-pid="oa.product.ID" :data-oaid="oa.ID">
 					<td>
 						<button @click="$load(oa.ID,oa.product.ID)">load</button>
 					</td>
-					<td>{{ oa.product.Variete }}</td>
+					<td :class="oa.c?.Variete">{{ oa.product.Variete }}</td>
 					<td>{{ oa.product.Format }}</td>
 					<td>{{ oa.pw }}</td>
 					<td>{{ oa.ID }}</td>
-					<td><TableInput :modelValue="oa.years_pastC0" :original="oa.years_pastC0O" @update:modelValue="upCost($event,oa)"/></td>
+					<td>
+						<TableInput :modelValue="oa.years_pastC0" :original="oa.years_pastC0O" @update:modelValue="upCost($event,oa)"/>
+					</td>
 					<td>{{ $value(oa.years_pastT0) }}</td>
-					<td><TableInput :modelValue="oa.product.years_pastV0" :original="oa.product.years_pastV0O" @update:modelValue="upPrice($event,oa.product)"/></td>
+					<td>
+						<TableInput :modelValue="oa.product.years_pastV0" :original="oa.product.years_pastV0O" @update:modelValue="upPrice($event,oa.product)"/>
+					</td>
 					<td>{{ $value(oa.years_pastC1) }}</td>
 					<td>{{ $value(oa.years_pastT1) }}</td>
 					<td>{{ $value(oa.product.years_pastV1) }}</td>
@@ -52,7 +59,9 @@
 					<td>{{ oa.Format }}</td>
 					<td>{{ oa.Fournisseur }}</td>
 					<td :class="{'red': oa.product.Quantite<=0}">{{ oa.product.Quantite }}</td>
-					<td><TableInput :always="true" :modelValue="oa.product['bible.Quantite']" :original="oa.product['bible.QuantiteO']" @update:modelValue="upAchat($event,oa,oa.product)"/></td>
+					<td>
+						<TableInput :always="true" :modelValue="oa.product['bible.Quantite']" :original="oa.product['bible.QuantiteO']" @update:modelValue="upAchat($event,oa,oa.product)"/>
+					</td>
 					<td>{{ $valueI(oa.product.years_pastA0) }}</td>
 					<td>{{ $valueI(oa.product.years_pastA1) }}</td>
 					<td>{{ $date(oa.Date_reception) }}</td>
@@ -61,13 +70,14 @@
 					<td>{{ $valueI(oa.product.years_pastVe1) }}</td>
 					<td>{{ $valueI(oa.product.years_pastVe2) }}</td>
 				</tr>
-<!--				<tr>
-					<td colspan="10">{{Object.keys(oa)}}</td>
-				</tr>
-				<tr>
-					<td colspan="10">{{Object.keys(oa.product)}}</td>
-				</tr>-->
+<!--				<tr>-->
+<!--					<td colspan="25">{{ Object.keys(oa) }}</td>-->
+<!--				</tr>-->
+<!--				<tr>-->
+<!--					<td colspan="25">{{ Object.keys(oa.product) }}</td>-->
+<!--				</tr>-->
 			</template>
+			</tbody>
 		</table>
 		<Pagination v-model:page="page" v-model:len="len"/>
 	</div>
@@ -80,6 +90,9 @@ import {useStore} from "vuex";
 import Pagination from "@/components/Pagination.vue";
 import TableInput from "@/components/TableInput.vue";
 import {Modifications} from "@/Modifications";
+import {ContextMenu} from "@/ContextMenu";
+import {Menu} from "@electron/remote";
+import {ColorMenu} from "@/Const";
 
 export default defineComponent({
 	name: 'ViewA',
@@ -91,6 +104,32 @@ export default defineComponent({
 	setup() {
 		const store = useStore();
 		const modifications = new Modifications(store);
+		const tableRef = ref<HTMLTableElement | undefined>();
+
+		ContextMenu.addInSetup((x, y) => {
+
+			const table = tableRef.value;
+			if (!table)
+				return false;
+
+			for (const row of table.tBodies[0].rows) {
+
+				const rect = row.getBoundingClientRect();
+				if (rect.left < x && rect.right > x)
+					if (rect.top < y && rect.bottom > y) {
+						console.log(x, y,row.dataset);
+
+						const menu = Menu.buildFromTemplate(ColorMenu(store,modifications,row))
+						menu.popup({
+							x, y
+						});
+
+						return true;
+					}
+			}
+
+			return false;
+		})
 
 		const allOAs = computed(() => {
 			const oas = store.state.oas;
@@ -137,13 +176,21 @@ export default defineComponent({
 		//watch([variSearch], () => productPage.value = 0)
 
 		return {
-			oas: computed(() => allOAs.value.slice(len.value * page.value, len.value * (page.value + 1))),
+			oas: computed(() => allOAs.value.slice(len.value * page.value, len.value * (page.value + 1)).map(oa=>{
+				try {
+					oa.c = JSON.parse(oa['bible.Color']);
+				} catch (e) {
+				}
+				return oa;
+			})),
 			loading: computed(() => store.state.loading),
 
 			page,
 			len: computed(() => Math.ceil(allOAs.value.length / len.value)),
 
-			upCost(val,oa){
+			tableRef,
+
+			upCost(val, oa) {
 				modifications.setCost({
 					OA_ID: oa.ID,
 					val
@@ -156,10 +203,10 @@ export default defineComponent({
 					val,
 					Prix_ID: modifications.getMainPrice().ID,
 					Produit_ID: product.ID
-				},true);
+				}, true);
 				modifications.commit();
 			},
-			upAchat(val,oa,product){
+			upAchat(val, oa, product) {
 				modifications.setAchat({
 					OA_ID: oa.ID,
 					Produit_ID: product.ID,
@@ -190,12 +237,12 @@ table {
 		}
 
 		&:hover {
-			background-color: #f3f3f3;
+			background-color: #f0f0f0;
 		}
 	}
 
-	td{
-		button{
+	td {
+		button {
 			padding: .3rem .5rem;
 			font-size: .8rem;
 		}

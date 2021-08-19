@@ -5,6 +5,9 @@ import store from './store'
 
 import "./style.scss";
 import moment from "moment";
+import {ContextMenu} from "@/ContextMenu";
+
+ContextMenu.init()
 
 const stateRaw = localStorage.getItem('state');
 const stateDeltaRaw = localStorage.getItem('stateDelta');

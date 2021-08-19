@@ -203,6 +203,9 @@ export default createStore({
                 const products: any = {};
                 for (const p of result[0] as any[]) {
                     p.years_pastV0O = p.years_pastV0;
+                    p['ColorO'] = p['Color']
+                    p['bible.QuantiteO'] = p['bible.Quantite'];
+                    p['bible.ColorO'] = p['bible.Color']
                     products[p.ID.toString()] = p;
                 }
                 context.commit('setProducts', products);
@@ -215,6 +218,7 @@ export default createStore({
                 for (const p of result[0] as any[]) {
                     p.years_pastC0O = p.years_pastC0;
                     p['bible.QuantiteO'] = p['bible.Quantite'];
+                    p['bible.ColorO'] = p['bible.Color']
                     oas[p.ID.toString()] = p;
                 }
                 context.commit('setOAs', oas);
@@ -276,7 +280,7 @@ function reqPrices() {
 function reqOA() {
     let query = "SELECT ";
     const fields = {
-        bible: ["Note", "Quantite as 'bible.Quantite'", "Vendant", "PrixC", "Color"],
+        bible: ["Note", "Quantite as 'bible.Quantite'", "Vendant", "PrixC", "Color as 'bible.Color'"],
         vue_ordres_assemblages: ["Produit", "ID", "pw", "sem_fini", "Quantite_produire", "Quantite_recevoir", "Quantite_recu", "Format", "Fournisseur", "empotages", "Quantite", "Date_reception", "years_pastT0", "years_pastT1", "years_pastT2", "years_pastC0", "years_pastC1", "years_pastC2"]
     };
     const froms = [
@@ -300,7 +304,7 @@ function reqOA() {
 function req1() {
     let query = "SELECT ";
     const fields = {
-        //bible: ["Note", "Quantite", "Vendant", "PrixC", "Color"],
+        bible: ["Note", "Quantite as 'bible.Quantite'", "Vendant", "PrixC", "Color as 'bible.Color'"],
         produits: ["Color"],
         vue_produits: ["Code", "Variete", "Format", "reservation", "years_pastM0", "years_pastM1", "years_pastM2", "years_pastVe0", "years_pastVe1", "years_pastVe2", "years_pastA0", "years_pastA1", "years_pastA2", "years_pastV0", "years_pastV1", "years_pastV2", "ID"],
         vue_inventaire: ["Quantite"],
@@ -309,7 +313,7 @@ function req1() {
     const froms = [
         "vue_produits",
         //"vue_ordres_assemblages ON `vue_produits`.`ID`=`vue_ordres_assemblages`.`Produit`",
-        //"bible ON `vue_ordres_assemblages`.`ID`=`bible`.`OA` OR (`bible`.`OA` IS NULL AND `vue_produits`.`ID`=`bible`.`Produit`)",
+        "bible ON (`bible`.`OA` IS NULL AND `vue_produits`.`ID`=`bible`.`Produit`)",
         "produits ON `vue_produits`.`ID`=`produits`.`ID`",
         "vue_inventaire ON `vue_produits`.`ID`=`vue_inventaire`.`ID`"
     ];
@@ -318,7 +322,7 @@ function req1() {
     ];
     
     query += Object.entries(fields).flatMap(e => {
-        return e[1].map(a => e[0] + '.' + a + " as '" + a + "'");
+        return e[1].map(a => e[0] + '.' + a);
     }).join(',');
     
     query += " FROM " + froms.join(" LEFT JOIN ");

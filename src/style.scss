@@ -12,40 +12,66 @@ body {
 		}
 	}
 	
-	.red {
-		background-color: #ff000085;
-	}
-	
-	.yellow {
-		background-color: #ffff0085;
-	}
-	
-	.green {
-		background-color: #00800085;
-	}
-	
-	.blue {
-		background-color: #0000ff85;
-	}
-	
-	.violet {
-		background-color: #ee82ee85;
-	}
-	
-	.grey {
-		background-color: #80808085;
+	tr {
+		&.red > td {
+			background-color: #ff000085;
+		}
+		
+		td.red {
+			background-color: #ff000085 !important;
+		}
+		
+		&.yellow > td {
+			background-color: #ffff0085;
+		}
+		
+		td.yellow {
+			background-color: #ffff0085 !important;
+		}
+		
+		&.green > td {
+			background-color: #00800085;
+		}
+		
+		td.green {
+			background-color: #00800085 !important;
+		}
+		
+		&.blue > td {
+			background-color: #0000ff85;
+		}
+		
+		td.blue {
+			background-color: #0000ff85 !important;
+		}
+		
+		&.violet > td {
+			background-color: #ee82ee85;
+		}
+		
+		td.violet {
+			background-color: #ee82ee85 !important;
+		}
+		
+		&.grey > td {
+			background-color: #80808085;
+		}
+		
+		td.grey {
+			background-color: #80808085 !important;
+		}
 	}
 }
 
 
 .skinA {
 	button {
-		border:none;
+		border: none;
 		border-radius: 5px;
 		background-color: #8daa26;
 		color: #fff;
 		
-		&:disabled{
+		&:disabled {
 			opacity: .6;
 		}
 		
