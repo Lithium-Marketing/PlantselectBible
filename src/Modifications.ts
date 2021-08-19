@@ -158,4 +158,33 @@ export class Modifications {
             text: `Modification cout de la matiere premiere du oa ${payload.OA_ID}: ${this.store.state.oas[payload.OA_ID].years_pastC0} -> ${val}`
         })
     }
+    
+    setAchat(payload) {
+        const original = this.store.state.products[payload.Produit_ID]['bible.QuantiteO'];
+        const ival = parseInt(payload.val);
+        const val = isNaN(ival) ? original : ival.toFixed(0);
+        
+        const OA_ID = payload.OA_ID === undefined ? "NULL" : `${payload.OA_ID}`
+        const Produit_ID = payload.OA_ID === undefined ? `${payload.Produit_ID}` : "NULL"
+        
+        this.add({
+            resource: "products",
+            field: "bible.Quantite",
+            key: payload.Produit_ID,
+            value: val,
+            sql: `
+				INSERT INTO bible
+				(
+					OA, Produit, Quantite
+				)
+				VALUES (
+					       ${OA_ID}, ${Produit_ID}, ${val}
+				       ) ON DUPLICATE KEY
+				UPDATE
+					Quantite=
+				VALUES (Quantite)
+            `,
+            text: `Modification de la qty d'achat du produit ${this.store.state.products[payload.Produit_ID].Code} :${original} -> ${val}`
+        });
+    }
 }

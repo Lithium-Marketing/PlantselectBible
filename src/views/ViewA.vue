@@ -21,6 +21,7 @@
 				<th>Fourn.</th>
 				<th>Inv.</th>
 				<th>{{ $pastTitle.years_pastA0 }}</th>
+				<th>{{ $pastTitle.years_pastA0 }} Confirmer</th>
 				<th>{{ $pastTitle.years_pastA1 }}</th>
 				<th>Reception</th>
 				<th>Reception</th>
@@ -51,6 +52,7 @@
 					<td>{{ oa.Format }}</td>
 					<td>{{ oa.Fournisseur }}</td>
 					<td :class="{'red': oa.product.Quantite<=0}">{{ oa.product.Quantite }}</td>
+					<td><TableInput :always="true" :modelValue="oa.product['bible.Quantite']" :original="oa.product['bible.QuantiteO']" @update:modelValue="upAchat($event,oa,oa.product)"/></td>
 					<td>{{ $valueI(oa.product.years_pastA0) }}</td>
 					<td>{{ $valueI(oa.product.years_pastA1) }}</td>
 					<td>{{ $date(oa.Date_reception) }}</td>
@@ -59,6 +61,12 @@
 					<td>{{ $valueI(oa.product.years_pastVe1) }}</td>
 					<td>{{ $valueI(oa.product.years_pastVe2) }}</td>
 				</tr>
+<!--				<tr>
+					<td colspan="10">{{Object.keys(oa)}}</td>
+				</tr>
+				<tr>
+					<td colspan="10">{{Object.keys(oa.product)}}</td>
+				</tr>-->
 			</template>
 		</table>
 		<Pagination v-model:page="page" v-model:len="len"/>
@@ -143,8 +151,6 @@ export default defineComponent({
 				modifications.commit();
 			},
 			upPrice(val, product) {
-				console.log(product,modifications.getMainPrice(),modifications.getMainPrice(product.ID));
-
 				modifications.setPrice({
 					key: modifications.getMainPrice(product.ID).ID,
 					val,
@@ -153,6 +159,14 @@ export default defineComponent({
 				},true);
 				modifications.commit();
 			},
+			upAchat(val,oa,product){
+				modifications.setAchat({
+					OA_ID: oa.ID,
+					Produit_ID: product.ID,
+					val: val
+				});
+				modifications.commit();
+			}
 		};
 	}
 });

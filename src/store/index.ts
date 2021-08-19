@@ -214,6 +214,7 @@ export default createStore({
                 const oas: any = {};
                 for (const p of result[0] as any[]) {
                     p.years_pastC0O = p.years_pastC0;
+                    p['bible.QuantiteO'] = p['bible.Quantite'];
                     oas[p.ID.toString()] = p;
                 }
                 context.commit('setOAs', oas);

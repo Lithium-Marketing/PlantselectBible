@@ -11,11 +11,11 @@ import {computed} from "vue";
 
 export default {
 	name: "TableInput",
-	props: ["modelValue", "original"],
+	props: ["modelValue", "original", "always"],
 	setup(props, {emit}) {
 		return {
 			changed: computed(() => props.modelValue !== props.original),
-			show: computed(() => !!props.modelValue),
+			show: computed(() => (props.modelValue!==undefined && props.modelValue!==null) || !!props.always),
 			value: computed({
 				get() {
 					return props.modelValue
