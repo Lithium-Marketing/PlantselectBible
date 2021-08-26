@@ -248,7 +248,7 @@ const actions: ModificationsI = {
     },
     
     setVenteFutur(payload, compiler) {
-        const original = compiler.store.state.products[payload.Produit_ID]['bible.VendantO'];
+        const original = compiler.store.state.products[payload.Produit_ID] ? compiler.store.state.products[payload.Produit_ID]['bible.VendantO'] : undefined;
         const ival = parseFloat(payload.val);
         const val = isNaN(ival) ? "" : ival.toFixed(2);
         

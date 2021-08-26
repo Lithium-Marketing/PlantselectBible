@@ -10,6 +10,8 @@ import {Modifications} from "@/Modifications";
 
 ContextMenu.init()
 
+//Object.values(JSON.parse(localStorage.backup).changes).filter((c) => c.field === 'years_pastV0').reduce((a,c)=>{a['setVenteFutur.'+c.key] = {type:'setVenteFutur',Produit_ID: c.key,val: c.newValue}; return a},{})
+
 const stateRaw = localStorage.getItem('state');
 const stateDeltaRaw = localStorage.getItem('stateDelta');
 const stateVersion = localStorage.getItem('version');
