@@ -31,8 +31,8 @@ const stateVersion = localStorage.getItem('version');
                         _: store.state._,
                         mysqlLogin: data.mysqlLogin
                     });
-                    if (data.chages)
-                        Object.values(data.chages).filter((c: any) => c.field === 'years_pastV0').forEach((c: any) => {
+                    if (data.changes)
+                        Object.values(data.changes).filter((c: any) => c.field === 'years_pastV0').forEach((c: any) => {
                             mod.add({
                                 type: "setVenteFutur",
                                 Produit_ID: c.key,

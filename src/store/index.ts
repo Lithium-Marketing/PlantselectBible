@@ -324,12 +324,15 @@ export default createStore<StoreState>({
             
             //console.time("Modification Compilation");
             await new Job(() => {
+                if (i >= entries.length)
+                    return true;
+                
                 if (showLoading && i % 10 === 0)
                     context.commit("_loading", i / entries.length)
                 compiler.apply(entries[i]);
                 //console.timeLog("Modification Compilation");
                 
-                return ++i >= entries.length;
+                ++i;
             }).start();
             //console.timeEnd("Modification Compilation");
             

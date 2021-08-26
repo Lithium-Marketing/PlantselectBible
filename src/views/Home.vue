@@ -25,7 +25,6 @@
 							<ButtonConfirm @action="$store.dispatch('deleteSave',save.ID)" style="background-color: rgb(165 0 0)">X</ButtonConfirm>
 						</td>
 						<td>{{ save.Name }}</td>
-						<td>{{ save.Data }}</td>
 					</tr>
 				</table>
 			</div>
