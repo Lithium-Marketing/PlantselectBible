@@ -40,7 +40,7 @@ async function createWindow() {
         // Load the index.html when not in development
         await win.loadURL('app://./index.html#');
         autoUpdater.autoDownload = true;
-        autoUpdater.autoInstallOnAppQuit = false;
+        autoUpdater.autoInstallOnAppQuit = true;
         await checkUpdate();
     }
 }
