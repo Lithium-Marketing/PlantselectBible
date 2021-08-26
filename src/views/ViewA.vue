@@ -34,6 +34,34 @@
 				<th>{{ $pastTitle.years_pastVe2 }}</th>
 			</tr>
 			<tr>
+				<th></th>
+				<th></th>
+				<th><input v-model="search.variete"/></th>
+				<th></th>
+				<th></th>
+				<th></th>
+				<th></th>
+				<th></th>
+				<th></th>
+				<th></th>
+				<th></th>
+				<th></th>
+				<th></th>
+				<th></th>
+				<th></th>
+				<th></th>
+				<th></th>
+				<th></th>
+				<th></th>
+				<th></th>
+				<th></th>
+				<th></th>
+				<th></th>
+				<th></th>
+				<th></th>
+				<th></th>
+				<th></th>
+				<th></th>
 			</tr>
 			</thead>
 			<tbody>
@@ -62,7 +90,7 @@
 						<TableInput :modelValue="oa.years_pastC0" :original="oa.years_pastC0O" @update:modelValue="upCost($event,oa)"/>
 					</td>
 					<td>{{ $value(oa.years_pastT0) }}</td>
-					<td>
+					<td :class="oa.c?.v0">
 						<TableInput :modelValue="oa.product.years_pastV0" :original="oa.product.years_pastV0O" @update:modelValue="upPrice($event,oa.product)"/>
 					</td>
 					<td>{{ $value(oa.years_pastC1) }}</td>
@@ -73,13 +101,13 @@
 					<td>{{ $value(oa.product.years_pastV2) }}</td>
 					<td>{{ oa.Format }}</td>
 					<td>{{ oa.Fournisseur }}</td>
-					<td :class="{'red': oa.product.Quantite<=0}">{{ oa.product.Quantite }}</td>
-					<td>
+					<td :class="oa.c?.Inventaire">{{ oa.product.Quantite }}</td>
+					<td :class="oa.c?.qtyF">
 						<TableInput :always="true" :modelValue="oa.product['bible.Quantite']" :original="oa.product['bible.QuantiteO']" @update:modelValue="upAchat($event,oa,oa.product)"/>
 					</td>
-					<td>{{ $valueI(oa.product.years_pastA0) }}</td>
+					<td :class="oa.c?.a0">{{ $valueI(oa.product.years_pastA0) }}</td>
 					<td>{{ $valueI(oa.product.years_pastA1) }}</td>
-					<td>{{ $date(oa.Date_reception) }}</td>
+					<td :class="oa.c?.dateReception">{{ $date(oa.Date_reception) }}</td>
 					<td>{{ $valueI(oa.Quantite_recu) }}/{{ $valueI(oa.Quantite_recevoir) }}</td>
 					<td>{{ $valueI(oa.product.years_pastVe0) }}</td>
 					<td>{{ $valueI(oa.product.years_pastVe1) }}</td>
@@ -99,7 +127,7 @@
 </template>
 
 <script lang="ts">
-import {computed, defineComponent, ref} from 'vue';
+import {computed, defineComponent, reactive, ref} from 'vue';
 import HelloWorld from '@/components/HelloWorld.vue';
 import {useStore} from "vuex";
 import Pagination from "@/components/Pagination.vue";
@@ -146,6 +174,9 @@ export default defineComponent({
 			return false;
 		})
 
+		const search = reactive({
+			variete: ""
+		});
 		const allOAs = computed(() => {
 			const oas = store.state.oas;
 			const products = store.state.products;
@@ -161,6 +192,8 @@ export default defineComponent({
 
 			for (const productsKey in products) {
 				const prod = products[productsKey];
+				if(prod.Variete && prod.Variete.toLowerCase().indexOf(search.variete.toLowerCase())===-1)
+					continue;
 
 				if (oasByProd[productsKey])
 					for (const oaKey of oasByProd[productsKey]) {
@@ -201,6 +234,7 @@ export default defineComponent({
 		})
 
 		return {
+			search,
 			oas: computed(() => allOAs.value.slice(len.value * page.value, len.value * (page.value + 1)).map(oa => {
 				try {
 					oa.c = JSON.parse(oa['bible.Color']);

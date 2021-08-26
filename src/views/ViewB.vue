@@ -7,9 +7,15 @@
 				<th></th>
 				<th>Produit</th>
 				<th>Format</th>
+				<th>Vendant Futur</th>
 				<th v-for="titles in $store.state.priceTitles">{{ titles.Titre }}</th>
 			</tr>
 			<tr>
+				<th></th>
+				<th><input v-model="search.variete"/></th>
+				<th></th>
+				<th></th>
+				<th v-for="titles in $store.state.priceTitles"></th>
 			</tr>
 			</thead>
 			<tbody>
@@ -20,6 +26,7 @@
 					</td>
 					<td>{{ product.Variete }}</td>
 					<td>{{ product.Format }}</td>
+					<td>{{ product['bible.Vendant'] }}</td>
 					<td v-for="titles in $store.state.priceTitles" style="padding-inline: 1rem" :class="{diff:product.prices?.[titles.ID]?.diff}">
 						{{ product.prices?.[titles.ID]?.Prix }}
 					</td>
@@ -38,7 +45,7 @@
 </template>
 
 <script lang="ts">
-import {computed, defineComponent, ref, watchEffect} from 'vue';
+import {computed, defineComponent, reactive, ref, watchEffect} from 'vue';
 import HelloWorld from '@/components/HelloWorld.vue';
 import {useStore} from "vuex";
 import Pagination from "@/components/Pagination.vue";
@@ -66,10 +73,25 @@ export default defineComponent({
 
 		const page = ref(0);
 		const ipp = computed(() => store.state.settings.ipp);
+		const len = ref({});
 		const products = ref([]);
+		const search = reactive({
+			variete: ""
+		});
 
 		watchEffect(() => {
-			Object.values(store.state.products).slice(ipp.value * page.value, ipp.value * (page.value + 1)).forEach((p: any, i) => {
+			products.value.length = 0;
+
+			const filtered = Object.values(store.state.products).filter((p: any) => {
+				return !p.Variete || p.Variete.toLowerCase().indexOf(search.variete.toLowerCase()) !== -1
+			});
+
+			const newLen = Math.ceil(filtered.length / ipp.value);
+			if (newLen !== len.value)
+				page.value = 0;
+			len.value = newLen;
+
+			filtered.slice(ipp.value * page.value, ipp.value * (page.value + 1)).forEach((p: any, i) => {
 				products.value[i] = {
 					...p,
 					prices: pricesByProduct.value[p.ID]?.reduce((a, v) => {
@@ -84,11 +106,11 @@ export default defineComponent({
 		})
 
 		return {
-
+			search,
 			products,
 
 			page,
-			len: computed(() => Math.ceil(Object.values(store.state.products).length / ipp.value)),
+			len
 		};
 	}
 });

@@ -13,6 +13,9 @@
 		<button @click="apply(false)" style="margin: auto">
 			Appliquer sur {{ n }} produits
 		</button>
+		<button @click="apply(true,true)" style="margin: auto">
+			Appliquer sur les produits avec un vendant futur {{ nF }}
+		</button>
 		<LoadingBar :progress="progress"/>
 		<h2 v-if="n && n<1000">Produits affectés</h2>
 		<ul v-if="n && n<1000" style="margin: auto">
@@ -52,14 +55,16 @@ export default defineComponent({
 
 		const progress = ref(0);
 
-		function applyFor(prod, priceByProdID, modifications: Modifications) {
+		function applyFor(prod, priceByProdID, modifications: Modifications, vF: boolean) {
 			const prices = priceByProdID[prod.ID];
-			if (!prices || !prices[mainPriceId.value])
+			if (!vF && (!prices || !prices[mainPriceId.value]))
 				return store.dispatch("log", `Produit ${prod.Code} n'a pas de Prix 1`);
 
-			const main = parseFloat(prices[mainPriceId.value].Prix);
+			const main = parseFloat(vF ? prod['bible.Vendant'] : prices[mainPriceId.value].Prix);
 
-			Object.entries(vals.value).forEach(([key, val]) => {
+			const percents = vF ? {...vals.value, 1: 100} : vals.value
+
+			Object.entries(percents).forEach(([key, val]) => {
 				modifications.add({
 					type: "setPrice",
 					val: main * ((val as number) / 100),
@@ -90,9 +95,12 @@ export default defineComponent({
 			},
 
 			n: computed(() => prods.value.length),
+			nF: computed(() => Object.values(store.state.products).filter(p => {
+				return p['bible.Vendant'] && p['bible.Vendant'].length;
+			}).length),
 			prods,
 
-			apply(all) {
+			apply(all, vF) {
 				const modifications = new Modifications(store);
 
 				const priceByProdID = Object.values(store.state.prices).reduce((a, v) => {
@@ -102,18 +110,20 @@ export default defineComponent({
 				}, {});
 
 				if (all) {
-					const prods = Object.values(store.state.products);
+					const prods = Object.values(store.state.products).filter(p => {
+						return !vF || p['bible.Vendant'] && p['bible.Vendant'].length;
+					});
 					const len = prods.length;
 					let i = 0;
 					modifications.start(() => {
 						if (!(i % 100) || i + 1 === len)
 							progress.value = (i + 1) / len;
 
-						applyFor(prods[i], priceByProdID, modifications);
+						applyFor(prods[i], priceByProdID, modifications, vF);
 						return ++i === len;
 					})
 				} else {
-					prods.value.forEach(p => applyFor(p, priceByProdID, modifications))
+					prods.value.forEach(p => applyFor(p, priceByProdID, modifications, vF))
 					modifications.commit();
 				}
 			},

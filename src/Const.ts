@@ -25,24 +25,38 @@ export const ColorMenu = (store: Store<any>, modifications: Modifications, row: 
         }
     }
     
-    function colorsFor(type, fn = oaColor) {
+    console.log(store.state.products[row.dataset.pid]);
+    
+    console.log(store.state.products[row.dataset.pid]['Color']);
+    
+    function colorsFor(type, fn = oaColor): MenuItemConstructorOptions[] {
+        let color = "n/a";
+        try {
+            color = fn === oaColor ? JSON.parse(store.state.oas[row.dataset.oaid]?.['bible.Color'])?.[type] : store.state.products[row.dataset.pid]['Color'];
+            console.log(color);
+        } catch (e) {
+            console.error(e)
+        }
         return [
-            {label: "Rouge", click: fn("red", type)},
-            {label: "Jaune", click: fn("yellow", type)},
-            {label: "Vert", click: fn("green", type)},
-            {label: "Bleu", click: fn("blue", type)},
-            {label: "Violet", click: fn("violet", type)},
-            {label: "Gris", click: fn("grey", type)},
-            {label: "Clear", click: fn(undefined, type)}
+            {label: "Rouge", click: fn("red", type), type: "checkbox", checked: color === "red"},
+            {label: "Jaune", click: fn("yellow", type), type: "checkbox", checked: color === "yellow"},
+            {label: "Vert", click: fn("green", type), type: "checkbox", checked: color === "green"},
+            {label: "Bleu", click: fn("blue", type), type: "checkbox", checked: color === "blue"},
+            {label: "Violet", click: fn("violet", type), type: "checkbox", checked: color === "violet"},
+            {label: "Gris", click: fn("grey", type), type: "checkbox", checked: color === "grey"},
+            {label: "Clear", click: fn(undefined, type), type: "checkbox", checked: color === "" || color === undefined}
         ]
     }
     
-    return [
+    const menu: MenuItemConstructorOptions[] = [
         {
             label: 'Produit ' + store.state.products[row.dataset.pid].Code,
             submenu: colorsFor("", prodColor)
-        },
-        {
+        }
+    ];
+    
+    if (store.state.oas[row.dataset.oaid])
+        menu.push({
             label: "OA " + row.dataset.oaid,
             submenu: [
                 ...Object.entries(colorText).map(e => ({
@@ -50,10 +64,10 @@ export const ColorMenu = (store: Store<any>, modifications: Modifications, row: 
                     submenu: colorsFor(e[0])
                 })),
             ]
-        },
-        //{type: 'separator'},
-        //{label: 'Menu Item 2', type: 'checkbox', checked: true}
-    ]
+        });
+    
+    
+    return menu;
 };
 
 const colorText = {
@@ -62,7 +76,7 @@ const colorText = {
     a0: "Achat",
     v0: "Vente",
     dateReception: "Date Reception",
-    qtyF: "Quantite Future"
+    qtyF: "Achat Future"
 }
 
 const text = {

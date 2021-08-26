@@ -8,7 +8,8 @@ import moment from "moment";
 import {ContextMenu} from "@/ContextMenu";
 import {Modifications} from "@/Modifications";
 
-ContextMenu.init()
+ContextMenu.init();
+moment.locale('fr')
 
 //Object.values(JSON.parse(localStorage.backup).changes).filter((c) => c.field === 'years_pastV0').reduce((a,c)=>{a['setVenteFutur.'+c.key] = {type:'setVenteFutur',Produit_ID: c.key,val: c.newValue}; return a},{})
 
@@ -137,7 +138,7 @@ const stateVersion = localStorage.getItem('version');
     app.config.globalProperties.$date = (val) => {
         if (!val)
             return "-";
-        return moment.unix(val).format('lll')
+        return moment.unix(val).format('ll')
     }
     app.config.globalProperties.$load = (oaID, prodID, tab = 'product') => {
         store.commit('load', {
