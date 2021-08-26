@@ -13,10 +13,7 @@
 		<button @click="apply(false)" style="margin: auto">
 			Appliquer sur {{ n }} produits
 		</button>
-		<div class="progress">
-			<span :style="{width:(progress*100)+'%'}"></span>
-			<strong>{{ (progress * 100).toFixed(0) }}%</strong>
-		</div>
+		<LoadingBar :progress="progress"/>
 		<h2 v-if="n && n<1000">Produits affectés</h2>
 		<ul v-if="n && n<1000" style="margin: auto">
 			<li v-for="prod of prods" style="text-align: left">
@@ -26,17 +23,19 @@
 	</div>
 </template>
 
-<script>
+<script lang="ts">
 
 import {computed, defineComponent, ref} from "vue";
 import {useStore} from "vuex";
 import {Modifications} from "@/Modifications";
+import {StoreState} from "@/store";
+import LoadingBar from "@/components/LoadingBar.vue";
 
 export default defineComponent({
 	name: 'PriceCalc',
-	components: {},
+	components: {LoadingBar},
 	setup() {
-		const store = useStore();
+		const store = useStore<StoreState>();
 
 		const vals = ref({});
 		const mainPriceId = computed(() => {
@@ -44,12 +43,31 @@ export default defineComponent({
 		})
 
 		const prods = computed(() => {
-			return Object.values(store.state.changes).filter(c => {
-				return c.resourceKey === 'prices'
-			}).map(c => store.state.products[store.state.prices[c.key]?.Produit_ID]);
+			return Object.values(store.state.modifications).filter(mod => {
+				return mod.changes.filter(c => c.resource === 'prices').length;
+			}).flatMap(mod => {
+				return mod.changes.filter(c => c.resource === 'prices').map(c => store.state.products[store.state.prices["create" in c ? c.create : c.key]?.Produit_ID]);
+			});
 		});
 
 		const progress = ref(0);
+
+		function applyFor(prod, priceByProdID, modifications: Modifications) {
+			const prices = priceByProdID[prod.ID];
+			if (!prices || !prices[mainPriceId.value])
+				return store.dispatch("log", `Produit ${prod.Code} n'a pas de Prix 1`);
+
+			const main = parseFloat(prices[mainPriceId.value].Prix);
+
+			Object.entries(vals.value).forEach(([key, val]) => {
+				modifications.add({
+					type: "setPrice",
+					val: main * ((val as number) / 100),
+					Prix_ID: key,
+					Produit_ID: prod.ID
+				})
+			})
+		}
 
 		return {
 			progress,
@@ -91,30 +109,15 @@ export default defineComponent({
 						if (!(i % 100) || i + 1 === len)
 							progress.value = (i + 1) / len;
 
-						this.applyFor(prods[i], priceByProdID, modifications);
+						applyFor(prods[i], priceByProdID, modifications);
 						return ++i === len;
 					})
 				} else {
-					prods.value.forEach(p => this.applyFor(p, priceByProdID, modifications))
+					prods.value.forEach(p => applyFor(p, priceByProdID, modifications))
 					modifications.commit();
 				}
 			},
-			applyFor(prod, priceByProdID, modifications) {
-				const prices = priceByProdID[prod.ID];
-				if (!prices || !prices[mainPriceId.value])
-					return store.dispatch("log", `Produit ${prod.Code} n'a pas de Prix 1`);
-
-				const main = parseFloat(prices[mainPriceId.value].Prix);
-
-				Object.entries(vals.value).forEach(([key, val]) => {
-					modifications.setPrice({
-						key: prices[key]?.ID,
-						val: main * (val / 100),
-						Prix_ID: key,
-						Produit_ID: prod.ID
-					})
-				})
-			}
+			applyFor
 		};
 	}
 });
@@ -138,36 +141,6 @@ export default defineComponent({
 		font-size: 1.2rem;
 		width: 5rem;
 		padding: .2rem .6rem;
-	}
-}
-
-.progress {
-	position: relative;
-	z-index: 0;
-	width: 100%;
-	max-width: 500px;
-	height: 1.5rem;
-	margin: 2rem auto;
-	border-radius: 5px;
-	overflow: hidden;
-	text-align: center;
-	background-color: #f2f2f2;
-
-	strong{
-		position: relative;
-		line-height: 1.5rem;
-		z-index: 1;
-		color: #000;
-		text-shadow: 0 0 2px #fff;
-	}
-
-	span {
-		position: absolute;
-		height: 100%;
-		display: block;
-		background-color: #8daa26;
-		top: 0;
-		z-index: 0;
 	}
 }
 

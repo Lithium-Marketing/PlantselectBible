@@ -5,10 +5,13 @@
 			<thead>
 			<tr>
 				<th></th>
+				<th></th>
 				<th>Produit</th>
 				<th>Format</th>
 				<th>pw</th>
 				<th>OA</th>
+				<th>Coutant Futur</th>
+				<th>Vendant Futur</th>
 				<th>{{ $pastTitle.years_pastC0 }}</th>
 				<th>{{ $pastTitle.years_pastT0 }}</th>
 				<th>{{ $pastTitle.years_pastV0 }}</th>
@@ -39,10 +42,22 @@
 					<td>
 						<button @click="$load(oa.ID,oa.product.ID)">load</button>
 					</td>
+					<td>
+						<button class="tooltip" :style="{'background-color':oa.Note ? '#8daa26':'#888'}" @click="$load(oa.ID,oa.product.ID,'note')">
+							N
+							<span class="tooltiptext" v-if="oa.Note"><pre>{{oa.Note}}</pre></span>
+						</button>
+					</td>
 					<td :class="oa.c?.Variete">{{ oa.product.Variete }}</td>
 					<td>{{ oa.product.Format }}</td>
 					<td>{{ oa.pw }}</td>
 					<td>{{ oa.ID }}</td>
+					<td>
+						<!--						<TableInput :modelValue="oa.years_pastC0" :original="oa.years_pastC0O" @update:modelValue="upCost($event,oa)"/>-->
+					</td>
+					<td>
+						<TableInput :always="true" :modelValue="oa.product['bible.Vendant']" :original="oa.product['bible.VendantO']" @update:modelValue="upVendantF($event,oa.product)"/>
+					</td>
 					<td>
 						<TableInput :modelValue="oa.years_pastC0" :original="oa.years_pastC0O" @update:modelValue="upCost($event,oa)"/>
 					</td>
@@ -70,12 +85,12 @@
 					<td>{{ $valueI(oa.product.years_pastVe1) }}</td>
 					<td>{{ $valueI(oa.product.years_pastVe2) }}</td>
 				</tr>
-<!--				<tr>-->
-<!--					<td colspan="25">{{ Object.keys(oa) }}</td>-->
-<!--				</tr>-->
-<!--				<tr>-->
-<!--					<td colspan="25">{{ Object.keys(oa.product) }}</td>-->
-<!--				</tr>-->
+				<!--				<tr>-->
+				<!--					<td colspan="25">{{ Object.keys(oa) }}</td>-->
+				<!--				</tr>-->
+				<!--								<tr>-->
+				<!--									<td colspan="25">{{ Object.keys(oa.product) }}</td>-->
+				<!--								</tr>-->
 			</template>
 			</tbody>
 		</table>
@@ -93,6 +108,7 @@ import {Modifications} from "@/Modifications";
 import {ContextMenu} from "@/ContextMenu";
 import {Menu} from "@electron/remote";
 import {ColorMenu} from "@/Const";
+import {StoreState} from "@/store";
 
 export default defineComponent({
 	name: 'ViewA',
@@ -102,7 +118,7 @@ export default defineComponent({
 		HelloWorld,
 	},
 	setup() {
-		const store = useStore();
+		const store = useStore<StoreState>();
 		const modifications = new Modifications(store);
 		const tableRef = ref<HTMLTableElement | undefined>();
 
@@ -117,9 +133,8 @@ export default defineComponent({
 				const rect = row.getBoundingClientRect();
 				if (rect.left < x && rect.right > x)
 					if (rect.top < y && rect.bottom > y) {
-						console.log(x, y,row.dataset);
 
-						const menu = Menu.buildFromTemplate(ColorMenu(store,modifications,row))
+						const menu = Menu.buildFromTemplate(ColorMenu(store, modifications, row))
 						menu.popup({
 							x, y
 						});
@@ -146,6 +161,7 @@ export default defineComponent({
 
 			for (const productsKey in products) {
 				const prod = products[productsKey];
+
 				if (oasByProd[productsKey])
 					for (const oaKey of oasByProd[productsKey]) {
 						result.push({
@@ -175,15 +191,32 @@ export default defineComponent({
 
 		//watch([variSearch], () => productPage.value = 0)
 
+		const pricesByProduct = computed(() => {
+			const result = {};
+			for (const price of Object.values(store.state.prices)) {
+				result[price.Produit_ID] = result[price.Produit_ID] || [];
+				result[price.Produit_ID].push(price);
+			}
+			return result;
+		})
+
 		return {
-			oas: computed(() => allOAs.value.slice(len.value * page.value, len.value * (page.value + 1)).map(oa=>{
+			oas: computed(() => allOAs.value.slice(len.value * page.value, len.value * (page.value + 1)).map(oa => {
 				try {
 					oa.c = JSON.parse(oa['bible.Color']);
 				} catch (e) {
 				}
+
+				const price = modifications.getMainPrice(oa.product.ID, pricesByProduct.value);
+				oa.product.years_pastV0 = price?.Prix || "0.00";
+				oa.product.years_pastV0O = price?.Prix ? price?.PrixO : "0.00";
+
+				//oa.product['bible.VendantO'] = oa.product['bible.Vendant'] ? oa.product['bible.VendantO'] : "0.00"
+				//oa.product['bible.Vendant'] = oa.product['bible.Vendant'] || "0.00"
+
 				return oa;
 			})),
-			loading: computed(() => store.state.loading),
+			//loading: computed(() => store.state.loading),
 
 			page,
 			len: computed(() => Math.ceil(allOAs.value.length / len.value)),
@@ -191,25 +224,42 @@ export default defineComponent({
 			tableRef,
 
 			upCost(val, oa) {
-				modifications.setCost({
+				modifications.add({
+					type: "setCost",
 					OA_ID: oa.ID,
 					val
 				});
 				modifications.commit();
 			},
 			upPrice(val, product) {
-				modifications.setPrice({
-					key: modifications.getMainPrice(product.ID).ID,
+				modifications.add({
+					type: "setPriceOne",
 					val,
-					Prix_ID: modifications.getMainPrice().ID,
 					Produit_ID: product.ID
-				}, true);
+				});
 				modifications.commit();
 			},
 			upAchat(val, oa, product) {
-				modifications.setAchat({
+				modifications.add({
+					type: "setAchat",
 					OA_ID: oa.ID,
 					Produit_ID: product.ID,
+					val: val
+				});
+				modifications.commit();
+			},
+			upVendantF(val, product) {
+				modifications.add({
+					type: "setVenteFutur",
+					Produit_ID: product.ID,
+					val: val
+				});
+				modifications.commit();
+			},
+			upNote(val, oa) {
+				modifications.add({
+					type: "setNote",
+					OA_ID: oa.ID,
 					val: val
 				});
 				modifications.commit();
@@ -246,6 +296,32 @@ table {
 			padding: .3rem .5rem;
 			font-size: .8rem;
 		}
+	}
+}
+
+.tooltip {
+	position: relative;
+	display: inline-block;
+
+	.tooltiptext {
+		visibility: hidden;
+		background-color: black;
+		color: #fff;
+		text-align: center;
+		padding: .2rem 1rem;
+		border-radius: 6px;
+
+		/* Position the tooltip text - see examples below! */
+		position: absolute;
+		z-index: 1;
+
+		pre{
+			font-size: 1rem;
+		}
+	}
+
+	&:hover .tooltiptext {
+		visibility: visible;
 	}
 }
 

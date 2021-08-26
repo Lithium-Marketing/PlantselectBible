@@ -1,6 +1,7 @@
-import {createStore} from 'vuex'
+import {createStore} from 'vuex';
 
 import mysql from 'mysql2/promise'
+import {Job, Modification, ModificationsCompiler, ModificationType} from "@/Modifications";
 
 /*const conn = mysql.createPool({
     database: "lithweb_crm_plantselect",
@@ -9,11 +10,62 @@ import mysql from 'mysql2/promise'
     host: "plantselect.lithiumwebsolutions.com"
 });*/
 
+export interface Price {
+    Produit_ID,
+    /**
+     * refer to table produits_prix
+     */
+    Prix_ID,
+    ID,
+    Prix,
+    PrixO
+}
 
-export default createStore({
+export interface PriceTitle {
+    Titre,
+    ID
+}
+
+export interface StoreState {
+    _: {
+        loading: boolean;
+        '%': number,
+        loadingSaves: boolean
+    };
+    editState: {
+        oaID: number;
+        prodID: number;
+        tab: string;
+    };
+    mysqlLogin: {
+        database: string;
+        user: string;
+        password: string;
+        host: string;
+    };
+    products: {};
+    oas: Record<any, any>;
+    prices: Record<any, Price>;
+    priceTitles: Record<any, PriceTitle>;
+    
+    pricesByProduct,
+    
+    modificationsRaw: Record<any, ModificationType>;
+    modifications: Record<any, Modification>;
+    
+    logs: any[];
+    settings: {
+        ipp: number
+    };
+    saves: { ID: number, Name: string, Data: string }[]
+}
+
+export default createStore<StoreState>({
     state: {
         _: {
             loading: false,
+            '%': 0,
+            loadingSaves: false
         },
         
         editState: {
@@ -32,16 +84,19 @@ export default createStore({
         products: {},//key is products.ID
         oas: {},//key is oa.ID
         //oasByProduct: {},//key ia products.ID value is array of oa.ID
-        
         prices: {},
         priceTitles: {},
         
-        changes: {},//key is generated ID for operation
+        pricesByProduct: {},
+        
+        modificationsRaw: {},//key is generated ID for operation
+        modifications: {},//key is generated ID for operation
         
         logs: [],
         settings: {
             ipp: 20
-        }
+        },
+        saves: []
     },
     mutations: {
         setProducts(state, payload) {
@@ -52,17 +107,27 @@ export default createStore({
             state.oas = payload;
             console.log("oas", Object.entries(payload).length);
         },
-        setPrices(state, payload) {
-            state.prices = payload;
-            console.log("prices", Object.entries(payload).length);
+        setPrices(state, {prices, pricesByProduct}) {
+            state.prices = prices;
+            state.pricesByProduct = pricesByProduct;
+            console.log("prices", Object.entries(prices).length);
         },
         setPriceTitles(state, payload) {
             state.priceTitles = payload;
             console.log("priceTitles", Object.entries(payload).length);
         },
-        _loading(state, payload) {
-            state._.loading = !!payload;
+        setSaves(state, payload) {
+            state.saves = payload;
         },
+        
+        _loading(state, payload: boolean | number) {
+            state._.loading = typeof payload === 'boolean' ? payload : payload < 1;
+            state._['%'] = typeof payload === 'boolean' ? -1 : payload;
+        },
+        _loadingSaves(state, payload: boolean) {
+            state._.loadingSaves = payload;
+        },
+        
         load(state, payload) {
             state.editState.prodID = payload.prodID >= 0 ? payload.prodID : -1;
             state.editState.oaID = payload.oaID >= 0 ? payload.oaID : -1;
@@ -79,83 +144,70 @@ export default createStore({
         mysqlLogin(state, payload) {
             state.mysqlLogin = payload
         },
-        
-        modification(state, payload) {
-            const resourceKey = payload.resource;
-            const key = payload.key;
-            const field = payload.field;
-            const newValue = payload.value;
-            const sql = payload.sql;
-            const text = payload.text;
-            
-            if (key) {
-                const oldValue = state[resourceKey][key][field];
-                if (oldValue == newValue)
-                    return;
-                state[resourceKey][key] = {
-                    ...state[resourceKey][key],
-                    [field]: newValue
-                };
-                
-                const changeId = [resourceKey, key, field].join(".");
-                state.changes[changeId] = {
-                    sql,
-                    resourceKey, key, field, text,
-                    oldValue, newValue
-                };
-            } else {
-                state.changes[Date.now()] = {
-                    sql,
-                    resourceKey, field, text,
-                    newValue
-                };
-            }
-            
+        modificationsRaw(state, modifications: Record<any, ModificationType>) {
+            Object.entries(modifications).forEach(m => {
+                state.modificationsRaw[m[0]] = m[1];
+            })
         },
-        modificationsRaw(state, payload) {
-            for (const mod of payload) {
-                const resourceKey = mod.resource;
-                const key = mod.key;
-                const field = mod.field;
-                const newValue = mod.value;
-                const sql = mod.sql;
-                const text = mod.text;
-                const changeId = mod.changeId;
+        modifications(state, modifications: Modification[]) {
+            for (const modId in modifications) {
+                if (!modifications.hasOwnProperty(modId))
+                    continue;
                 
-                if (key) {
-                    if (state[resourceKey][key][field] == newValue) {
-                        continue;
-                    } else if (state[resourceKey][key][field + "O"] == newValue) {
-                        state[resourceKey][key] = {
-                            ...state[resourceKey][key],
-                            [field]: newValue
-                        };
-                        if (state.changes[changeId])
-                            delete state.changes[changeId];
-                        continue
+                const oldMod = state.modifications[modId];
+                if (oldMod)
+                    for (const change of oldMod.changes) {
+                        const resourceKey = change.resource;
+                        const newValue = change.value;
+                        
+                        if ("create" in change)
+                            delete state[resourceKey][change.create]
                     }
-                }
                 
-                state.changes[changeId] = {
-                    sql,
-                    resourceKey, field, text,
-                    newValue
-                };
+                const newMod = modifications[modId];
+                delete state.modifications[modId];
                 
-                if (key) {
-                    const oldValue = state[resourceKey][key][field];
+                let changed = false;
+                for (const change of newMod.changes) {
+                    const resourceKey = change.resource;
+                    const newValue = change.value;
+                    
+                    if ("create" in change) {
+                        if (newValue === undefined)
+                            continue;
+                        
+                        state[resourceKey] = {
+                            ...state[resourceKey],
+                            [change.create]: {
+                                ...newValue,
+                                ID: change.create
+                            }
+                        };
+                        changed = true;
+                        continue;
+                    }
+                    const key = change.key;
+                    const field = change.field;
+                    
                     state[resourceKey][key] = {
                         ...state[resourceKey][key],
                         [field]: newValue
                     };
                     
-                    state.changes[changeId].key = key;
-                    state.changes[changeId].oldValue = oldValue;
+                    if (state[resourceKey][key][field + "O"] == newValue)
+                        continue
+                    
+                    changed = true;
                 }
+                
+                if (changed)
+                    state.modifications[modId] = newMod;
+                
             }
         },
         clearMod(state) {
-            state.changes = {};
+            state.modificationsRaw = {};
+            state.modifications = {};
         }
     },
     actions: {
@@ -173,7 +225,7 @@ export default createStore({
                 await connection.beginTransaction()
                 const queryPromises = []
                 
-                Object.values(context.state.changes).forEach((query: any) => {
+                Object.values(context.state.modifications).forEach((query: any) => {
                     queryPromises.push(connection.query(query.sql))
                 })
                 const results = await Promise.all(queryPromises)
@@ -194,7 +246,6 @@ export default createStore({
             
             const conn = await mysql.createPool(context.state.mysqlLogin)
             
-            context.commit("clearMod")
             context.commit("_loading", true);
             
             const promises = [];
@@ -206,6 +257,7 @@ export default createStore({
                     p['ColorO'] = p['Color']
                     p['bible.QuantiteO'] = p['bible.Quantite'];
                     p['bible.ColorO'] = p['bible.Color']
+                    p['bible.VendantO'] = p['bible.Vendant']
                     products[p.ID.toString()] = p;
                 }
                 context.commit('setProducts', products);
@@ -219,6 +271,7 @@ export default createStore({
                     p.years_pastC0O = p.years_pastC0;
                     p['bible.QuantiteO'] = p['bible.Quantite'];
                     p['bible.ColorO'] = p['bible.Color']
+                    p['NoteO'] = p['Note']
                     oas[p.ID.toString()] = p;
                 }
                 context.commit('setOAs', oas);
@@ -228,11 +281,14 @@ export default createStore({
             
             promises.push(conn.query(reqPrices()).then(result => {
                 const prices: any = {};
+                const pricesByProduct: any = {};
                 for (const p of result[0] as any[]) {
                     p.PrixO = p.Prix;
                     prices[p.ID.toString()] = p;
+                    //pricesByProduct[p.Produit_ID] = pricesByProduct[p.Produit_ID] || [];
+                    //pricesByProduct[p.Produit_ID].push(p);
                 }
-                context.commit('setPrices', prices);
+                context.commit('setPrices', {prices, pricesByProduct});
             }).catch(e => {
                 console.error(e);
             }));
@@ -251,6 +307,80 @@ export default createStore({
             await conn.end()
             
             context.commit("_loading", false);
+            await context.dispatch("modificationsRaw", {
+                showLoading: true,
+                mods: context.state.modificationsRaw
+            })
+        },
+        
+        async modificationsRaw(context, {showLoading = false, mods}: { showLoading: boolean, mods: Record<any, ModificationType> }) {
+            if (showLoading)
+                context.commit("_loading", true);
+            
+            const compiler = new ModificationsCompiler(this);
+            const entries = Object.values(mods);
+            
+            let i = 0;
+            
+            //console.time("Modification Compilation");
+            await new Job(() => {
+                if (showLoading && i % 10 === 0)
+                    context.commit("_loading", i / entries.length)
+                compiler.apply(entries[i]);
+                //console.timeLog("Modification Compilation");
+                
+                return ++i >= entries.length;
+            }).start();
+            //console.timeEnd("Modification Compilation");
+            
+            //console.time("Modification Commit");
+            compiler.commit();
+            //console.timeEnd("Modification Commit");
+            
+            if (showLoading)
+                context.commit("_loading", false);
+        },
+        
+        async createSave(context, name) {
+            const connection = await mysql.createConnection(context.state.mysqlLogin);
+            const data = JSON.stringify(context.state.modificationsRaw);
+            try {
+                await connection.query(`INSERT INTO bible_saves(
+					                                               Name, Data
+				                                               ) VALUE ('${name}','${data}')`);
+            } finally {
+                connection.end()
+            }
+            await context.dispatch("refreshSaves");
+        },
+        async refreshSaves(context) {
+            context.commit("_loadingSaves", true);
+            const connection = await mysql.createConnection(context.state.mysqlLogin);
+            try {
+                const result = (await connection.query(`SELECT *
+				                                        FROM bible_saves`))[0];
+                context.commit("setSaves", result);
+            } finally {
+                connection.end()
+                context.commit("_loadingSaves", false);
+            }
+        },
+        async loadSave(context, data) {
+            context.commit("clearMod");
+            context.commit("modificationsRaw", JSON.parse(data))
+            await context.dispatch("modificationsRaw", {mods: context.state.modificationsRaw})
+        },
+        async deleteSave(context, id) {
+            const connection = await mysql.createConnection(context.state.mysqlLogin);
+            try {
+                await connection.query(`DELETE
+				                        FROM bible_saves
+				                        WHERE
+					                        ID = ${id}`);
+                context.dispatch("refreshSaves");
+            } finally {
+                connection.end()
+            }
         }
     }
 })
@@ -304,7 +434,7 @@ function reqOA() {
 function req1() {
     let query = "SELECT ";
     const fields = {
-        bible: ["Note", "Quantite as 'bible.Quantite'", "Vendant", "PrixC", "Color as 'bible.Color'"],
+        bible: ["Note", "Quantite as 'bible.Quantite'", "Vendant as 'bible.Vendant'", "Color as 'bible.Color'"],
         produits: ["Color"],
         vue_produits: ["Code", "Variete", "Format", "reservation", "years_pastM0", "years_pastM1", "years_pastM2", "years_pastVe0", "years_pastVe1", "years_pastVe2", "years_pastA0", "years_pastA1", "years_pastA2", "years_pastV0", "years_pastV1", "years_pastV2", "ID"],
         vue_inventaire: ["Quantite"],

@@ -16,7 +16,13 @@
 					<div v-for="price of prices">
 						<span>{{ price.Titre }}.</span>
 						<input :value="price.PrixO" disabled>
-						<input :value="price.Prix" @change="updatePrice($event.target.value,price)" :disabled="!price.ID">
+						<input :value="price.Prix" @change="updatePrice($event.target.value,price.Prix_ID,price.Produit_ID)" :disabled="!price.Prix_ID">
+					</div>
+				</div>
+
+				<div v-if="tab==='note' && prodID!==-1" class="prodTab">
+					<div>
+						<textarea :value="oa.Note" style="width: 30rem;height: 10rem" @change="upNote($event.target.value,oa)"></textarea>
 					</div>
 				</div>
 
@@ -48,7 +54,7 @@
 						<template v-for="(oa,val) of oas" :key="val.ID">
 							<tr :class="[oa.Color]">
 								<td>
-									<button @click="$load(oa.ID,prodID)">load</button>
+									<button @click="$load(oa.ID,prodID,'oa')">load</button>
 								</td>
 								<td>{{ oa.pw }}</td>
 								<td>{{ oa.ID }}</td>
@@ -69,24 +75,25 @@
 	</div>
 </template>
 
-<script>
+<script lang="ts">
 
 import {computed, defineComponent} from "vue";
 import {useStore} from "vuex";
 import {Modifications} from "@/Modifications";
+import {StoreState} from "@/store";
 
 export default defineComponent({
 	name: 'Edit',
 	components: {},
 	setup() {
 		//const route = useRoute();
-		const store = useStore();
+		const store = useStore<StoreState>();
 
 		const tab = computed({
 			get() {
 				return store.state.editState.tab;
 			},
-			set(val) {
+			set(val: string) {
 				store.state.editState.tab = val;
 			}
 		});
@@ -102,11 +109,11 @@ export default defineComponent({
 
 			prices: computed(() => {
 				const prodID = store.state.editState.prodID;
-				const prices = Object.values(store.state.prices).filter(v => v.Produit_ID === prodID).reduce((a, v) => {
+				const pricesByTitle = Object.values(store.state.prices).filter(v => v.Produit_ID === prodID).reduce((a, v) => {
 					a[v.Prix_ID] = v;
 					return a;
 				}, {});
-				return Object.values(store.state.priceTitles).map(t => ({...prices[t.ID], Titre: t.Titre}));
+				return Object.values(store.state.priceTitles).map(t => ({...pricesByTitle[t.ID], Titre: t.Titre, Prix_ID:t.ID ,Produit_ID: prodID}));
 			}),
 
 			oas: computed(() => {
@@ -119,19 +126,28 @@ export default defineComponent({
 				return store.state.oas[oaID];
 			}),
 
-			updatePrice(val, price) {
-				modifications.setPrice({
-					key: price.ID,
+			updatePrice(val, Prix_ID,Produit_ID) {
+				modifications.add({
+					type: "setPrice",
 					val,
-					Prix_ID: price.Prix_ID,
-					Produit_ID: price.Produit_ID
+					Prix_ID: Prix_ID,
+					Produit_ID: Produit_ID
 				});
 				modifications.commit();
 			},
-			updateCost(val,oa){
-				modifications.setCost({
+			updateCost(val, oa) {
+				modifications.add({
+					type: "setCost",
 					OA_ID: oa.ID,
 					val
+				});
+				modifications.commit();
+			},
+			upNote(val, oa) {
+				modifications.add({
+					type: "setNote",
+					OA_ID: oa.ID,
+					val: val
 				});
 				modifications.commit();
 			}

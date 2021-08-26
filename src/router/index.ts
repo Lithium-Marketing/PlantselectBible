@@ -5,6 +5,7 @@ import OAs from "@/views/OAs.vue";
 import ViewA from "@/views/ViewA.vue";
 import Edit from "@/views/Edit.vue";
 import Tools from "@/views/Tools.vue";
+import ViewB from "@/views/ViewB.vue";
 
 const routes: Array<RouteRecordRaw> = [
     {
@@ -19,6 +20,10 @@ const routes: Array<RouteRecordRaw> = [
         path: '/viewA',
         name: 'ViewA',
         component: ViewA
+    }, {
+        path: '/viewB',
+        name: 'ViewB',
+        component: ViewB
     }, {
         path: '/products',
         name: 'Products',

@@ -5,120 +5,68 @@ import {MenuItemConstructorOptions} from "electron";
 export const ColorMenu = (store: Store<any>, modifications: Modifications, row: HTMLTableRowElement): MenuItemConstructorOptions[] => {
     function oaColor(val, type) {
         return () => {
-            modifications.setOAColor({
+            modifications.add({
+                type: "setOAColor",
                 val,
-                type,
+                colorType: type,
                 OA_ID: row.dataset.oaid,
                 Produit_ID: row.dataset.pid,
             }).commit();
         }
     }
     
-    function oaFor(type) {
+    function prodColor(val, type) {
+        return () => {
+            modifications.add({
+                type: "setProductColor",
+                val,
+                Produit_ID: row.dataset.pid
+            }).commit();
+        }
+    }
+    
+    function colorsFor(type, fn = oaColor) {
         return [
-            {label: "Rouge", click: oaColor("red", type)},
-            {label: "Jaune", click: oaColor("yellow", type)},
-            {label: "Vert", click: oaColor("green", type)},
-            {label: "Bleu", click: oaColor("blue", type)},
-            {label: "Violet", click: oaColor("violet", type)},
-            {label: "Gris", click: oaColor("grey", type)},
-            {label: "Clear", click: oaColor(undefined, type)}
+            {label: "Rouge", click: fn("red", type)},
+            {label: "Jaune", click: fn("yellow", type)},
+            {label: "Vert", click: fn("green", type)},
+            {label: "Bleu", click: fn("blue", type)},
+            {label: "Violet", click: fn("violet", type)},
+            {label: "Gris", click: fn("grey", type)},
+            {label: "Clear", click: fn(undefined, type)}
         ]
     }
     
     return [
         {
             label: 'Produit ' + store.state.products[row.dataset.pid].Code,
-            submenu: [
-                {
-                    label: "Rouge",
-                    click() {
-                        modifications.setProductColor({
-                            val: "red",
-                            Produit_ID: row.dataset.pid
-                        }).commit();
-                    }
-                },
-                {
-                    label: "Jaune",
-                    click() {
-                        modifications.setProductColor({
-                            val: "yellow",
-                            Produit_ID: row.dataset.pid
-                        }).commit();
-                    }
-                },
-                {
-                    label: "Vert",
-                    click() {
-                        modifications.setProductColor({
-                            val: "green",
-                            Produit_ID: row.dataset.pid
-                        }).commit();
-                    }
-                },
-                {
-                    label: "Bleu",
-                    click() {
-                        modifications.setProductColor({
-                            val: "blue",
-                            Produit_ID: row.dataset.pid
-                        }).commit();
-                    }
-                },
-                {
-                    label: "Violet",
-                    click() {
-                        modifications.setProductColor({
-                            val: "violet",
-                            Produit_ID: row.dataset.pid
-                        }).commit();
-                    }
-                },
-                {
-                    label: "Gris",
-                    click() {
-                        modifications.setProductColor({
-                            val: "grey",
-                            Produit_ID: row.dataset.pid
-                        }).commit();
-                    }
-                },
-                {
-                    label: "Clear",
-                    click() {
-                        modifications.setProductColor({
-                            val: undefined,
-                            Produit_ID: row.dataset.pid
-                        }).commit();
-                    }
-                }
-            ]
+            submenu: colorsFor("", prodColor)
         },
         {
             label: "OA " + row.dataset.oaid,
             submenu: [
-                {
-                    label: "Variete",
-                    submenu: oaFor("Variete")
-                }, {
-                    label: "Inventaire",
-                    submenu: oaFor("")
-                },
+                ...Object.entries(colorText).map(e => ({
+                    label: e[1],
+                    submenu: colorsFor(e[0])
+                })),
             ]
         },
-        {type: 'separator'},
-        {label: 'Menu Item 2', type: 'checkbox', checked: true}
+        //{type: 'separator'},
+        //{label: 'Menu Item 2', type: 'checkbox', checked: true}
     ]
 };
 
-const text = {
+const colorText = {
     Variete: "Variete",
     Inventaire: "Inventaire",
     a0: "Achat",
     v0: "Vente",
     dateReception: "Date Reception",
     qtyF: "Quantite Future"
+}
+
+const text = {
+    ...colorText
 };
 
 export function toText(key: string) {

@@ -1,42 +1,37 @@
 <template>
 	<div class="home">
-		<div class="op">
-			<ButtonConfirm @action="refresh" style="background-color: rgb(165 0 0)">Rafraîchir les données & Annuler les changements</ButtonConfirm>
-			<ButtonConfirm @action="save">Sauvegarder les changements & Rafraîchir les données</ButtonConfirm>
+		<div class="row">
+			<div>
+				<h2>Actions</h2>
+				<ButtonConfirm @action="apply">Appliquer les changements</ButtonConfirm>
+				<ButtonConfirm @action="refresh" style="background-color: rgb(0 0 145)">Rafraîchir les données</ButtonConfirm>
+				<hr style="width: 100%">
+				<ButtonConfirm @action="annule" style="background-color: rgb(165 0 0)">Annuler les changements</ButtonConfirm>
+			</div>
+			<div class="saves">
+				<h2>Sauvegarde</h2>
+				<loading-bar :progress="-1" v-if="$store.state._.loadingSaves"/>
+				<table v-else>
+					<tr>
+						<td>
+							<button @click="$store.dispatch('createSave',saveName)">nouvelle sauvgarde</button>
+							<button @click="$store.dispatch('refreshSaves')" style="background-color: rgb(160 160 160)">R</button>
+						</td>
+						<td><input v-model="saveName"/></td>
+					</tr>
+					<tr v-for="save of $store.state.saves">
+						<td>
+							<ButtonConfirm @action="$store.dispatch('loadSave',save.Data)">load</ButtonConfirm>
+							<ButtonConfirm @action="$store.dispatch('deleteSave',save.ID)" style="background-color: rgb(165 0 0)">X</ButtonConfirm>
+						</td>
+						<td>{{ save.Name }}</td>
+						<td>{{ save.Data }}</td>
+					</tr>
+				</table>
+			</div>
 		</div>
-		<h2>Statistique</h2>
-		<table class="stat">
-			<tr>
-				<td>Nombre de produit:</td>
-				<td>{{ productsLen }}</td>
-			</tr>
-			<tr>
-				<td>Nombre de OA:</td>
-				<td>{{ oasLen }}</td>
-			</tr>
-			<tr>
-				<td>Nombre de Prix:</td>
-				<td>{{ pricesLen }}</td>
-			</tr>
-			<tr>
-				<td>Nombre de Changement:</td>
-				<td>{{ changesLen }}</td>
-			</tr>
-		</table>
-		<h2>Configuration</h2>
-		<table>
-			<tr>
-				<td>Elements par page:</td>
-				<td><select v-model="ipp">
-					<option v-for="n in 10" :value="n*10">{{ n * 10 }}</option>
-				</select></td>
-			</tr>
-			<tr>
-				<td>Chaine de connexion:</td>
-				<td><input v-model="mysqlLogin"></td>
-			</tr>
-		</table>
-		<h2 v-if="changesLen">Changements</h2>
+
+		<h2>Changements</h2>
 		<table>
 			<tr v-for="change of changes">
 				<td><strong>{{ change.text }}</strong></td>
@@ -46,55 +41,38 @@
 	</div>
 </template>
 
-<script>
+<script lang="ts">
 import {computed, defineComponent, onMounted, onUnmounted, ref, watch} from 'vue';
 import {useStore} from "vuex";
 import moment from "moment";
-import ButtonConfirm from "@/components/ButtonConfirm";
+import ButtonConfirm from "@/components/ButtonConfirm.vue";
+import {StoreState} from "@/store";
+import LoadingBar from "@/components/LoadingBar.vue";
 
 export default defineComponent({
 	name: 'Home',
-	components: {ButtonConfirm},
+	components: {LoadingBar, ButtonConfirm},
 	setup() {
-		const store = useStore();
+		const store = useStore<StoreState>();
 
 		const year = moment().add(7, 'M').year();
 
 		return {
-			productsLen: computed(() => Object.entries(store.state.products).length),
-			oasLen: computed(() => Object.entries(store.state.oas).length),
-			pricesLen: computed(() => Object.entries(store.state.prices).length),
-			changesLen: computed(() => Object.entries(store.state.changes).length),
+			saveName: ref(""),
 
-			changes: computed(() => Object.values(store.state.changes)),
-
-			ipp: computed({
-				get() {
-					return store.state.settings.ipp;
-				},
-				set(val) {
-					store.commit('ipp', val);
-				}
-			}),
-			mysqlLogin: computed({
-				get() {
-					return JSON.stringify(store.state.mysqlLogin);
-				},
-				set(val) {
-					store.commit('mysqlLogin', JSON.parse(val));
-				}
-			}),
+			changes: computed(() => Object.values(store.state.modifications)),
 
 			refresh() {
 				store.dispatch('refresh', true);
 			},
-			async save() {
-				console.log("applyMod");
+			async apply() {
 				await store.dispatch("applyMod");
-				console.log("refresh");
 				await store.dispatch("refresh", true);
-				console.log("done");
-			}
+			},
+			async annule() {
+				store.commit("clearMod");
+				await store.dispatch("refresh", true);
+			},
 		};
 	}
 });
@@ -145,31 +123,37 @@ function setupScroll(loadMorePosts) {
 		padding-bottom: 1rem;
 	}
 
-	.op {
+	.row {
 		display: flex;
 		justify-content: center;
 		gap: 1rem;
 
 		width: 100%;
-		padding: 1rem;
+		padding-block: 1rem;
 
-		button {
+		> div {
+			display: flex;
+			flex-direction: column;
+			border: 1px solid black;
+			padding: 1rem;
 		}
 	}
 
-	.stat {
-		border-collapse: collapse;
-		border: 1px solid #f2f2f2;
+	.saves {
+		td:nth-child(1) {
+			display: flex;
 
-		tr {
-			border-bottom: 1px solid #f2f2f2;
+			button:nth-child(1) {
+				flex-grow: 1;
+			}
 		}
 
-		td {
-			padding: .5rem;
-			border-left: 1px solid #f2f2f2;
+		tr:nth-child(1) {
+			background-color: #ccc;
 		}
 	}
+
+
 }
 
 </style>

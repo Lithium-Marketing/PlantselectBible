@@ -40,7 +40,7 @@ async function createWindow() {
         // Load the index.html when not in development
         await win.loadURL('app://./index.html#');
         autoUpdater.autoDownload = true;
-        autoUpdater.autoInstallOnAppQuit = true;
+        autoUpdater.autoInstallOnAppQuit = false;
         await checkUpdate();
     }
 }
@@ -93,5 +93,5 @@ if (isDevelopment) {
 async function checkUpdate() {
     const result = await autoUpdater.checkForUpdatesAndNotify();
     
-    setTimeout(checkUpdate, 1000 * 60 * 60);
+    setTimeout(checkUpdate, 1000 * 60 * 5);
 }
