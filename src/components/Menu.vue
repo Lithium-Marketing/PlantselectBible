@@ -46,7 +46,6 @@ export default defineComponent({
 			canUpdate,
 			version: isDev ? "dev" : app.getVersion(),
 			update() {
-				autoUpdater.quitAndInstall()
 			}
 		};
 	}
