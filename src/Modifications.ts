@@ -138,6 +138,7 @@ export class Modifications extends Helper {
 
 export class ModificationsCompiler extends Helper {
     private readonly mods: Record<any, Modification> = {};
+    private readonly failed: ModificationType[] = [];
     
     add(modId: string | number, mod: Modification) {
         //if(!modId)
@@ -147,11 +148,19 @@ export class ModificationsCompiler extends Helper {
     }
     
     apply(mod: ModificationType) {
-        return match(mod, actions, this);
+        try{
+            return match(mod, actions, this);
+        }catch (e) {
+            this.store.commit('log',e);
+            this.failed.push(mod)
+        }
     }
     
     commit() {
         this.store.commit("modifications", this.mods);
+        this.store.commit("failed", this.failed);
+    
+        this.failed.length = 0;
         Object.keys(this.mods).forEach((key) => {
             if (this.mods.hasOwnProperty(key))
                 delete this.mods[key];

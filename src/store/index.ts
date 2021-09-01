@@ -48,10 +48,13 @@ export interface StoreState {
     prices: Record<any, Price>;
     priceTitles: Record<any, PriceTitle>;
     
+    productsOrder: string[],
     pricesByProduct,
     
     modificationsRaw: Record<any, ModificationType>;
     modifications: Record<any, Modification>;
+    
+    failed: ModificationType[],
     
     logs: any[];
     settings: {
@@ -87,10 +90,13 @@ export default createStore<StoreState>({
         prices: {},
         priceTitles: {},
         
+        productsOrder: [],
         pricesByProduct: {},
         
         modificationsRaw: {},//key is generated ID for operation
         modifications: {},//key is generated ID for operation
+        
+        failed: [],
         
         logs: [],
         settings: {
@@ -102,6 +108,9 @@ export default createStore<StoreState>({
         setProducts(state, payload) {
             state.products = payload;
             console.log("products", Object.entries(payload).length);
+        },
+        setProductsOrder(state, payload) {
+            state.productsOrder = payload;
         },
         setOAs(state, payload) {
             state.oas = payload;
@@ -135,7 +144,7 @@ export default createStore<StoreState>({
         },
         log(state, payload) {
             state.logs.push(payload?.toString());
-            if (state.logs.length > 20)
+            if (state.logs.length > 120)
                 state.logs.splice(0, state.logs.length - 20);
         },
         ipp(state, payload) {
@@ -148,6 +157,9 @@ export default createStore<StoreState>({
             Object.entries(modifications).forEach(m => {
                 state.modificationsRaw[m[0]] = m[1];
             })
+        },
+        failed(state, failed: ModificationType[]) {
+            state.failed.push(...failed);
         },
         modifications(state, modifications: Modification[]) {
             for (const modId in modifications) {
@@ -252,6 +264,7 @@ export default createStore<StoreState>({
             
             promises.push(conn.query(req1()).then(result => {
                 const products: any = {};
+                const order = [];
                 for (const p of result[0] as any[]) {
                     p.years_pastV0O = p.years_pastV0;
                     p['ColorO'] = p['Color']
@@ -259,8 +272,10 @@ export default createStore<StoreState>({
                     p['bible.ColorO'] = p['bible.Color']
                     p['bible.VendantO'] = p['bible.Vendant']
                     products[p.ID.toString()] = p;
+                    order.push(p.ID.toString());
                 }
                 context.commit('setProducts', products);
+                context.commit('setProductsOrder', order);
             }).catch(e => {
                 console.error(e);
             }));

@@ -180,6 +180,7 @@ export default defineComponent({
 		const allOAs = computed(() => {
 			const oas = store.state.oas;
 			const products = store.state.products;
+			const productIds = store.state.productsOrder;
 			const oasByProd = {};
 
 			for (const oasKey in oas) {
@@ -190,7 +191,7 @@ export default defineComponent({
 
 			const result = [];
 
-			for (const productsKey in products) {
+			for (const productsKey of productIds) {
 				const prod = products[productsKey];
 				if(prod.Variete && prod.Variete.toLowerCase().indexOf(search.variete.toLowerCase())===-1)
 					continue;

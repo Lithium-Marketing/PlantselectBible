@@ -25,12 +25,17 @@
 </template>
 
 <script>
-import {computed, defineComponent} from "vue";
+import {computed, defineComponent, watchEffect} from "vue";
 
 export default defineComponent({
 	name: "Pagination",
 	props: ["page", "len"],
 	setup(props, {emit}) {
+
+		watchEffect(()=>{
+			if(props.page>props.len)
+				emit("update:page", 0);
+		})
 
 		return {
 			page: computed({

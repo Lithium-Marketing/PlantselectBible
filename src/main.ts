@@ -73,6 +73,23 @@ const stateVersion = localStorage.getItem('version');
                         store.commit(delta.type, delta.payload);
                     }
                 }
+                await store.dispatch("refresh",true)
+                break;
+            case "3":
+                if (stateRaw) {
+                    const data = JSON.parse(stateRaw);
+                    store.replaceState({
+                        ...store.state,
+                        ...data,
+                        _: store.state._
+                    });
+                }
+                if (stateDeltaRaw) {
+                    const deltas = JSON.parse(stateDeltaRaw);
+                    for (const delta of deltas) {
+                        store.commit(delta.type, delta.payload);
+                    }
+                }
                 break;
             default:
                 store.commit("log", "State could not be loaded");
@@ -100,7 +117,7 @@ const stateVersion = localStorage.getItem('version');
         }
         
         localStorage.setItem('stateDelta', JSON.stringify(deltas));
-        localStorage.setItem('version', '2');
+        localStorage.setItem('version', '3');
     })
     
     const app = createApp(App);
