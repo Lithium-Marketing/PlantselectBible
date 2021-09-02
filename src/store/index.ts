@@ -477,5 +477,5 @@ function req1() {
     
     query += " WHERE " + wheres.map(e => "(" + e + ")").join(" AND")
     
-    return query + " ORDER BY `vue_produits`.`Type` asc,`vue_produits`.`Variete` asc,`vue_produits`.`Format` asc";
+    return query + " ORDER BY `produits`.`Type` asc,`vue_produits`.`Variete` asc,`vue_produits`.`Format` asc";
 }
