@@ -3,11 +3,15 @@
 		<div>
 			<div>
 				<button :disabled="tab==='price'" @click="tab='price'">Prix Calculateur</button>
+				<button :disabled="tab==='rapport'" @click="tab='rapport'">Rapports</button>
 			</div>
 
 			<div>
 				<div v-if="tab==='price'" class="prodTab">
 					<PriceCalc></PriceCalc>
+				</div>
+				<div v-if="tab==='rapport'" class="prodTab">
+					<ExcelBuilder/>
 				</div>
 			</div>
 		</div>
@@ -19,10 +23,11 @@
 import {computed, defineComponent, ref} from "vue";
 import {useStore} from "vuex";
 import PriceCalc from "@/components/PriceCalc";
+import ExcelBuilder from "@/components/ExcelBuilder";
 
 export default defineComponent({
 	name: 'Tools',
-	components: {PriceCalc},
+	components: {ExcelBuilder, PriceCalc},
 	setup() {
 		const store = useStore();
 

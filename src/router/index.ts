@@ -6,6 +6,7 @@ import ViewA from "@/views/ViewA.vue";
 import Edit from "@/views/Edit.vue";
 import Tools from "@/views/Tools.vue";
 import ViewB from "@/views/ViewB.vue";
+import ExcelViewer from "@/views/ExcelViewer.vue";
 
 const routes: Array<RouteRecordRaw> = [
     {
@@ -36,6 +37,10 @@ const routes: Array<RouteRecordRaw> = [
         path: '/tools',
         name: 'Tools',
         component: Tools
+    }, {
+        path: "/ExcelViewer/:file",
+        name: "ExcelViewer",
+        component: ExcelViewer
     }, {
         path: '/about',
         name: 'About',

@@ -53,7 +53,7 @@ import TableInput from "@/components/TableInput.vue";
 import {StoreState} from "@/store";
 
 export default defineComponent({
-	name: 'ViewA',
+	name: 'ViewB',
 	components: {
 		TableInput,
 		Pagination,
