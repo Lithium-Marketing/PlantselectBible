@@ -301,12 +301,12 @@ const actions: ModificationsI = {
         const OA_ID = payload.OA_ID === undefined ? "NULL" : `${payload.OA_ID}`
         const Produit_ID = payload.OA_ID === undefined ? `${payload.Produit_ID}` : "NULL"
         
-        compiler.add(["products", payload.Produit_ID, "bible.Quantite"].join("."), {
+        compiler.add(["oas", payload.OA_ID, "bible.Quantite"].join("."), {
             changes: [
                 {
-                    resource: "products",
+                    resource: "oas",
                     field: "bible.Quantite",
-                    key: payload.Produit_ID,
+                    key: payload.OA_ID,
                     value: val,
                 }
             ],

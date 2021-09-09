@@ -103,7 +103,7 @@
 					<td>{{ oa.Fournisseur }}</td>
 					<td :class="oa.c?.Inventaire">{{ oa.product.Quantite }}</td>
 					<td :class="oa.c?.qtyF">
-						<TableInput :always="true" :modelValue="oa.product['bible.Quantite']" :original="oa.product['bible.QuantiteO']" @update:modelValue="upAchat($event,oa,oa.product)"/>
+						<TableInput :always="true" :modelValue="oa['bible.Quantite']" :original="oa['bible.QuantiteO']" @update:modelValue="upAchat($event,oa,oa.product)"/>
 					</td>
 					<td :class="oa.c?.a0">{{ $valueI(oa.product.years_pastA0) }}</td>
 					<td>{{ $valueI(oa.product.years_pastA1) }}</td>
