@@ -71,7 +71,7 @@ export default defineComponent({
 		return {
 			versions,
 
-			logs: computed(() => store.state.logs),
+			logs: computed(() => store.state._.logs),
 
 			ipp: computed({
 				get() {

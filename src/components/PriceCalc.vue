@@ -58,7 +58,7 @@ export default defineComponent({
 		function applyFor(prod, priceByProdID, modifications: Modifications, vF: boolean) {
 			const prices = priceByProdID[prod.ID];
 			if (!vF && (!prices || !prices[mainPriceId.value]))
-				return store.dispatch("log", `Produit ${prod.Code} n'a pas de Prix 1`);
+				return store.dispatch("_log", `Produit ${prod.Code} n'a pas de Prix 1`);
 
 			const main = parseFloat(vF ? prod['bible.Vendant'] : prices[mainPriceId.value].Prix);
 

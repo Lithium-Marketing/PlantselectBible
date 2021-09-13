@@ -92,7 +92,7 @@ const stateVersion = localStorage.getItem('version');
                 }
                 break;
             default:
-                store.commit("log", "State could not be loaded");
+                store.commit("_log", "State could not be loaded");
         }
     } catch (e) {
         console.error(e);

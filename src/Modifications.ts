@@ -150,8 +150,9 @@ export class ModificationsCompiler extends Helper {
     apply(mod: ModificationType) {
         try{
             return match(mod, actions, this);
-        }catch (e) {
-            this.store.commit('log',e);
+        } catch (e) {
+            //console.error(e);
+            this.store.commit('_log', e);
             this.failed.push(mod)
         }
     }

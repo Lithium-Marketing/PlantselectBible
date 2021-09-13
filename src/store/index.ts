@@ -31,6 +31,7 @@ export interface StoreState {
         loading: boolean;
         '%': number,
         loadingSaves: boolean
+        logs: any[];
     };
     editState: {
         oaID: number;
@@ -56,7 +57,6 @@ export interface StoreState {
     
     failed: ModificationType[],
     
-    logs: any[];
     settings: {
         ipp: number
     };
@@ -68,7 +68,8 @@ export default createStore<StoreState>({
         _: {
             loading: false,
             '%': 0,
-            loadingSaves: false
+            loadingSaves: false,
+            logs: [],
         },
         
         editState: {
@@ -98,7 +99,6 @@ export default createStore<StoreState>({
         
         failed: [],
         
-        logs: [],
         settings: {
             ipp: 20
         },
@@ -142,10 +142,10 @@ export default createStore<StoreState>({
             state.editState.oaID = payload.oaID >= 0 ? payload.oaID : -1;
             state.editState.tab = payload.tab
         },
-        log(state, payload) {
-            state.logs.push(payload?.toString());
-            if (state.logs.length > 120)
-                state.logs.splice(0, state.logs.length - 20);
+        _log(state, payload) {
+            state._.logs.push(payload?.toString());
+            if (state._.logs.length > 240)
+                state._.logs.splice(0, state._.logs.length - 20);
         },
         ipp(state, payload) {
             state.settings.ipp = payload
@@ -224,7 +224,7 @@ export default createStore<StoreState>({
     },
     actions: {
         log(context, payload) {
-            context.commit("log", payload);
+            context.commit("_log", payload);
         },
         load(context, payload) {
             console.log(payload);
