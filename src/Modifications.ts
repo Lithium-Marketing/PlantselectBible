@@ -184,8 +184,8 @@ const actions: ModificationsI = {
         val = Math.ceil((val * 100) / 5 - 0.01) * 5 / 100;//ceil to 5 cent
         val = isNaN(val) ? undefined : val.toFixed(2);
         
-        const price = Object.values(compiler.store.state.prices).filter(p => {
-            return p.Produit_ID == payload.Produit_ID && p.Prix_ID == payload.Prix_ID;
+        const price = compiler.store.state.pricesByProduct[payload.Produit_ID] && Object.values(compiler.store.state.pricesByProduct[payload.Produit_ID]).filter(p => {
+            return p.Prix_ID == payload.Prix_ID;
         })[0];
         
         if (!price || price.ID < 0) {
@@ -259,7 +259,7 @@ const actions: ModificationsI = {
     
     setVenteFutur(payload, compiler) {
         const product = compiler.store.state.products[payload.Produit_ID];
-        if(!product)
+        if (!product)
             return;
         
         const original = product?.['bible.VendantO'];

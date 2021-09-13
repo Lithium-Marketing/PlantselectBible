@@ -50,7 +50,7 @@ export interface StoreState {
     priceTitles: Record<any, PriceTitle>;
     
     productsOrder: string[],
-    pricesByProduct,
+    pricesByProduct: Record<any, Record<any, Price>>,
     
     modificationsRaw: Record<any, ModificationType>;
     modifications: Record<any, Modification>;
