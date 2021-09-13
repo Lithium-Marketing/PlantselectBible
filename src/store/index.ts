@@ -386,7 +386,7 @@ export default createStore<StoreState>({
         async loadSave(context, data) {
             context.commit("clearMod");
             context.commit("modificationsRaw", JSON.parse(data))
-            await context.dispatch("modificationsRaw", {mods: context.state.modificationsRaw})
+            await context.dispatch("refresh", true);
         },
         async deleteSave(context, id) {
             const connection = await mysql.createConnection(context.state.mysqlLogin);
