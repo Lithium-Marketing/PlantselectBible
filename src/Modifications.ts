@@ -10,7 +10,7 @@ export class Job {
     private resolve: (value: (PromiseLike<void> | void)) => void;
     private reject: (reason?: any) => void;
     
-    constructor(cb: () => boolean, limit = 10000) {
+    constructor(cb: () => boolean, limit = 100000) {
         this.cb = cb;
         this.limit = limit;
         this.promise = new Promise((resolve, reject) => {
