@@ -41,10 +41,6 @@
 			</div>
 		</div>
 
-		<h2>Logs</h2>
-		<ul>
-			<li v-for="log in logs">{{ log }}</li>
-		</ul>
 		<h2>Versions</h2>
 		<table>
 			<tr v-for="(version,name) in versions">
@@ -59,7 +55,8 @@
 
 import {computed, defineComponent, ref} from "vue";
 import {useStore} from "vuex";
-import {StoreState} from "../store";
+import {StoreState} from "@/store";
+import moment from "moment";
 
 export default defineComponent({
 	name: 'About',
@@ -70,8 +67,6 @@ export default defineComponent({
 
 		return {
 			versions,
-
-			logs: computed(() => store.state._.logs),
 
 			ipp: computed({
 				get() {

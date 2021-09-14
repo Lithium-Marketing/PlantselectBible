@@ -73,7 +73,7 @@ const stateVersion = localStorage.getItem('version');
                         store.commit(delta.type, delta.payload);
                     }
                 }
-                await store.dispatch("refresh",true)
+                await store.dispatch("refresh", true)
                 break;
             case "3":
                 if (stateRaw) {
@@ -103,22 +103,14 @@ const stateVersion = localStorage.getItem('version');
             return;
         //console.log(mutation);
         
-        const stateDeltaRaw = localStorage.getItem('stateDelta');
-        const deltas = stateDeltaRaw ? JSON.parse(stateDeltaRaw) : [];
+        localStorage.setItem('state', JSON.stringify({
+            ...store.state,
+            _: undefined
+        }));
         
-        deltas.push(mutation);
-        
-        if (deltas.length > 10) {
-            localStorage.setItem('state', JSON.stringify({
-                ...store.state,
-                _: undefined
-            }));
-            deltas.length = 0;
-        }
-        
-        localStorage.setItem('stateDelta', JSON.stringify(deltas));
+        localStorage.removeItem('stateDelta');
         localStorage.setItem('version', '3');
-    })
+    });
     
     const app = createApp(App);
     

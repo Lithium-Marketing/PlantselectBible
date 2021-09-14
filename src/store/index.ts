@@ -3,12 +3,7 @@ import {createStore} from 'vuex';
 import mysql from 'mysql2/promise'
 import {Job, Modification, ModificationsCompiler, ModificationType} from "@/Modifications";
 
-/*const conn = mysql.createPool({
-    database: "lithweb_crm_plantselect",
-    user: "lithweb_pl_bible",
-    password: "CAkdCI@HU6s?",
-    host: "plantselect.lithiumwebsolutions.com"
-});*/
+const MAX_LOG_LEN = 240;
 
 export interface Price {
     Produit_ID,
@@ -31,7 +26,7 @@ export interface StoreState {
         loading: boolean;
         '%': number,
         loadingSaves: boolean
-        logs: any[];
+        logs: { date: number, text: string }[];
     };
     editState: {
         oaID: number;
@@ -132,6 +127,16 @@ export default createStore<StoreState>({
         _loading(state, payload: boolean | number) {
             state._.loading = typeof payload === 'boolean' ? payload : payload < 1;
             state._['%'] = typeof payload === 'boolean' ? -1 : payload;
+            
+            if (typeof payload === 'boolean' || payload == -1)
+                return;
+            
+            state._.logs.push({
+                date: Date.now(),
+                text: (payload * 100).toFixed(2) + "%"
+            });
+            if (state._.logs.length > MAX_LOG_LEN)
+                state._.logs.splice(0, state._.logs.length - MAX_LOG_LEN);
         },
         _loadingSaves(state, payload: boolean) {
             state._.loadingSaves = payload;
@@ -143,9 +148,12 @@ export default createStore<StoreState>({
             state.editState.tab = payload.tab
         },
         _log(state, payload) {
-            state._.logs.push(payload?.toString());
-            if (state._.logs.length > 240)
-                state._.logs.splice(0, state._.logs.length - 20);
+            state._.logs.push({
+                date: Date.now(),
+                text: payload?.toString()
+            });
+            if (state._.logs.length > MAX_LOG_LEN)
+                state._.logs.splice(0, state._.logs.length - MAX_LOG_LEN);
         },
         ipp(state, payload) {
             state.settings.ipp = payload

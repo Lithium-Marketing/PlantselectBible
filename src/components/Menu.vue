@@ -9,6 +9,8 @@
 			<span>|</span>
 			<router-link to="/about">About</router-link>
 			<span>|</span>
+			<a href="#" @click.prevent="loading = true">Logs</a>
+			<span>|</span>
 			<strong :class="{pill:true,canUp: canUpdate}" @click.ctrl="update" :title="canUpdate?'Maintenir \'Ctrl\' et cliquez' : ''">{{ version }}</strong>
 		</div>
 
@@ -22,7 +24,7 @@
 
 <script>
 
-import {defineComponent, ref} from "vue";
+import {computed, defineComponent, ref} from "vue";
 import HelloWorld from "@/components/HelloWorld";
 import {useStore} from "vuex";
 import {app, autoUpdater} from "@electron/remote";
@@ -32,7 +34,9 @@ export default defineComponent({
 	components: {
 		HelloWorld,
 	},
-	setup() {
+	props:['loading'],
+	emits:['update:loading'],
+	setup(props,{emit}) {
 		const store = useStore();
 
 		const isDev = process.env.NODE_ENV === "development";
@@ -46,7 +50,12 @@ export default defineComponent({
 			canUpdate,
 			version: isDev ? "dev" : app.getVersion(),
 			update() {
-			}
+			},
+
+			loading: computed({
+				get(){return props.loading},
+				set(v){emit("update:loading",v)}
+			})
 		};
 	}
 });
