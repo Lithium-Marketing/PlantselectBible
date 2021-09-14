@@ -1,6 +1,8 @@
 import {Store} from "vuex";
 import {Modifications} from "@/Modifications";
 import {MenuItemConstructorOptions} from "electron";
+import {Price, StoreState} from "@/store";
+import {computed, ComputedRef, ref, WritableComputedOptions} from "vue";
 
 export const ColorMenu = (store: Store<any>, modifications: Modifications, row: HTMLTableRowElement): MenuItemConstructorOptions[] => {
     function oaColor(val, type) {
@@ -85,4 +87,53 @@ const text = {
 
 export function toText(key: string) {
     return text[key] || key;
+}
+
+export interface CacheI<T>{
+    enable();
+    value: T
+}
+
+export class CacheReactive{
+    private store: Store<StoreState>;
+    
+    private _pricesByProduct: CacheI<Record<any, Record<any, Price>>>
+    
+    constructor(store: Store<StoreState>) {
+        this.store = store;
+    
+        this._pricesByProduct = CacheReactive.newCache(()=>{
+            const result = {};
+            Object.values(store.state.prices).forEach(price=>{
+                result[price.Produit_ID] = result[price.Produit_ID] || [];
+                result[price.Produit_ID][price.Prix_ID] = price;
+            })
+            return result;
+        });
+    }
+    
+    static newCache<T>(getter: WritableComputedOptions<T>['get']):CacheI<T>{
+        let cache: ComputedRef<T>;
+        return {
+            enable(){
+                if(cache)
+                    return;
+                cache = computed(getter);
+            },
+            get value(){
+                return cache?.value;
+            }
+        };
+    }
+    
+    prices(Produit_ID,Prix_ID){
+        this._pricesByProduct.enable();
+        return this._pricesByProduct.value[Produit_ID]?.[Prix_ID];
+    }
+    
+    pricesByProduct(Produit_ID){
+        this._pricesByProduct.enable();
+        return this._pricesByProduct.value[Produit_ID];
+    }
+    
 }

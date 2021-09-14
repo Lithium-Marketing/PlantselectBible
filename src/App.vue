@@ -74,7 +74,7 @@ export default defineComponent({
 <style lang="scss" scoped>
 
 .logContainer{
-	height: 75vh;
+	height: 70vh;
 	overflow-y: scroll;
 	border: 1px solid black;
 	border-radius: 5px;

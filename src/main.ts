@@ -98,7 +98,7 @@ const stateVersion = localStorage.getItem('version');
         console.error(e);
     }
     
-    store.subscribe(function (mutation, state) {
+    store.subscribe(function storeSubscriber(mutation, state) {
         if (mutation.type.startsWith("_"))
             return;
         //console.log(mutation);

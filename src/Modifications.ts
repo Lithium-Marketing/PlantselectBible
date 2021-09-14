@@ -1,6 +1,6 @@
 import {Store} from "vuex";
 import {Price, PriceTitle, StoreState} from "@/store";
-import {toText} from "@/Const";
+import {CacheReactive, toText} from "@/Const";
 
 export class Job {
     private cb: () => boolean;
@@ -137,8 +137,14 @@ export class Modifications extends Helper {
 }
 
 export class ModificationsCompiler extends Helper {
-    private readonly mods: Record<any, Modification> = {};
-    private readonly failed: ModificationType[] = [];
+    private mods: Record<any, Modification> = {};
+    private failed: ModificationType[] = [];
+    public readonly cache: CacheReactive;
+    
+    constructor(store: Store<StoreState>) {
+        super(store);
+        this.cache = new CacheReactive(store);
+    }
     
     add(modId: string | number, mod: Modification) {
         //if(!modId)
@@ -148,7 +154,7 @@ export class ModificationsCompiler extends Helper {
     }
     
     apply(mod: ModificationType) {
-        try{
+        try {
             return match(mod, actions, this);
         } catch (e) {
             //console.error(e);
@@ -157,15 +163,34 @@ export class ModificationsCompiler extends Helper {
         }
     }
     
-    commit() {
-        this.store.commit("modifications", this.mods);
-        this.store.commit("failed", this.failed);
-    
-        this.failed.length = 0;
-        Object.keys(this.mods).forEach((key) => {
-            if (this.mods.hasOwnProperty(key))
-                delete this.mods[key];
-        });
+    async commit(progress?: (number) => void) {
+        const me = this;
+        
+        //this.store.commit("modifications", Object.freeze(this.mods));
+        this.store.commit("failed", Object.freeze(this.failed));
+        
+        const entries = Object.entries(this.mods);
+        let i = 0;
+        const n = 100;
+        const mod = Math.ceil(entries.length / n);
+        
+        await new Job(function modificationCompilerCommitJob() {
+            const len = Math.min(mod, entries.length - (mod * i))
+            
+            me.store.commit("modifications", Object.entries(me.mods).slice(mod * i, mod * i + len).reduce((a, v) => {
+                a[v[0]] = v[1];
+                return a;
+            }, {}));
+            
+            ++i;
+            if (progress)
+                progress(i / n)
+            if (i >= n)
+                return true;
+        }).start();
+        
+        this.failed = [];
+        this.mods = {};
     }
     
 }
@@ -184,9 +209,7 @@ const actions: ModificationsI = {
         val = Math.ceil((val * 100) / 5 - 0.01) * 5 / 100;//ceil to 5 cent
         val = isNaN(val) ? undefined : val.toFixed(2);
         
-        const price = compiler.store.state.pricesByProduct[payload.Produit_ID] && Object.values(compiler.store.state.pricesByProduct[payload.Produit_ID]).filter(p => {
-            return p.Prix_ID == payload.Prix_ID;
-        })[0];
+        const price = compiler.cache.prices(payload.Produit_ID, payload.Prix_ID);
         
         if (!price || price.ID < 0) {
             compiler.add(["prices", payload.Prix_ID, "produit", payload.Produit_ID, "Prix"].join("."), {

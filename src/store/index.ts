@@ -45,7 +45,6 @@ export interface StoreState {
     priceTitles: Record<any, PriceTitle>;
     
     productsOrder: string[],
-    pricesByProduct: Record<any, Record<any, Price>>,
     
     modificationsRaw: Record<any, ModificationType>;
     modifications: Record<any, Modification>;
@@ -87,7 +86,6 @@ export default createStore<StoreState>({
         priceTitles: {},
         
         productsOrder: [],
-        pricesByProduct: {},
         
         modificationsRaw: {},//key is generated ID for operation
         modifications: {},//key is generated ID for operation
@@ -111,9 +109,8 @@ export default createStore<StoreState>({
             state.oas = payload;
             console.log("oas", Object.entries(payload).length);
         },
-        setPrices(state, {prices, pricesByProduct}) {
+        setPrices(state, {prices}) {
             state.prices = prices;
-            state.pricesByProduct = pricesByProduct;
             console.log("prices", Object.entries(prices).length);
         },
         setPriceTitles(state, payload) {
@@ -310,14 +307,11 @@ export default createStore<StoreState>({
             
             promises.push(conn.query(reqPrices()).then(result => {
                 const prices: any = {};
-                const pricesByProduct: any = {};
                 for (const p of result[0] as any[]) {
                     p.PrixO = p.Prix;
                     prices[p.ID.toString()] = p;
-                    //pricesByProduct[p.Produit_ID] = pricesByProduct[p.Produit_ID] || [];
-                    //pricesByProduct[p.Produit_ID].push(p);
                 }
-                context.commit('setPrices', {prices, pricesByProduct});
+                context.commit('setPrices', {prices});
             }).catch(e => {
                 console.error(e);
             }));
@@ -356,8 +350,8 @@ export default createStore<StoreState>({
                 if (i >= entries.length)
                     return true;
                 
-                if (showLoading && i % 10 === 0)
-                    context.commit("_loading", i / entries.length)
+                //if (showLoading && i % 10 === 0)
+                    //context.commit("_loading", i / entries.length / 2)
                 compiler.apply(entries[i]);
                 //console.timeLog("Modification Compilation");
                 
@@ -366,7 +360,7 @@ export default createStore<StoreState>({
             //console.timeEnd("Modification Compilation");
             
             //console.time("Modification Commit");
-            compiler.commit();
+            await compiler.commit((p) => context.commit("_loading", (p / 2) + .5));
             //console.timeEnd("Modification Commit");
             
             if (showLoading)
