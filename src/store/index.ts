@@ -231,16 +231,22 @@ export default createStore<StoreState>({
         },
         
         async applyMod(context, payload) {
+            context.commit("_loading", true);
+            
             const connection = await mysql.createConnection(context.state.mysqlLogin)
             
             try {
                 await connection.beginTransaction()
-                const queryPromises = []
                 
-                Object.values(context.state.modifications).forEach((query: any) => {
-                    queryPromises.push(connection.query(query.sql))
-                })
-                const results = await Promise.all(queryPromises)
+                const len = Object.values(context.state.modifications).length;
+                let done = 0;
+                const results = [];
+                
+                for (const mod of Object.values(context.state.modifications)) {
+                    results.push(await connection.query(mod.sql));
+                    context.commit("_loading", (++done) / len);
+                }
+                
                 await connection.commit()
                 context.commit("clearMod")
                 await connection.end()
