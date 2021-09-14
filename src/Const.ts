@@ -81,8 +81,21 @@ const colorText = {
     qtyF: "Achat Future"
 }
 
+const modText = {
+    setVenteFutur: "Vendant Futur",
+    setPriceOne: "Prix",
+    setProductColor: "Couleur",
+    setOAColor: "Couleur",
+    setCost: "Coutant",
+    setAchat: "Achat",
+    setNote: "Note",
+    setPrice: "Prix",
+    
+}
+
 const text = {
-    ...colorText
+    ...colorText,
+    ...modText
 };
 
 export function toText(key: string) {

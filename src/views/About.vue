@@ -38,6 +38,12 @@
 						<td>{{ changesLen }}</td>
 					</tr>
 				</table>
+				<table class="stat">
+					<tr v-for="(changes,type) in types">
+						<td>{{ type }}</td>
+						<td>{{ changes }}</td>
+					</tr>
+				</table>
 			</div>
 		</div>
 
@@ -56,7 +62,8 @@
 import {computed, defineComponent, ref} from "vue";
 import {useStore} from "vuex";
 import {StoreState} from "@/store";
-import moment from "moment";
+import {ModificationType} from "@/Modifications";
+import {toText} from "@/Const";
 
 export default defineComponent({
 	name: 'About',
@@ -83,6 +90,16 @@ export default defineComponent({
 				set(val: string) {
 					store.commit('mysqlLogin', JSON.parse(val));
 				}
+			}),
+
+			types: computed(() => {
+				return Object.values(store.state.modificationsRaw).reduce((a, v: ModificationType) => {
+					const t = toText(v.type);
+					if (!a[t])
+						a[t] = 0;
+					a[t]++;
+					return a;
+				}, {});
 			}),
 
 			productsLen: computed(() => Object.entries(store.state.products).length),
