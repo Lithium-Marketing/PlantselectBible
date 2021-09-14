@@ -9,7 +9,19 @@ import {ContextMenu} from "@/ContextMenu";
 import {Modifications} from "@/Modifications";
 
 ContextMenu.init();
-moment.locale('fr')
+moment.locale('fr');
+
+const oldLog = console.log;
+const oldError = console.error;
+console.log = function(){
+    oldLog.call(console,...arguments);
+    store.commit("_log",[...arguments].join('\t'))
+}
+console.error = function(){
+    oldError.call(console,...arguments);
+    store.commit("_log",[...arguments].join('\t'))
+}
+
 
 //Object.values(JSON.parse(localStorage.backup).changes).filter((c) => c.field === 'years_pastV0').reduce((a,c)=>{a['setVenteFutur.'+c.key] = {type:'setVenteFutur',Produit_ID: c.key,val: c.newValue}; return a},{})
 
