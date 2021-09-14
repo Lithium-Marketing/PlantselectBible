@@ -344,8 +344,7 @@ const actions: ModificationsI = {
 					       ${OA_ID}, ${Produit_ID}, ${val}
 				       ) ON DUPLICATE KEY
 				UPDATE
-					Quantite=
-				VALUES (Quantite)
+					Quantite=${val}
             `,
             text: `Modification de la qty d'achat du produit ${compiler.store.state.products[payload.Produit_ID].Code} :${original} -> ${val}`
         });
