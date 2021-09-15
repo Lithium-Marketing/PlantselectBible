@@ -193,12 +193,12 @@ export default createStore<StoreState>({
                         if (newValue === undefined)
                             continue;
                         
-                        state[resourceKey] = {
+                        state[resourceKey] ={
                             ...state[resourceKey],
-                            [change.create]: {
+                            [change.create]:  Object.freeze({
                                 ...newValue,
                                 ID: change.create
-                            }
+                            })
                         };
                         changed = true;
                         continue;
@@ -206,10 +206,10 @@ export default createStore<StoreState>({
                     const key = change.key;
                     const field = change.field;
                     
-                    state[resourceKey][key] = {
+                    state[resourceKey][key] = Object.freeze({
                         ...state[resourceKey][key],
                         [field]: newValue
-                    };
+                    });
                     
                     if (state[resourceKey][key][field + "O"] == newValue)
                         continue
@@ -282,7 +282,7 @@ export default createStore<StoreState>({
                     p['bible.QuantiteO'] = p['bible.Quantite'];
                     p['bible.ColorO'] = p['bible.Color']
                     p['bible.VendantO'] = p['bible.Vendant']
-                    products[p.ID.toString()] = p;
+                    products[p.ID.toString()] = Object.freeze(p);
                     order.push(p.ID.toString());
                 }
                 context.commit('setProducts', products);
@@ -298,7 +298,7 @@ export default createStore<StoreState>({
                     p['bible.QuantiteO'] = p['bible.Quantite'];
                     p['bible.ColorO'] = p['bible.Color']
                     p['NoteO'] = p['Note']
-                    oas[p.ID.toString()] = p;
+                    oas[p.ID.toString()] = Object.freeze(p);
                 }
                 context.commit('setOAs', oas);
             }).catch(e => {
@@ -309,7 +309,7 @@ export default createStore<StoreState>({
                 const prices: any = {};
                 for (const p of result[0] as any[]) {
                     p.PrixO = p.Prix;
-                    prices[p.ID.toString()] = p;
+                    prices[p.ID.toString()] = Object.freeze(p);
                 }
                 context.commit('setPrices', {prices});
             }).catch(e => {
@@ -319,7 +319,7 @@ export default createStore<StoreState>({
             promises.push(conn.query(reqPricesTitle()).then(result => {
                 const prices: any = {};
                 for (const p of result[0] as any[]) {
-                    prices[p.ID.toString()] = p;
+                    prices[p.ID.toString()] = Object.freeze(p);
                 }
                 context.commit('setPriceTitles', prices);
             }).catch(e => {

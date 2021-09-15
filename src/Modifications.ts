@@ -171,7 +171,7 @@ export class ModificationsCompiler extends Helper {
         
         const entries = Object.entries(this.mods);
         let i = 0;
-        const n = 100;
+        const n = Math.min(100,entries.length/100);
         const mod = Math.ceil(entries.length / n);
         
         await new Job(function modificationCompilerCommitJob() {
