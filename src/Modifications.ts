@@ -424,11 +424,10 @@ const actions: ModificationsI = {
 					OA, Produit, Color
 				)
 				VALUES (
-					       ${OA_ID}, ${Produit_ID}, ${val}
+					       ${OA_ID}, ${Produit_ID}, '${val}'
 				       ) ON DUPLICATE KEY
 				UPDATE
-					Quantite=
-				VALUES (Quantite)
+					Color='${val}'
             `,
             text: `Modification de la coleur du OA ${payload.OA_ID} du produit ${compiler.store.state.products[payload.Produit_ID].Code}: ${str}`
         });
@@ -444,7 +443,7 @@ const actions: ModificationsI = {
             }],
             sql: `
 				UPDATE produits
-				SET Color=${payload.val}
+				SET Color='${payload.val}'
 				WHERE
 					ID = ${payload.Produit_ID}
             `,
