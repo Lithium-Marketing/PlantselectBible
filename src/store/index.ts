@@ -360,7 +360,7 @@ export default createStore<StoreState>({
             //console.timeEnd("Modification Compilation");
             
             //console.time("Modification Commit");
-            await compiler.commit((p) => context.commit("_loading", (p / 2) + .5));
+            await compiler.commit((p) => showLoading && context.commit("_loading", (p / 2) + .5));
             //console.timeEnd("Modification Commit");
             
             if (showLoading)
