@@ -93,6 +93,11 @@ const modText = {
     
 }
 
+const changeType = {
+    mod: "Modification",
+    create: "Création"
+}
+
 const text = {
     ...colorText,
     ...modText

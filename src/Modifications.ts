@@ -231,7 +231,12 @@ const actions: ModificationsI = {
 				      VALUES (
 					             ${val}, ${payload.Prix_ID}, ${payload.Produit_ID}, 1
 				             )`,
-                text: `Creation prix ${compiler.store.state.priceTitles[payload.Prix_ID].Titre} de ${compiler.store.state.products[payload.Produit_ID].Variete}: ${val}`
+                description:{
+                    type:"create",
+                    resource:`Prix Vendant ${compiler.store.state.priceTitles[payload.Prix_ID].Titre}`,
+                    on: compiler.store.state.products[payload.Produit_ID].Variete,
+                    val
+                }
             })
         } else {
             compiler.add(["prices", price.ID, "Prix"].join("."), {
@@ -247,7 +252,13 @@ const actions: ModificationsI = {
 				      SET Prix=${val || "0.00"}
 				      WHERE
 					      ID = ${price.ID}`,
-                text: `Changer prix ${compiler.store.state.priceTitles[price.Prix_ID].Titre} de ${compiler.store.state.products[price.Produit_ID].Variete}: ${price.PrixO} -> ${val || "0.00"}`
+                description:{
+                    type:"mod",
+                    resource:`Prix Vendant ${compiler.store.state.priceTitles[payload.Prix_ID].Titre}`,
+                    on: compiler.store.state.products[payload.Produit_ID].Variete,
+                    val,
+                    old:price.PrixO
+                }
             })
         }
     },
@@ -276,7 +287,13 @@ const actions: ModificationsI = {
 					           WHERE
 						           ID = ${payload.OA_ID}
 					           )`,
-            text: `Modification cout de la matiere premiere du oa ${payload.OA_ID}: ${compiler.store.state.oas[payload.OA_ID].years_pastC0} -> ${val}`
+            description:{
+                type:"mod",
+                resource:`Cout matiere premiere`,
+                on: String(payload.OA_ID),
+                old:compiler.store.state.oas[payload.OA_ID].years_pastC0,
+                val
+            },
         });
     },
     
@@ -313,7 +330,13 @@ const actions: ModificationsI = {
 				UPDATE
 					Vendant=${val === "" ? "''" : val}
             `,
-            text: `Modification du Vendant Futur du produit ${product?.Code} :${original} -> ${val}`
+            description:{
+                type:"mod",
+                resource:`Vendant Futur du produit`,
+                on: product?.Variete,
+                old:original,
+                val
+            }
         });
     },
     
@@ -346,11 +369,17 @@ const actions: ModificationsI = {
 				UPDATE
 					Quantite=${val}
             `,
-            text: `Modification de la qty d'achat du produit ${compiler.store.state.products[payload.Produit_ID].Code} :${original} -> ${val}`
+            description:{
+                type:"mod",
+                resource:`qty d'achat`,
+                on: compiler.store.state.products[payload.Produit_ID]?.Variete,
+                old:original,
+                val
+            }
         });
     },
     
-    setNote(payload, compiler) {//TODO note
+    setNote(payload, compiler) {
         const original = compiler.store.state.oas[payload.OA_ID]['NoteO'];
         
         const OA_ID = `${payload.OA_ID}`
@@ -378,7 +407,13 @@ const actions: ModificationsI = {
 					Note=
 				VALUES (Note)
             `,
-            text: `Modification de la note du oa ${compiler.store.state.oas[payload.OA_ID].ID}`
+            description:{
+                type:"mod",
+                resource:`note`,
+                on: OA_ID,
+                old:original,
+                val:payload.val
+            }
         });
     },
     
@@ -429,7 +464,12 @@ const actions: ModificationsI = {
 				UPDATE
 					Color='${val}'
             `,
-            text: `Modification de la coleur du OA ${payload.OA_ID} du produit ${compiler.store.state.products[payload.Produit_ID].Code}: ${str}`
+            description:{
+                type:"mod",
+                resource:`Couleur OA`,
+                on: payload.OA_ID,
+                val:str
+            }
         });
         return this;
     },
@@ -447,7 +487,13 @@ const actions: ModificationsI = {
 				WHERE
 					ID = ${payload.Produit_ID}
             `,
-            text: `Modification de la coleur du produit ${compiler.store.state.products[payload.Produit_ID].Code} :${compiler.store.state.products[payload.Produit_ID].ColorO} -> ${payload.val}`
+            description:{
+                type:"mod",
+                resource:`Couleur produit`,
+                on: compiler.store.state.products[payload.Produit_ID]?.Variete,
+                old:compiler.store.state.products[payload.Produit_ID].ColorO,
+                val: payload.val
+            }
         });
         return this;
     }
@@ -507,7 +553,13 @@ export type Change = {
 export type Modification = {
     changes: Change[],
     sql: string,
-    text: string
+    description:{
+        type: "create"|"mod",
+        resource: string,
+        on: string,
+        old?:string,
+        val:string
+    }
 };
 
 type Color = {

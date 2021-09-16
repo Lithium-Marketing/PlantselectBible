@@ -235,7 +235,7 @@ export default createStore<StoreState>({
             console.log(payload);
         },
         
-        async applyMod(context, payload) {
+        async applyMod(context, payload:Record<any, Modification>) {
             context.commit("_loading", true);
             
             const connection = await mysql.createConnection(context.state.mysqlLogin)
@@ -243,18 +243,17 @@ export default createStore<StoreState>({
             try {
                 await connection.beginTransaction()
                 
-                const len = Object.values(context.state.modifications).length;
+                const len = Object.values(payload).length;
                 let done = 0;
                 const results = [];
                 
-                for (const mod of Object.values(context.state.modifications)) {
+                for (const mod of Object.values(payload)) {
                     results.push(await connection.query(mod.sql));
                     context.commit("_loading", (++done) / len);
                 }
                 
-                await connection.commit()
-                context.commit("clearMod")
-                await connection.end()
+                await connection.commit();
+                await connection.end();
                 return results
             } catch (err) {
                 await connection.rollback()

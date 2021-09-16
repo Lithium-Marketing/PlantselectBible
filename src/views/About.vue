@@ -38,12 +38,6 @@
 						<td>{{ changesLen }}</td>
 					</tr>
 				</table>
-				<table class="stat">
-					<tr v-for="(changes,type) in types">
-						<td>{{ type }}</td>
-						<td>{{ changes }}</td>
-					</tr>
-				</table>
 			</div>
 		</div>
 
@@ -92,16 +86,6 @@ export default defineComponent({
 				}
 			}),
 
-			types: computed(() => {
-				return Object.values(store.state.modificationsRaw).reduce((a, v: ModificationType) => {
-					const t = toText(v.type);
-					if (!a[t])
-						a[t] = 0;
-					a[t]++;
-					return a;
-				}, {});
-			}),
-
 			productsLen: computed(() => Object.entries(store.state.products).length),
 			oasLen: computed(() => Object.entries(store.state.oas).length),
 			pricesLen: computed(() => Object.entries(store.state.prices).length),
@@ -126,19 +110,5 @@ table {
 .row {
 	display: flex;
 	flex-wrap: wrap;
-}
-
-.stat {
-	border-collapse: collapse;
-	border: 1px solid #f2f2f2;
-
-	tr {
-		border-bottom: 1px solid #f2f2f2;
-	}
-
-	td {
-		padding: .5rem;
-		border-left: 1px solid #f2f2f2;
-	}
 }
 </style>

@@ -1,42 +1,46 @@
 <template>
 	<div class="home">
-		<div class="row">
-			<div>
-				<h2>Actions</h2>
-				<ButtonConfirm @action="apply">Appliquer les changements</ButtonConfirm>
-				<ButtonConfirm @action="refresh" style="background-color: rgb(0 0 145)">Rafraîchir les données</ButtonConfirm>
-				<hr style="width: 100%">
-				<ButtonConfirm @action="annule" style="background-color: rgb(165 0 0)">Annuler les changements</ButtonConfirm>
-			</div>
-			<div class="saves">
-				<h2>Sauvegarde</h2>
-				<loading-bar :progress="-1" v-if="$store.state._.loadingSaves"/>
-				<table v-else>
-					<tr>
-						<td>
-							<button @click="$store.dispatch('createSave',saveName)">nouvelle sauvgarde</button>
-							<button @click="$store.dispatch('refreshSaves')" style="background-color: rgb(160 160 160)">R</button>
-						</td>
-						<td><input v-model="saveName"/></td>
-					</tr>
-					<tr v-for="save of $store.state.saves">
-						<td>
-							<ButtonConfirm @action="$store.dispatch('loadSave',save.Data)">load</ButtonConfirm>
-							<ButtonConfirm @action="$store.dispatch('deleteSave',save.ID)" style="background-color: rgb(165 0 0)">X</ButtonConfirm>
-						</td>
-						<td>{{ save.Name }}</td>
+
+		<Tabs :activeIndex="2" style="width: 90vw">
+			<Tab header="Stats">
+				<table class="stat">
+					<tr v-for="(changes,type) in types">
+						<td>{{ type }}</td>
+						<td>{{ changes }}</td>
 					</tr>
 				</table>
-			</div>
-		</div>
-
-		<h2>Changements</h2>
-		<table>
-			<tr v-for="change of changes">
-				<td><strong>{{ change.text }}</strong></td>
-				<td><small>{{ change.sql }}</small></td>
-			</tr>
-		</table>
+			</Tab>
+			<Tab header="Modifications">
+				<ModificationsPanel />
+			</Tab>
+			<Tab header="Changements">
+				<ChangesPanel />
+			</Tab>
+			<Tab header="Sauvegarde">
+				<div class="saves">
+					<loading-bar :progress="-1" v-if="$store.state._.loadingSaves"/>
+					<table v-else>
+						<tr><th colspan="2" style="background-color: red;color: white">!!Attention!! Charger une sauvegarde va effacer les modification en cours</th></tr>
+						<tr>
+							<td>
+								<button @click="$store.dispatch('refreshSaves')" style="background-color: rgb(160 160 160)">Rafraichir</button>
+							</td>
+							<td>
+								<input v-model="saveName"/>
+								<button @click="$store.dispatch('createSave',saveName)">Sauvegarder modifications</button>
+							</td>
+						</tr>
+						<tr v-for="save of $store.state.saves">
+							<td>
+								<ButtonConfirm @action="$store.dispatch('loadSave',save.Data)">load</ButtonConfirm>
+								<ButtonConfirm @action="$store.dispatch('deleteSave',save.ID)" style="background-color: rgb(165 0 0)">X</ButtonConfirm>
+							</td>
+							<td>{{ save.Name }}</td>
+						</tr>
+					</table>
+				</div>
+			</Tab>
+		</Tabs>
 	</div>
 </template>
 
@@ -47,31 +51,31 @@ import moment from "moment";
 import ButtonConfirm from "@/components/ButtonConfirm.vue";
 import {StoreState} from "@/store";
 import LoadingBar from "@/components/LoadingBar.vue";
+import Tabs from "@/components/Tabs.vue";
+import Tab from "@/components/Tab.vue";
+import ChangesPanel from "@/components/ChangesPanel.vue";
+import {ModificationType} from "@/Modifications";
+import {toText} from "@/Const";
+import ModificationsPanel from "@/components/ModificationsPanel.vue";
 
 export default defineComponent({
 	name: 'Home',
-	components: {LoadingBar, ButtonConfirm},
+	components: {ModificationsPanel, ChangesPanel, Tab, Tabs, LoadingBar, ButtonConfirm},
 	setup() {
 		const store = useStore<StoreState>();
-
-		const year = moment().add(7, 'M').year();
 
 		return {
 			saveName: ref(""),
 
-			changes: computed(() => Object.values(store.state.modifications)),
-
-			refresh() {
-				store.dispatch('refresh', true);
-			},
-			async apply() {
-				await store.dispatch("applyMod");
-				await store.dispatch("refresh", true);
-			},
-			async annule() {
-				store.commit("clearMod");
-				await store.dispatch("refresh", true);
-			},
+			types: computed(() => {
+				return Object.values(store.state.modificationsRaw).reduce((a, v: ModificationType) => {
+					const t = toText(v.type);
+					if (!a[t])
+						a[t] = 0;
+					a[t]++;
+					return a;
+				}, {});
+			}),
 		};
 	}
 });
@@ -116,31 +120,20 @@ function setupScroll(loadMorePosts) {
 	justify-content: center;
 	align-items: center;
 
-	.msg {
-		font-size: 1.3rem;
-		font-weight: bold;
-		padding-bottom: 1rem;
-	}
-
-	.row {
-		display: flex;
-		justify-content: center;
-		gap: 1rem;
-
-		width: 100%;
-		padding-block: 1rem;
-
-		> div {
-			display: flex;
-			flex-direction: column;
-			border: 1px solid black;
-			padding: 1rem;
-		}
-	}
-
 	.saves {
+		width: 100%;
+
+		table {
+			width: 100%;
+		}
+
+		td {
+			width: 100%;
+		}
+
 		td:nth-child(1) {
 			display: flex;
+			width: unset;
 
 			button:nth-child(1) {
 				flex-grow: 1;
@@ -149,6 +142,20 @@ function setupScroll(loadMorePosts) {
 
 		tr:nth-child(1) {
 			background-color: #ccc;
+		}
+	}
+
+	.stat {
+		border-collapse: collapse;
+		border: 1px solid #f2f2f2;
+
+		tr {
+			border-bottom: 1px solid #f2f2f2;
+		}
+
+		td {
+			padding: .5rem;
+			border-left: 1px solid #f2f2f2;
 		}
 	}
 
