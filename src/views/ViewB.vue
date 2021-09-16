@@ -64,7 +64,7 @@ export default defineComponent({
 
 		const pricesByProduct = computed(() => {
 			const result = {};
-			for (const price of Object.values(store.state.prices)) {
+			for (const price of Object.values(store.state._.prices)) {
 				result[price.Produit_ID] = result[price.Produit_ID] || [];
 				result[price.Produit_ID].push(price);
 			}
@@ -82,7 +82,7 @@ export default defineComponent({
 		watchEffect(() => {
 			products.value.length = 0;
 
-			const filtered = Object.values(store.state.products).filter((p: any) => {
+			const filtered = Object.values(store.state._.products).filter((p: any) => {
 				return !p.Variete || p.Variete.toLowerCase().indexOf(search.variete.toLowerCase()) !== -1
 			});
 

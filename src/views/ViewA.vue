@@ -178,9 +178,9 @@ export default defineComponent({
 			variete: ""
 		});
 		const allOAs = computed(() => {
-			const oas = store.state.oas;
-			const products = store.state.products;
-			const productIds = store.state.productsOrder;
+			const oas = store.state._.oas;
+			const products = store.state._.products;
+			const productIds = store.state._.productsOrder;
 			const oasByProd = {};
 
 			for (const oasKey in oas) {
@@ -227,7 +227,7 @@ export default defineComponent({
 
 		const pricesByProduct = computed(() => {
 			const result = {};
-			for (const price of Object.values(store.state.prices)) {
+			for (const price of Object.values(store.state._.prices)) {
 				result[price.Produit_ID] = result[price.Produit_ID] || [];
 				result[price.Produit_ID].push(price);
 			}

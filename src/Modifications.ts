@@ -56,10 +56,10 @@ class Helper {
      */
     getMainPrice(prodID?: number | string, pricesByProduct?: Record<any, Price[]>) {
         if (prodID === undefined)
-            return this.store.state.priceTitles[1]
+            return this.store.state._.priceTitles[1]
         
-        const prices = (pricesByProduct ? pricesByProduct[prodID] : Object.values(this.store.state.prices))?.filter(p => {
-            return p.Produit_ID == prodID && p.Prix_ID == this.store.state.priceTitles[1].ID;
+        const prices = (pricesByProduct ? pricesByProduct[prodID] : Object.values(this.store.state._.prices))?.filter(p => {
+            return p.Produit_ID == prodID && p.Prix_ID == this.store.state._.priceTitles[1].ID;
         });
         
         if (!prices || !prices.length)
@@ -68,7 +68,7 @@ class Helper {
         if (prices.length !== 1)
             throw new Error(JSON.stringify(prices));
         
-        return this.store.state.prices[prices[0].ID];//needed to have update when price change
+        return this.store.state._.prices[prices[0].ID];//needed to have update when price change
     }
     
     
@@ -177,7 +177,7 @@ export class ModificationsCompiler extends Helper {
         await new Job(function modificationCompilerCommitJob() {
             const len = Math.min(mod, entries.length - (mod * i))
             
-            me.store.commit("changes", Object.entries(me.mods).slice(mod * i, mod * i + len).reduce((a, v) => {
+            me.store.commit("_changes", Object.entries(me.mods).slice(mod * i, mod * i + len).reduce((a, v) => {
                 a[v[0]] = v[1];
                 return a;
             }, {}));
@@ -233,8 +233,8 @@ const actions: ModificationsI = {
 				             )`,
                 description:{
                     type:"create",
-                    resource:`Prix Vendant ${compiler.store.state.priceTitles[payload.Prix_ID].Titre}`,
-                    on: compiler.store.state.products[payload.Produit_ID].Variete,
+                    resource:`Prix Vendant ${compiler.store.state._.priceTitles[payload.Prix_ID].Titre}`,
+                    on: compiler.store.state._.products[payload.Produit_ID].Variete,
                     val
                 }
             })
@@ -254,8 +254,8 @@ const actions: ModificationsI = {
 					      ID = ${price.ID}`,
                 description:{
                     type:"mod",
-                    resource:`Prix Vendant ${compiler.store.state.priceTitles[payload.Prix_ID].Titre}`,
-                    on: compiler.store.state.products[payload.Produit_ID].Variete,
+                    resource:`Prix Vendant ${compiler.store.state._.priceTitles[payload.Prix_ID].Titre}`,
+                    on: compiler.store.state._.products[payload.Produit_ID].Variete,
                     val,
                     old:price.PrixO
                 }
@@ -291,14 +291,14 @@ const actions: ModificationsI = {
                 type:"mod",
                 resource:`Cout matiere premiere`,
                 on: String(payload.OA_ID),
-                old:compiler.store.state.oas[payload.OA_ID].years_pastC0,
+                old:compiler.store.state._.oas[payload.OA_ID].years_pastC0,
                 val
             },
         });
     },
     
     setVenteFutur(payload, compiler) {
-        const product = compiler.store.state.products[payload.Produit_ID];
+        const product = compiler.store.state._.products[payload.Produit_ID];
         if (!product)
             return;
         
@@ -341,7 +341,7 @@ const actions: ModificationsI = {
     },
     
     setAchat(payload, compiler) {
-        const original = compiler.store.state.products[payload.Produit_ID]['bible.QuantiteO'];
+        const original = compiler.store.state._.products[payload.Produit_ID]['bible.QuantiteO'];
         const ival = parseInt(payload.val);
         const val = isNaN(ival) ? original : ival.toFixed(0);
         
@@ -372,7 +372,7 @@ const actions: ModificationsI = {
             description:{
                 type:"mod",
                 resource:`qty d'achat`,
-                on: compiler.store.state.products[payload.Produit_ID]?.Variete,
+                on: compiler.store.state._.products[payload.Produit_ID]?.Variete,
                 old:original,
                 val
             }
@@ -380,7 +380,7 @@ const actions: ModificationsI = {
     },
     
     setNote(payload, compiler) {
-        const original = compiler.store.state.oas[payload.OA_ID]['NoteO'];
+        const original = compiler.store.state._.oas[payload.OA_ID]['NoteO'];
         
         const OA_ID = `${payload.OA_ID}`
         const Produit_ID = "NULL"
@@ -421,8 +421,8 @@ const actions: ModificationsI = {
         const OA_ID = payload.OA_ID === undefined ? "NULL" : `${payload.OA_ID}`
         const Produit_ID = payload.OA_ID === undefined ? `${payload.Produit_ID}` : "NULL"
         
-        const color: Color = JSON.parse(compiler.store.state.oas[payload.OA_ID]['bible.Color']) || {};
-        const colorO: Color = JSON.parse(compiler.store.state.oas[payload.OA_ID]['bible.ColorO']) || {};
+        const color: Color = JSON.parse(compiler.store.state._.oas[payload.OA_ID]['bible.Color']) || {};
+        const colorO: Color = JSON.parse(compiler.store.state._.oas[payload.OA_ID]['bible.ColorO']) || {};
         
         color[payload.colorType] = payload.val;
         const val = JSON.stringify(color);
@@ -490,8 +490,8 @@ const actions: ModificationsI = {
             description:{
                 type:"mod",
                 resource:`Couleur produit`,
-                on: compiler.store.state.products[payload.Produit_ID]?.Variete,
-                old:compiler.store.state.products[payload.Produit_ID].ColorO,
+                on: compiler.store.state._.products[payload.Produit_ID]?.Variete,
+                old:compiler.store.state._.products[payload.Produit_ID].ColorO,
                 val: payload.val
             }
         });

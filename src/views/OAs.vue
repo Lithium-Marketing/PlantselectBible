@@ -61,10 +61,10 @@ export default defineComponent({
 	setup() {
 		const store = useStore();
 
-		const products = computed(() => store.state.products);
+		const products = computed(() => store.state._.products);
 
 		const allOAs = computed(() => {
-			const oas = Object.values(store.state.oas);
+			const oas = Object.values(store.state._.oas);
 			const result = [];
 
 			for (let i = 0; i < oas.length; i++) {

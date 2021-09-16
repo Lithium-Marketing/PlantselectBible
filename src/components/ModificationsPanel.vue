@@ -58,7 +58,7 @@ export default defineComponent({
 				if ('Produit_ID' in mod)
 					v = [v[0], {
 						...mod,
-						Produit: !store.state.products[mod.Produit_ID] ? `<produit ${mod.Produit_ID} inexistant>` : store.state.products[mod.Produit_ID].Variete + " " + store.state.products[mod.Produit_ID].Format + "g",
+						Produit: !store.state._.products[mod.Produit_ID] ? `<produit ${mod.Produit_ID} inexistant>` : store.state._.products[mod.Produit_ID].Variete + " " + store.state._.products[mod.Produit_ID].Format + "g",
 						val: mod.val
 					}]
 				if ('colorType' in mod)

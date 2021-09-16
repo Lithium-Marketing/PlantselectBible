@@ -104,26 +104,26 @@ export default defineComponent({
 			tab,
 
 			prodID: computed(() => store.state.editState.prodID),
-			prodVar: computed(() => store.state.products[store.state.editState.prodID]?.Variete),
+			prodVar: computed(() => store.state._.products[store.state.editState.prodID]?.Variete),
 			oaID: computed(() => store.state.editState.oaID),
 
 			prices: computed(() => {
 				const prodID = store.state.editState.prodID;
-				const pricesByTitle = Object.values(store.state.prices).filter(v => v.Produit_ID === prodID).reduce((a, v) => {
+				const pricesByTitle = Object.values(store.state._.prices).filter(v => v.Produit_ID === prodID).reduce((a, v) => {
 					a[v.Prix_ID] = v;
 					return a;
 				}, {});
-				return Object.values(store.state.priceTitles).map(t => ({...pricesByTitle[t.ID], Titre: t.Titre, Prix_ID:t.ID ,Produit_ID: prodID}));
+				return Object.values(store.state._.priceTitles).map(t => ({...pricesByTitle[t.ID], Titre: t.Titre, Prix_ID:t.ID ,Produit_ID: prodID}));
 			}),
 
 			oas: computed(() => {
 				const prodID = store.state.editState.prodID;
-				return Object.values(store.state.oas).filter(oa => oa.Produit === prodID);
+				return Object.values(store.state._.oas).filter(oa => oa.Produit === prodID);
 			}),
 
 			oa: computed(() => {
 				const oaID = store.state.editState.oaID;
-				return store.state.oas[oaID];
+				return store.state._.oas[oaID];
 			}),
 
 			updatePrice(val, Prix_ID,Produit_ID) {

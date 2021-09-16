@@ -86,10 +86,10 @@ export default defineComponent({
 				}
 			}),
 
-			productsLen: computed(() => Object.entries(store.state.products).length),
-			oasLen: computed(() => Object.entries(store.state.oas).length),
-			pricesLen: computed(() => Object.entries(store.state.prices).length),
-			changesLen: computed(() => Object.entries(store.state.changes).length),
+			productsLen: computed(() => Object.entries(store.state._.products).length),
+			oasLen: computed(() => Object.entries(store.state._.oas).length),
+			pricesLen: computed(() => Object.entries(store.state._.prices).length),
+			changesLen: computed(() => Object.entries(store.state._.changes).length),
 		};
 	}
 });

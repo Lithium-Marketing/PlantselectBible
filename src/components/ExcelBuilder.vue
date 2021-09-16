@@ -20,23 +20,23 @@ export default defineComponent({
 
 		return {
 			async btn_prix() {
-				const pricesIndex = Object.values(store.state.priceTitles).reduce((a, v, i) => {
+				const pricesIndex = Object.values(store.state._.priceTitles).reduce((a, v, i) => {
 					a[v.ID] = i;
 					return a;
 				}, {});
-				const pricesTitle = Object.values(store.state.priceTitles).reduce((a, v, i) => {
+				const pricesTitle = Object.values(store.state._.priceTitles).reduce((a, v, i) => {
 					a[i] = v.Titre;
 					return a;
 				}, []);
 
 				const pricesByProduct = {};
-				for (const price of Object.values(store.state.prices)) {
+				for (const price of Object.values(store.state._.prices)) {
 					pricesByProduct[price.Produit_ID] = pricesByProduct[price.Produit_ID] || new Array(pricesTitle.length);
 					pricesByProduct[price.Produit_ID][pricesIndex[price.Prix_ID]] = price.Prix;
 				}
 
 				const products = [];
-				Object.values(store.state.products).forEach((p: any, i) => {
+				Object.values(store.state._.products).forEach((p: any, i) => {
 					products[i] = [
 						p.Code,
 						p.Variete,

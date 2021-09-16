@@ -42,14 +42,14 @@ export default defineComponent({
 
 		const vals = ref({});
 		const mainPriceId = computed(() => {
-			return Object.values(store.state.priceTitles).filter(p => p.Titre === '1')[0].ID
+			return Object.values(store.state._.priceTitles).filter(p => p.Titre === '1')[0].ID
 		})
 
 		const prods = computed(() => {
-			return Object.values(store.state.changes).filter(mod => {
+			return Object.values(store.state._.changes).filter(mod => {
 				return mod.changes.filter(c => c.resource === 'prices').length;
 			}).flatMap(mod => {
-				return mod.changes.filter(c => c.resource === 'prices').map(c => store.state.products[store.state.prices["create" in c ? c.create : c.key]?.Produit_ID]);
+				return mod.changes.filter(c => c.resource === 'prices').map(c => store.state._.products[store.state._.prices["create" in c ? c.create : c.key]?.Produit_ID]);
 			});
 		});
 
@@ -79,7 +79,7 @@ export default defineComponent({
 
 			vals,
 			prices: computed(() => {
-				return Object.values(store.state.priceTitles).map(p => {
+				return Object.values(store.state._.priceTitles).map(p => {
 					return {
 						...p,
 						val: vals.value[p.ID]
@@ -95,7 +95,7 @@ export default defineComponent({
 			},
 
 			n: computed(() => prods.value.length),
-			nF: computed(() => Object.values(store.state.products).filter(p => {
+			nF: computed(() => Object.values(store.state._.products).filter(p => {
 				return p['bible.Vendant'] && p['bible.Vendant'].length;
 			}).length),
 			prods,
@@ -103,14 +103,14 @@ export default defineComponent({
 			apply(all, vF) {
 				const modifications = new Modifications(store);
 
-				const priceByProdID = Object.values(store.state.prices).reduce((a, v) => {
+				const priceByProdID = Object.values(store.state._.prices).reduce((a, v) => {
 					a[v.Produit_ID] = a[v.Produit_ID] || {};
 					a[v.Produit_ID][v.Prix_ID] = (v);
 					return a;
 				}, {});
 
 				if (all) {
-					const prods = Object.values(store.state.products).filter(p => {
+					const prods = Object.values(store.state._.products).filter(p => {
 						return !vF || p['bible.Vendant'] && p['bible.Vendant'].length;
 					});
 					const len = prods.length;

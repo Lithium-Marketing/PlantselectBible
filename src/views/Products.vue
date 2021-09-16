@@ -89,7 +89,7 @@ export default defineComponent({
 		const variSearch = ref("");
 
 		const allProducts = computed(() => {
-			const prod = Object.values(store.state.products);
+			const prod = Object.values(store.state._.products);
 
 			if (variSearch.value === "")
 				return prod;
@@ -106,7 +106,7 @@ export default defineComponent({
 
 		return {
 			products: computed(() => allProducts.value.slice(len.value * productPage.value, len.value * (productPage.value + 1))),
-			oas: computed(() => store.state.oas),
+			oas: computed(() => store.state._.oas),
 			loading: computed(() => store.state.loading),
 
 			productPage,

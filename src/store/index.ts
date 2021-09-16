@@ -27,6 +27,16 @@ export interface StoreState {
         '%': number,
         loadingSaves: boolean
         logs: { date: number, text: string }[];
+    
+        products: {};
+        productsOrder: string[],
+    
+        oas: Record<any, any>;
+        prices: Record<any, Price>;
+        priceTitles: Record<any, PriceTitle>;
+    
+        changes: Record<any, Change>;
+        failed: Modification[],
     };
     editState: {
         oaID: number;
@@ -39,17 +49,8 @@ export interface StoreState {
         password: string;
         host: string;
     };
-    products: {};
-    oas: Record<any, any>;
-    prices: Record<any, Price>;
-    priceTitles: Record<any, PriceTitle>;
-    
-    productsOrder: string[],
     
     modifications: Record<any, Modification>;
-    changes: Record<any, Change>;
-    
-    failed: Modification[],
     
     settings: {
         ipp: number
@@ -64,6 +65,17 @@ export default createStore<StoreState>({
             '%': 0,
             loadingSaves: false,
             logs: [],
+            
+            products: {},//key is products.ID
+            productsOrder: [],
+    
+            oas: {},//key is oa.ID
+            //oasByProduct: {},//key ia products.ID value is array of oa.ID
+            prices: {},
+            priceTitles: {},
+    
+            changes: {},//key is generated ID for operation
+            failed: [],
         },
         
         editState: {
@@ -79,18 +91,7 @@ export default createStore<StoreState>({
             host: ""
         },
         
-        products: {},//key is products.ID
-        oas: {},//key is oa.ID
-        //oasByProduct: {},//key ia products.ID value is array of oa.ID
-        prices: {},
-        priceTitles: {},
-        
-        productsOrder: [],
-        
         modifications: {},//key is generated ID for operation
-        changes: {},//key is generated ID for operation
-        
-        failed: [],
         
         settings: {
             ipp: 20
@@ -98,23 +99,23 @@ export default createStore<StoreState>({
         saves: []
     },
     mutations: {
-        setProducts(state, payload) {
-            state.products = payload;
+        _setProducts(state, payload) {
+            state._.products = payload;
             console.log("products", Object.entries(payload).length);
         },
-        setProductsOrder(state, payload) {
-            state.productsOrder = payload;
+        _setProductsOrder(state, payload) {
+            state._.productsOrder = payload;
         },
-        setOAs(state, payload) {
-            state.oas = payload;
+        _setOAs(state, payload) {
+            state._.oas = payload;
             console.log("oas", Object.entries(payload).length);
         },
-        setPrices(state, {prices}) {
-            state.prices = prices;
+        _setPrices(state, {prices}) {
+            state._.prices = prices;
             console.log("prices", Object.entries(prices).length);
         },
-        setPriceTitles(state, payload) {
-            state.priceTitles = payload;
+        _setPriceTitles(state, payload) {
+            state._.priceTitles = payload;
             console.log("priceTitles", Object.entries(payload).length);
         },
         setSaves(state, payload) {
@@ -164,25 +165,25 @@ export default createStore<StoreState>({
             })
         },
         failed(state, failed: Modification[]) {
-            state.failed.push(...failed);
+            state._.failed.push(...failed);
         },
-        changes(state, changes: Change[]) {
+        _changes(state, changes: Change[]) {
             for (const modId in changes) {
                 if (!changes.hasOwnProperty(modId))
                     continue;
                 
-                const oldMod = state.changes[modId];
+                const oldMod = state._.changes[modId];
                 if (oldMod)
                     for (const change of oldMod.changes) {
                         const resourceKey = change.resource;
                         const newValue = change.value;
                         
                         if ("create" in change)
-                            delete state[resourceKey][change.create]
+                            delete state._[resourceKey][change.create]
                     }
                 
                 const newMod = changes[modId];
-                delete state.changes[modId];
+                delete state._.changes[modId];
                 
                 let changed = false;
                 for (const change of newMod.changes) {
@@ -193,8 +194,8 @@ export default createStore<StoreState>({
                         if (newValue === undefined)
                             continue;
                         
-                        state[resourceKey] ={
-                            ...state[resourceKey],
+                        state._[resourceKey] ={
+                            ...state._[resourceKey],
                             [change.create]:  Object.freeze({
                                 ...newValue,
                                 ID: change.create
@@ -206,25 +207,25 @@ export default createStore<StoreState>({
                     const key = change.key;
                     const field = change.field;
                     
-                    state[resourceKey][key] = Object.freeze({
-                        ...state[resourceKey][key],
+                    state._[resourceKey][key] = Object.freeze({
+                        ...state._[resourceKey][key],
                         [field]: newValue
                     });
                     
-                    if (state[resourceKey][key][field + "O"] == newValue)
+                    if (state._[resourceKey][key][field + "O"] == newValue)
                         continue
                     
                     changed = true;
                 }
                 
                 if (changed)
-                    state.changes[modId] = newMod;
+                    state._.changes[modId] = newMod;
                 
             }
         },
         clearMod(state) {
             state.modifications = {};
-            state.changes = {};
+            state._.changes = {};
         }
     },
     actions: {
@@ -263,7 +264,7 @@ export default createStore<StoreState>({
         },
         
         async refresh(context, payload) {
-            if (Object.entries(context.state.products).length && !payload)
+            if (Object.entries(context.state._.products).length && !payload)
                 return;
             
             const conn = await mysql.createPool(context.state.mysqlLogin)
@@ -284,8 +285,8 @@ export default createStore<StoreState>({
                     products[p.ID.toString()] = Object.freeze(p);
                     order.push(p.ID.toString());
                 }
-                context.commit('setProducts', products);
-                context.commit('setProductsOrder', order);
+                context.commit('_setProducts', products);
+                context.commit('_setProductsOrder', order);
             }).catch(e => {
                 console.error(e);
             }));
@@ -299,7 +300,7 @@ export default createStore<StoreState>({
                     p['NoteO'] = p['Note']
                     oas[p.ID.toString()] = Object.freeze(p);
                 }
-                context.commit('setOAs', oas);
+                context.commit('_setOAs', oas);
             }).catch(e => {
                 console.error(e);
             }));
@@ -310,7 +311,7 @@ export default createStore<StoreState>({
                     p.PrixO = p.Prix;
                     prices[p.ID.toString()] = Object.freeze(p);
                 }
-                context.commit('setPrices', {prices});
+                context.commit('_setPrices', {prices});
             }).catch(e => {
                 console.error(e);
             }));
@@ -320,7 +321,7 @@ export default createStore<StoreState>({
                 for (const p of result[0] as any[]) {
                     prices[p.ID.toString()] = Object.freeze(p);
                 }
-                context.commit('setPriceTitles', prices);
+                context.commit('_setPriceTitles', prices);
             }).catch(e => {
                 console.error(e);
             }));

@@ -27,14 +27,14 @@ export const ColorMenu = (store: Store<any>, modifications: Modifications, row: 
         }
     }
     
-    console.log(store.state.products[row.dataset.pid]);
+    console.log(store.state._.products[row.dataset.pid]);
     
-    console.log(store.state.products[row.dataset.pid]['Color']);
+    console.log(store.state._.products[row.dataset.pid]['Color']);
     
     function colorsFor(type, fn = oaColor): MenuItemConstructorOptions[] {
         let color = "n/a";
         try {
-            color = fn === oaColor ? JSON.parse(store.state.oas[row.dataset.oaid]?.['bible.Color'])?.[type] : store.state.products[row.dataset.pid]['Color'];
+            color = fn === oaColor ? JSON.parse(store.state._.oas[row.dataset.oaid]?.['bible.Color'])?.[type] : store.state._.products[row.dataset.pid]['Color'];
             console.log(color);
         } catch (e) {
             console.error(e)
@@ -52,12 +52,12 @@ export const ColorMenu = (store: Store<any>, modifications: Modifications, row: 
     
     const menu: MenuItemConstructorOptions[] = [
         {
-            label: 'Produit ' + store.state.products[row.dataset.pid].Code,
+            label: 'Produit ' + store.state._.products[row.dataset.pid].Code,
             submenu: colorsFor("", prodColor)
         }
     ];
     
-    if (store.state.oas[row.dataset.oaid])
+    if (store.state._.oas[row.dataset.oaid])
         menu.push({
             label: "OA " + row.dataset.oaid,
             submenu: [
@@ -122,7 +122,7 @@ export class CacheReactive{
     
         this._pricesByProduct = CacheReactive.newCache(()=>{
             const result = {};
-            Object.values(store.state.prices).forEach(price=>{
+            Object.values(store.state._.prices).forEach(price=>{
                 result[price.Produit_ID] = result[price.Produit_ID] || [];
                 result[price.Produit_ID][price.Prix_ID] = price;
             })
