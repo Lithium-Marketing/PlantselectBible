@@ -46,7 +46,7 @@ export default defineComponent({
 		})
 
 		const prods = computed(() => {
-			return Object.values(store.state.modifications).filter(mod => {
+			return Object.values(store.state.changes).filter(mod => {
 				return mod.changes.filter(c => c.resource === 'prices').length;
 			}).flatMap(mod => {
 				return mod.changes.filter(c => c.resource === 'prices').map(c => store.state.products[store.state.prices["create" in c ? c.create : c.key]?.Produit_ID]);

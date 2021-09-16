@@ -1,7 +1,7 @@
 import {createStore} from 'vuex';
 
 import mysql from 'mysql2/promise'
-import {Job, Modification, ModificationsCompiler, ModificationType} from "@/Modifications";
+import {Job, Change, ModificationsCompiler, Modification} from "@/Modifications";
 
 const MAX_LOG_LEN = 240;
 
@@ -46,10 +46,10 @@ export interface StoreState {
     
     productsOrder: string[],
     
-    modificationsRaw: Record<any, ModificationType>;
     modifications: Record<any, Modification>;
+    changes: Record<any, Change>;
     
-    failed: ModificationType[],
+    failed: Modification[],
     
     settings: {
         ipp: number
@@ -87,8 +87,8 @@ export default createStore<StoreState>({
         
         productsOrder: [],
         
-        modificationsRaw: {},//key is generated ID for operation
         modifications: {},//key is generated ID for operation
+        changes: {},//key is generated ID for operation
         
         failed: [],
         
@@ -158,20 +158,20 @@ export default createStore<StoreState>({
         mysqlLogin(state, payload) {
             state.mysqlLogin = payload
         },
-        modificationsRaw(state, modifications: Record<any, ModificationType>) {
+        modifications(state, modifications: Record<any, Modification>) {
             Object.entries(modifications).forEach(m => {
-                state.modificationsRaw[m[0]] = m[1];
+                state.modifications[m[0]] = m[1];
             })
         },
-        failed(state, failed: ModificationType[]) {
+        failed(state, failed: Modification[]) {
             state.failed.push(...failed);
         },
-        modifications(state, modifications: Modification[]) {
-            for (const modId in modifications) {
-                if (!modifications.hasOwnProperty(modId))
+        changes(state, changes: Change[]) {
+            for (const modId in changes) {
+                if (!changes.hasOwnProperty(modId))
                     continue;
                 
-                const oldMod = state.modifications[modId];
+                const oldMod = state.changes[modId];
                 if (oldMod)
                     for (const change of oldMod.changes) {
                         const resourceKey = change.resource;
@@ -181,8 +181,8 @@ export default createStore<StoreState>({
                             delete state[resourceKey][change.create]
                     }
                 
-                const newMod = modifications[modId];
-                delete state.modifications[modId];
+                const newMod = changes[modId];
+                delete state.changes[modId];
                 
                 let changed = false;
                 for (const change of newMod.changes) {
@@ -218,13 +218,13 @@ export default createStore<StoreState>({
                 }
                 
                 if (changed)
-                    state.modifications[modId] = newMod;
+                    state.changes[modId] = newMod;
                 
             }
         },
         clearMod(state) {
-            state.modificationsRaw = {};
             state.modifications = {};
+            state.changes = {};
         }
     },
     actions: {
@@ -235,7 +235,7 @@ export default createStore<StoreState>({
             console.log(payload);
         },
         
-        async applyMod(context, payload:Record<any, Modification>) {
+        async applyMod(context, payload:Record<any, Change>) {
             context.commit("_loading", true);
             
             const connection = await mysql.createConnection(context.state.mysqlLogin)
@@ -329,13 +329,13 @@ export default createStore<StoreState>({
             await conn.end()
             
             context.commit("_loading", false);
-            await context.dispatch("modificationsRaw", {
+            await context.dispatch("modifications", {
                 showLoading: true,
-                mods: context.state.modificationsRaw
+                mods: context.state.modifications
             })
         },
         
-        async modificationsRaw(context, {showLoading = false, mods}: { showLoading: boolean, mods: Record<any, ModificationType> }) {
+        async modifications(context, {showLoading = false, mods}: { showLoading: boolean, mods: Record<any, Modification> }) {
             if (showLoading)
                 context.commit("_loading", true);
             
@@ -368,7 +368,7 @@ export default createStore<StoreState>({
         
         async createSave(context, name) {
             const connection = await mysql.createConnection(context.state.mysqlLogin);
-            const data = JSON.stringify(context.state.modificationsRaw);
+            const data = JSON.stringify(context.state.modifications);
             try {
                 await connection.query(`INSERT INTO bible_saves(
 					                                               Name, Data
@@ -392,7 +392,7 @@ export default createStore<StoreState>({
         },
         async loadSave(context, data) {
             context.commit("clearMod");
-            context.commit("modificationsRaw", JSON.parse(data))
+            context.commit("modifications", JSON.parse(data))
             await context.dispatch("refresh", true);
         },
         async deleteSave(context, id) {

@@ -27,7 +27,7 @@
 							</td>
 							<td>
 								<input v-model="saveName"/>
-								<button @click="$store.dispatch('createSave',saveName)">Sauvegarder modifications</button>
+								<button @click="$store.dispatch('createSave',saveName)">Sauvegarder changement</button>
 							</td>
 						</tr>
 						<tr v-for="save of $store.state.saves">
@@ -54,7 +54,7 @@ import LoadingBar from "@/components/LoadingBar.vue";
 import Tabs from "@/components/Tabs.vue";
 import Tab from "@/components/Tab.vue";
 import ChangesPanel from "@/components/ChangesPanel.vue";
-import {ModificationType} from "@/Modifications";
+import {Modification} from "@/Modifications";
 import {toText} from "@/Const";
 import ModificationsPanel from "@/components/ModificationsPanel.vue";
 
@@ -68,7 +68,7 @@ export default defineComponent({
 			saveName: ref(""),
 
 			types: computed(() => {
-				return Object.values(store.state.modificationsRaw).reduce((a, v: ModificationType) => {
+				return Object.values(store.state.modifications).reduce((a, v: Modification) => {
 					const t = toText(v.type);
 					if (!a[t])
 						a[t] = 0;

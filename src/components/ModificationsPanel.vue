@@ -51,7 +51,7 @@ export default defineComponent({
 		const coches = ref({});
 
 		const changes = computed(() => {
-			return Object.entries(store.state.modificationsRaw).map((v: [string, any]) => {
+			return Object.entries(store.state.modifications).map((v: [string, any]) => {
 				const mod = v[1];
 				if ('Produit_ID' in mod)
 					v = [v[0], {
@@ -93,18 +93,18 @@ export default defineComponent({
 				});
 			},
 			cocheTotal: computed(() => {
-				const sel = Object.entries(store.state.modificationsRaw).filter(([v]) => coches.value[v] === undefined ? true : coches.value[v]).length
-				return sel + "/" + Object.entries(store.state.modificationsRaw).length
+				const sel = Object.entries(store.state.modifications).filter(([v]) => coches.value[v] === undefined ? true : coches.value[v]).length
+				return sel + "/" + Object.entries(store.state.modifications).length
 			}),
 			async annule() {
-				const mods =  Object.entries(store.state.modificationsRaw).filter(([v, _]) => {
+				const mods =  Object.entries(store.state.modifications).filter(([v, _]) => {
 					return !(coches.value[v] === undefined ? true : coches.value[v]);
 				}).reduce((a, v) => {
 					a[v[0]] = {...v[1]};
 					return a;
 				}, {});
 				store.commit("clearMod");
-				store.commit("modificationsRaw",mods);
+				store.commit("modifications",mods);
 				await store.dispatch("refresh", true);
 			}
 		};

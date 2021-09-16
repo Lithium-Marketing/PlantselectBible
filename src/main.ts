@@ -32,44 +32,6 @@ const stateVersion = localStorage.getItem('version');
 (async function () {
     try {
         switch (stateVersion) {
-            case "1":
-                localStorage.setItem("backup", localStorage.getItem("state"));
-                localStorage.setItem("backupDelta", localStorage.getItem("stateDelta"));
-                
-                const mod = new Modifications(store);
-                if (stateRaw) {
-                    const data = JSON.parse(stateRaw);
-                    store.replaceState({
-                        ...store.state,
-                        _: store.state._,
-                        mysqlLogin: data.mysqlLogin
-                    });
-                    if (data.changes)
-                        Object.values(data.changes).filter((c: any) => c.field === 'years_pastV0').forEach((c: any) => {
-                            mod.add({
-                                type: "setVenteFutur",
-                                Produit_ID: c.key,
-                                val: c.newValue
-                            })
-                        });
-                }
-                if (stateDeltaRaw) {
-                    const deltas = JSON.parse(stateDeltaRaw);
-                    for (const delta of deltas) {
-                        if (delta.type !== 'modificationsRaw')
-                            continue;
-                        delta.payload.filter((c: any) => c.field === 'years_pastV0').forEach((c: any) => {
-                            mod.add({
-                                type: "setVenteFutur",
-                                Produit_ID: c.key,
-                                val: c.value
-                            })
-                        });
-                    }
-                }
-                store.commit("modificationsRaw", mod.mods)
-                await store.dispatch("createSave", new Date().toLocaleString());
-                break;
             case "2":
                 if (stateRaw) {
                     const data = JSON.parse(stateRaw);

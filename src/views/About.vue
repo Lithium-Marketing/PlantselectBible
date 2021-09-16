@@ -56,7 +56,7 @@
 import {computed, defineComponent, ref} from "vue";
 import {useStore} from "vuex";
 import {StoreState} from "@/store";
-import {ModificationType} from "@/Modifications";
+import {Modification} from "@/Modifications";
 import {toText} from "@/Const";
 
 export default defineComponent({
@@ -89,7 +89,7 @@ export default defineComponent({
 			productsLen: computed(() => Object.entries(store.state.products).length),
 			oasLen: computed(() => Object.entries(store.state.oas).length),
 			pricesLen: computed(() => Object.entries(store.state.prices).length),
-			changesLen: computed(() => Object.entries(store.state.modifications).length),
+			changesLen: computed(() => Object.entries(store.state.changes).length),
 		};
 	}
 });

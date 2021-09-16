@@ -48,10 +48,10 @@ export default defineComponent({
 		});
 
 		const coches = ref({});
-		watch(store.state.modifications, () => coches.value = {})
+		watch(store.state.changes, () => coches.value = {})
 
 		const changes = computed(() => {
-			return Object.entries(store.state.modifications).filter((m) => {
+			return Object.entries(store.state.changes).filter((m) => {
 				for (const filtersKey in filters) {
 					if (!filters[filtersKey].length)
 						continue;
@@ -82,12 +82,12 @@ export default defineComponent({
 				});
 			},
 			cocheTotal: computed(() => {
-				const sel = Object.entries(store.state.modifications).filter(([v]) => coches.value[v] === undefined ? true : coches.value[v]).length
-				return sel + "/" + Object.entries(store.state.modifications).length
+				const sel = Object.entries(store.state.changes).filter(([v]) => coches.value[v] === undefined ? true : coches.value[v]).length
+				return sel + "/" + Object.entries(store.state.changes).length
 			}),
 
 			async apply() {
-				await store.dispatch("applyMod", Object.entries(store.state.modifications).filter(([v, _]) => {
+				await store.dispatch("applyMod", Object.entries(store.state.changes).filter(([v, _]) => {
 					return coches.value[v] === undefined ? true : coches.value[v];
 				}).reduce((a, v) => {
 					a[v[0]] = v[1];

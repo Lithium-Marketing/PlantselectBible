@@ -75,7 +75,7 @@ class Helper {
 }
 
 export class Modifications extends Helper {
-    public readonly mods: Record<any, ModificationType> = {};
+    public readonly mods: Record<any, Modification> = {};
     
     //methods
     
@@ -87,7 +87,7 @@ export class Modifications extends Helper {
         });
     }
     
-    add(mod: ModificationType) {
+    add(mod: Modification) {
         let modId = mod.type;
         switch (mod.type) {
             case "setAchat":
@@ -123,9 +123,9 @@ export class Modifications extends Helper {
     }
     
     async commit(dispatch: boolean = true) {
-        this.store.commit("modificationsRaw", this.mods);
+        this.store.commit("modifications", this.mods);
         if (dispatch)
-            await this.store.dispatch("modificationsRaw", {
+            await this.store.dispatch("modifications", {
                 mods: this.mods,
                 showLoading: Object.entries(this.mods).length > 5
             });
@@ -137,8 +137,8 @@ export class Modifications extends Helper {
 }
 
 export class ModificationsCompiler extends Helper {
-    private mods: Record<any, Modification> = {};
-    private failed: ModificationType[] = [];
+    private mods: Record<any, Change> = {};
+    private failed: Modification[] = [];
     public readonly cache: CacheReactive;
     
     constructor(store: Store<StoreState>) {
@@ -146,14 +146,14 @@ export class ModificationsCompiler extends Helper {
         this.cache = new CacheReactive(store);
     }
     
-    add(modId: string | number, mod: Modification) {
+    add(modId: string | number, mod: Change) {
         //if(!modId)
         //    modId = mod.key ? [mod.resource, mod.key, mod.field].join(".") : Date.now();
         
         this.mods[modId] = mod;
     }
     
-    apply(mod: ModificationType) {
+    apply(mod: Modification) {
         try {
             return match(mod, actions, this);
         } catch (e) {
@@ -177,7 +177,7 @@ export class ModificationsCompiler extends Helper {
         await new Job(function modificationCompilerCommitJob() {
             const len = Math.min(mod, entries.length - (mod * i))
             
-            me.store.commit("modifications", Object.entries(me.mods).slice(mod * i, mod * i + len).reduce((a, v) => {
+            me.store.commit("changes", Object.entries(me.mods).slice(mod * i, mod * i + len).reduce((a, v) => {
                 a[v[0]] = v[1];
                 return a;
             }, {}));
@@ -499,7 +499,7 @@ const actions: ModificationsI = {
     }
 };
 
-export type ModificationType = {
+export type Modification = {
     type: "setPriceOne",
     val: string | number,
     Produit_ID: string | number
@@ -537,9 +537,9 @@ export type ModificationType = {
     Produit_ID: any;
 };
 
-type ModificationsI = Handler<OfUnion<ModificationType>>;
+type ModificationsI = Handler<OfUnion<Modification>>;
 
-export type Change = {
+export type ChangeDef = {
     create: number
     resource: string,
     value: any
@@ -550,8 +550,8 @@ export type Change = {
     value: any
 }
 
-export type Modification = {
-    changes: Change[],
+export type Change = {
+    changes: ChangeDef[],
     sql: string,
     description:{
         type: "create"|"mod",
