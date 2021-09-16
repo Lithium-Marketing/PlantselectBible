@@ -5,6 +5,7 @@
 			<ButtonConfirm @action="annule" style="background-color: rgb(165 0 0)">Annuler tout</ButtonConfirm>
 			<ButtonConfirm @action="refresh" style="background-color: rgb(0 0 145)">Rafraîchir</ButtonConfirm>
 		</div>
+		<Pagination :len="len" v-model:page="page"/>
 		<table style="width: 100%">
 			<tr>
 				<th><span class="case" @click="coche(true)">☑</span><span class="case" @click="coche(false)">☒</span></th>
@@ -36,10 +37,11 @@ import {computed, defineComponent, reactive, ref, watch} from "vue";
 import ButtonConfirm from "./ButtonConfirm.vue";
 import {useStore} from "vuex";
 import {StoreState} from "../store";
+import Pagination from "@/components/Pagination.vue";
 
 export default defineComponent({
 	name: "ChangesPanel",
-	components: {ButtonConfirm},
+	components: {Pagination, ButtonConfirm},
 	setup() {
 		const store = useStore<StoreState>();
 
@@ -69,11 +71,18 @@ export default defineComponent({
 			}, {})
 		});
 
+		const page = ref(0);
+
 		return {
 
 			filters,
 
-			changes,
+			changes: computed(() => {
+				return Object.entries(changes.value).slice(page.value * store.state.settings.ipp, (page.value + 1) * store.state.settings.ipp).reduce((a, v) => {
+					a[v[0]] = v[1]
+					return a;
+				}, {})
+			}),
 
 			coches,
 			async coche(b: boolean) {
@@ -81,6 +90,11 @@ export default defineComponent({
 					coches.value[key] = b;
 				});
 			},
+
+			len: computed(() => {
+				return Math.ceil(Object.keys(changes.value).length / store.state.settings.ipp);
+			}),
+			page,
 			cocheTotal: computed(() => {
 				const sel = Object.entries(store.state.changes).filter(([v]) => coches.value[v] === undefined ? true : coches.value[v]).length
 				return sel + "/" + Object.entries(store.state.changes).length
