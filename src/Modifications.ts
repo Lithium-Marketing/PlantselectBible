@@ -171,7 +171,7 @@ export class ModificationsCompiler extends Helper {
         
         const entries = Object.entries(this.mods);
         let i = 0;
-        const n = Math.min(100,entries.length/100);
+        const n = Math.min(100, entries.length / 100);
         const mod = Math.ceil(entries.length / n);
         
         await new Job(function modificationCompilerCommitJob() {
@@ -231,9 +231,9 @@ const actions: ModificationsI = {
 				      VALUES (
 					             ${val}, ${payload.Prix_ID}, ${payload.Produit_ID}, 1
 				             )`,
-                description:{
-                    type:"create",
-                    resource:`Prix Vendant ${compiler.store.state._.priceTitles[payload.Prix_ID].Titre}`,
+                description: {
+                    type: "create",
+                    resource: `Prix Vendant ${compiler.store.state._.priceTitles[payload.Prix_ID].Titre}`,
                     on: compiler.store.state._.products[payload.Produit_ID].Variete,
                     val
                 }
@@ -252,12 +252,12 @@ const actions: ModificationsI = {
 				      SET Prix=${val || "0.00"}
 				      WHERE
 					      ID = ${price.ID}`,
-                description:{
-                    type:"mod",
-                    resource:`Prix Vendant ${compiler.store.state._.priceTitles[payload.Prix_ID].Titre}`,
+                description: {
+                    type: "mod",
+                    resource: `Prix Vendant ${compiler.store.state._.priceTitles[payload.Prix_ID].Titre}`,
                     on: compiler.store.state._.products[payload.Produit_ID].Variete,
                     val,
-                    old:price.PrixO
+                    old: price.PrixO
                 }
             })
         }
@@ -287,11 +287,11 @@ const actions: ModificationsI = {
 					           WHERE
 						           ID = ${payload.OA_ID}
 					           )`,
-            description:{
-                type:"mod",
-                resource:`Cout matiere premiere`,
+            description: {
+                type: "mod",
+                resource: `Cout matiere premiere`,
                 on: String(payload.OA_ID),
-                old:compiler.store.state._.oas[payload.OA_ID].years_pastC0,
+                old: compiler.store.state._.oas[payload.OA_ID].years_pastC0,
                 val
             },
         });
@@ -330,11 +330,11 @@ const actions: ModificationsI = {
 				UPDATE
 					Vendant=${val === "" ? "''" : val}
             `,
-            description:{
-                type:"mod",
-                resource:`Vendant Futur du produit`,
+            description: {
+                type: "mod",
+                resource: `Vendant Futur du produit`,
                 on: product?.Variete,
-                old:original,
+                old: original,
                 val
             }
         });
@@ -369,11 +369,11 @@ const actions: ModificationsI = {
 				UPDATE
 					Quantite=${val}
             `,
-            description:{
-                type:"mod",
-                resource:`qty d'achat`,
+            description: {
+                type: "mod",
+                resource: `qty d'achat`,
                 on: compiler.store.state._.products[payload.Produit_ID]?.Variete,
-                old:original,
+                old: original,
                 val
             }
         });
@@ -407,12 +407,12 @@ const actions: ModificationsI = {
 					Note=
 				VALUES (Note)
             `,
-            description:{
-                type:"mod",
-                resource:`note`,
+            description: {
+                type: "mod",
+                resource: `note`,
                 on: OA_ID,
-                old:original,
-                val:payload.val
+                old: original,
+                val: payload.val
             }
         });
     },
@@ -464,11 +464,11 @@ const actions: ModificationsI = {
 				UPDATE
 					Color='${val}'
             `,
-            description:{
-                type:"mod",
-                resource:`Couleur OA`,
+            description: {
+                type: "mod",
+                resource: `Couleur OA`,
                 on: payload.OA_ID,
-                val:str
+                val: str
             }
         });
         return this;
@@ -487,11 +487,11 @@ const actions: ModificationsI = {
 				WHERE
 					ID = ${payload.Produit_ID}
             `,
-            description:{
-                type:"mod",
-                resource:`Couleur produit`,
+            description: {
+                type: "mod",
+                resource: `Couleur produit`,
                 on: compiler.store.state._.products[payload.Produit_ID]?.Variete,
-                old:compiler.store.state._.products[payload.Produit_ID].ColorO,
+                old: compiler.store.state._.products[payload.Produit_ID].ColorO,
                 val: payload.val
             }
         });
@@ -553,12 +553,12 @@ export type ChangeDef = {
 export type Change = {
     changes: ChangeDef[],
     sql: string,
-    description:{
-        type: "create"|"mod",
+    description: {
+        type: "create" | "mod",
         resource: string,
         on: string,
-        old?:string,
-        val:string
+        old?: string,
+        val: string
     }
 };
 

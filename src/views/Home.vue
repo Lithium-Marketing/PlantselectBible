@@ -26,8 +26,6 @@
 								<button @click="$store.dispatch('refreshSaves')" style="background-color: rgb(160 160 160)">Rafraichir</button>
 							</td>
 							<td>
-								<input v-model="saveName"/>
-								<button @click="$store.dispatch('createSave',saveName)">Sauvegarder changement</button>
 							</td>
 						</tr>
 						<tr v-for="save of $store.state.saves">
@@ -65,7 +63,6 @@ export default defineComponent({
 		const store = useStore<StoreState>();
 
 		return {
-			saveName: ref(""),
 
 			types: computed(() => {
 				return Object.values(store.state.modifications).reduce((a, v: Modification) => {

@@ -367,9 +367,9 @@ export default createStore<StoreState>({
                 context.commit("_loading", false);
         },
         
-        async createSave(context, name) {
+        async createSave(context, {name,mods}:{name:string,mods:Record<any, Modification>}) {
             const connection = await mysql.createConnection(context.state.mysqlLogin);
-            const data = JSON.stringify(context.state.modifications);
+            const data = JSON.stringify(mods).replace(/'/g, "\\'");
             try {
                 await connection.query(`INSERT INTO bible_saves(
 					                                               Name, Data

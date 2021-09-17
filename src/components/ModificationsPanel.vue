@@ -2,6 +2,9 @@
 	<div>
 		<div class="header">
 			<ButtonConfirm @action="annule" style="background-color: rgb(165 0 0)">Annuler selection</ButtonConfirm>
+			<hr style="opacity: 0;">
+			<input v-model="saveName"/>
+			<button @click="save">Sauvegarder changement</button>
 		</div>
 		<Pagination :len="len" v-model:page="page"/>
 		<table style="width: 100%">
@@ -83,6 +86,7 @@ export default defineComponent({
 		});
 
 		const page = ref(0);
+		const saveName = ref("");
 
 		return {
 			filters,
@@ -120,6 +124,17 @@ export default defineComponent({
 				store.commit("clearMod");
 				store.commit("modifications", mods);
 				await store.dispatch("refresh", true);
+			},
+
+			saveName,
+			save() {
+				store.dispatch("createSave", {
+					name: saveName.value,
+					mods: Object.entries(store.state.modifications).filter(v => coches.value[v[0]] === undefined ? true : coches.value[v[0]]).reduce((a, v) => {
+						a[v[0]] = v[1];
+						return a;
+					}, {})
+				})
 			}
 		};
 	}
