@@ -13,12 +13,19 @@ moment.locale('fr');
 
 const oldLog = console.log;
 const oldError = console.error;
+function origin() {
+    try {
+        throw Error('');
+    } catch (err) {
+        return err.stack.split('\n')[3];
+    }
+}
 console.log = function(){
-    oldLog.call(console,...arguments);
+    oldLog.call(console,...arguments,origin());
     store.commit("_log",[...arguments].join('\t'))
 }
 console.error = function(){
-    oldError.call(console,...arguments);
+    oldError.call(console,...arguments,origin());
     store.commit("_log",[...arguments].join('\t'))
 }
 
