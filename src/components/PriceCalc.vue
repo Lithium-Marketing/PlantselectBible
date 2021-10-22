@@ -30,7 +30,7 @@
 
 import {computed, defineComponent, ref} from "vue";
 import {useStore} from "vuex";
-import {Modifications} from "@/Modifications";
+import {Modifications} from "@/helper/Modifications";
 import {StoreState} from "@/store";
 import LoadingBar from "@/components/LoadingBar.vue";
 

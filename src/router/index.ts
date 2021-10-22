@@ -7,6 +7,7 @@ import Edit from "@/views/Edit.vue";
 import Tools from "@/views/Tools.vue";
 import ViewB from "@/views/ViewB.vue";
 import ExcelViewer from "@/views/ExcelViewer.vue";
+import ViewC from "@/views/ViewC.vue";
 
 const routes: Array<RouteRecordRaw> = [
     {
@@ -25,6 +26,10 @@ const routes: Array<RouteRecordRaw> = [
         path: '/viewB',
         name: 'ViewB',
         component: ViewB
+    }, {
+        path: '/viewC',
+        name: 'ViewC',
+        component: ViewC
     }, {
         path: '/products',
         name: 'Products',

@@ -1,43 +1,8 @@
 import {Store} from "vuex";
 import {Price, PriceTitle, StoreState} from "@/store";
-import {CacheReactive, toText} from "@/Const";
-
-export class Job {
-    private cb: () => boolean;
-    private limit: number;
-    private timeout: any;
-    public readonly promise: Promise<void>;
-    private resolve: (value: (PromiseLike<void> | void)) => void;
-    private reject: (reason?: any) => void;
-    
-    constructor(cb: () => boolean, limit = 100000) {
-        this.cb = cb;
-        this.limit = limit;
-        this.promise = new Promise((resolve, reject) => {
-            this.resolve = resolve;
-            this.reject = reject;
-        })
-    }
-    
-    start() {
-        if (this.timeout)
-            clearTimeout(this.timeout);
-        
-        this.timeout = setTimeout(() => {
-            const start = Date.now();
-            while (Date.now() - start < 50)
-                if (this.cb())
-                    return this.resolve();
-                else if (this.limit-- <= 0)
-                    return this.reject(new Error("limit reached"))
-            
-            this.timeout = false;
-            this.start();
-        }, 0);
-        
-        return this.promise;
-    }
-}
+import {toText} from "@/helper/Const";
+import {JobOLD} from "@/helper/Job";
+import {CacheReactive} from "@/helper/Cache";
 
 class Helper {
     store: Store<StoreState>;
@@ -80,7 +45,7 @@ export class Modifications extends Helper {
     //methods
     
     start(cb: () => boolean, autoCommit = true) {
-        const job = new Job(cb);
+        const job = new JobOLD(cb);
         job.start().then(() => {
             if (autoCommit)
                 this.commit()
@@ -174,7 +139,7 @@ export class ModificationsCompiler extends Helper {
         const n = Math.min(100, entries.length / 100);
         const mod = Math.ceil(entries.length / n);
         
-        await new Job(function modificationCompilerCommitJob() {
+        await new JobOLD(function modificationCompilerCommitJob() {
             const len = Math.min(mod, entries.length - (mod * i))
             
             me.store.commit("_changes", Object.entries(me.mods).slice(mod * i, mod * i + len).reduce((a, v) => {

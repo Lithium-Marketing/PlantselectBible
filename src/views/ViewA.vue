@@ -132,10 +132,10 @@ import HelloWorld from '@/components/HelloWorld.vue';
 import {useStore} from "vuex";
 import Pagination from "@/components/Pagination.vue";
 import TableInput from "@/components/TableInput.vue";
-import {Modifications} from "@/Modifications";
-import {ContextMenu} from "@/ContextMenu";
+import {Modifications} from "@/helper/Modifications";
+import {ContextMenu} from "@/helper/ContextMenu";
 import {Menu} from "@electron/remote";
-import {ColorMenu} from "@/Const";
+import {ColorMenu} from "@/helper/Const";
 import {StoreState} from "@/store";
 
 export default defineComponent({

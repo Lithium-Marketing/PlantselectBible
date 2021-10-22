@@ -18,6 +18,8 @@
 			<router-link to="/viewA">View A</router-link>
 			<span>|</span>
 			<router-link to="/viewB">View B</router-link>
+			<span>|</span>
+			<router-link to="/viewC">View C</router-link>
 		</div>
 	</div>
 </template>

@@ -79,7 +79,7 @@
 
 import {computed, defineComponent} from "vue";
 import {useStore} from "vuex";
-import {Modifications} from "@/Modifications";
+import {Modifications} from "@/helper/Modifications";
 import {StoreState} from "@/store";
 
 export default defineComponent({

@@ -1,8 +1,10 @@
 import {Store} from "vuex";
-import {Modifications} from "@/Modifications";
+import {Modifications} from "@/helper/Modifications";
 import {MenuItemConstructorOptions} from "electron";
-import {Price, StoreState} from "@/store";
-import {computed, ComputedRef, ref, WritableComputedOptions} from "vue";
+import {App} from "vue";
+import moment from "moment";
+import store from "@/store";
+import router from "@/router";
 
 export const ColorMenu = (store: Store<any>, modifications: Modifications, row: HTMLTableRowElement): MenuItemConstructorOptions[] => {
     function oaColor(val, type) {
@@ -26,10 +28,6 @@ export const ColorMenu = (store: Store<any>, modifications: Modifications, row: 
             }).commit();
         }
     }
-    
-    console.log(store.state._.products[row.dataset.pid]);
-    
-    console.log(store.state._.products[row.dataset.pid]['Color']);
     
     function colorsFor(type, fn = oaColor): MenuItemConstructorOptions[] {
         let color = "n/a";
@@ -107,51 +105,48 @@ export function toText(key: string) {
     return text[key] || key;
 }
 
-export interface CacheI<T>{
-    enable();
-    value: T
-}
-
-export class CacheReactive{
-    private store: Store<StoreState>;
-    
-    private _pricesByProduct: CacheI<Record<any, Record<any, Price>>>
-    
-    constructor(store: Store<StoreState>) {
-        this.store = store;
-    
-        this._pricesByProduct = CacheReactive.newCache(()=>{
-            const result = {};
-            Object.values(store.state._.prices).forEach(price=>{
-                result[price.Produit_ID] = result[price.Produit_ID] || [];
-                result[price.Produit_ID][price.Prix_ID] = price;
-            })
-            return result;
+export function Const(app: App, ...options: any[]):any{
+    const year = moment().add(7, 'M').year();
+    app.config.globalProperties.$pastTitle = {
+        years_pastM0: "Mort " + year,
+        years_pastM1: "Mort " + (year - 1),
+        years_pastM2: "Mort " + (year - 2),
+        years_pastVe0: "Vente " + year,
+        years_pastVe1: "Vente " + (year - 1),
+        years_pastVe2: "Vente " + (year - 2),
+        years_pastA0: "Achat " + year,
+        years_pastA1: "Achat " + (year - 1),
+        years_pastA2: "Achat " + (year - 2),
+        years_pastV0: "Vendant " + year,
+        years_pastV1: "Vendant " + (year - 1),
+        years_pastV2: "Vendant " + (year - 2),
+        years_pastT0: "Transport " + year,
+        years_pastT1: "Transport " + (year - 1),
+        years_pastT2: "Transport " + (year - 2),
+        years_pastC0: "Coutant " + year,
+        years_pastC1: "Coutant " + (year - 1),
+        years_pastC2: "Coutant " + (year - 2),
+    };
+    app.config.globalProperties.$money = (val) => {
+        return val ? (parseFloat(val).toFixed(2) + "$") : "-";
+    }
+    app.config.globalProperties.$value = (val) => {
+        return val ? parseFloat(val).toFixed(2) : "-";
+    }
+    app.config.globalProperties.$valueI = (val) => {
+        return val ? parseInt(val).toFixed(0) : "-";
+    }
+    app.config.globalProperties.$date = (val) => {
+        if (!val)
+            return "-";
+        return moment.unix(val).format('ll')
+    }
+    app.config.globalProperties.$load = (oaID, prodID, tab = 'product') => {
+        store.commit('load', {
+            oaID: parseInt(oaID, 10),
+            prodID: parseInt(prodID, 10),
+            tab
         });
+        return router.push({name: "Edit"})
     }
-    
-    static newCache<T>(getter: WritableComputedOptions<T>['get']):CacheI<T>{
-        let cache: ComputedRef<T>;
-        return {
-            enable(){
-                if(cache)
-                    return;
-                cache = computed(getter);
-            },
-            get value(){
-                return cache?.value;
-            }
-        };
-    }
-    
-    prices(Produit_ID,Prix_ID){
-        this._pricesByProduct.enable();
-        return this._pricesByProduct.value[Produit_ID]?.[Prix_ID];
-    }
-    
-    pricesByProduct(Produit_ID){
-        this._pricesByProduct.enable();
-        return this._pricesByProduct.value[Produit_ID];
-    }
-    
 }

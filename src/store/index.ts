@@ -1,7 +1,8 @@
 import {createStore} from 'vuex';
 
 import mysql from 'mysql2/promise'
-import {Job, Change, ModificationsCompiler, Modification} from "@/Modifications";
+import {Change, ModificationsCompiler, Modification} from "@/helper/Modifications";
+import {JobOLD} from "@/helper/Job";
 
 const MAX_LOG_LEN = 240;
 
@@ -346,7 +347,7 @@ export default createStore<StoreState>({
             let i = 0;
             
             //console.time("Modification Compilation");
-            await new Job(() => {
+            await new JobOLD(() => {
                 if (i >= entries.length)
                     return true;
                 

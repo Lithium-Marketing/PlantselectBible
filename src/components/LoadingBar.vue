@@ -1,7 +1,9 @@
 <template>
 	<div class="progress">
 		<span :class="{inf: progress===-1}" :style="{width:(progress*100)+'%'}"></span>
-		<strong v-if="progress!==-1">{{ (progress * 100).toFixed(0) }}%</strong>
+		<strong v-if="progress===1">Complété</strong>
+		<strong v-else-if="progress>=0">{{ (progress * 100).toFixed(0) }}%</strong>
+		<strong v-else-if="progress===-2">En attente</strong>
 	</div>
 </template>
 

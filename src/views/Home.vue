@@ -1,7 +1,7 @@
 <template>
 	<div class="home">
 
-		<Tabs :activeIndex="2" style="width: 90vw">
+		<Tabs :activeIndex="1" style="width: 90vw">
 			<Tab header="Stats">
 				<table class="stat">
 					<tr v-for="(changes,type) in types">
@@ -12,9 +12,6 @@
 			</Tab>
 			<Tab header="Modifications">
 				<ModificationsPanel />
-			</Tab>
-			<Tab header="Changements">
-				<ChangesPanel />
 			</Tab>
 			<Tab header="Sauvegarde">
 				<div class="saves">
@@ -52,8 +49,8 @@ import LoadingBar from "@/components/LoadingBar.vue";
 import Tabs from "@/components/Tabs.vue";
 import Tab from "@/components/Tab.vue";
 import ChangesPanel from "@/components/ChangesPanel.vue";
-import {Modification} from "@/Modifications";
-import {toText} from "@/Const";
+import {Modification} from "@/helper/Modifications";
+import {toText} from "@/helper/Const";
 import ModificationsPanel from "@/components/ModificationsPanel.vue";
 
 export default defineComponent({

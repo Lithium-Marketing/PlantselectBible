@@ -56,8 +56,8 @@
 import {computed, defineComponent, ref} from "vue";
 import {useStore} from "vuex";
 import {StoreState} from "@/store";
-import {Modification} from "@/Modifications";
-import {toText} from "@/Const";
+import {Modification} from "@/helper/Modifications";
+import {toText} from "@/helper/Const";
 
 export default defineComponent({
 	name: 'About',
