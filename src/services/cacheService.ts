@@ -46,22 +46,14 @@ export class CacheService extends BaseService<any> {
             }, {})
         });
         this.cmdsByProdByYear = computed(function cmdsByProdByYear() {
-            const byProd = Object.values(s.data.get("clients_commandes_produits").value).reduce<Record<any, any[]>>(function reduceCmdProd(a, v) {
-                const prod = v.value;
-                //console.log(cmd);
+            return Object.entries(s.data.getByIndex("clients_commandes_produits","Produit").value).reduce((a,[prod_id, prods]) => {
                 
-                a[prod.Produit] = a[prod.Produit] || [];
-                a[prod.Produit].push(prod);
-                
-                return a;
-            }, {});
-            
-            return Object.entries(byProd).map(([id, prods]) => {
-                return {
+                a[prod_id] = {
                     vente(year: number) {
                         return computed(() => {
                             let result = 0;
-                            for (const prod of prods) {
+                            for (const id of prods) {
+                                const prod = s.data.get("clients_commandes_produits",id).value;
                                 const cmd = s.data.get("clients_commandes", prod.Commande).value;
                                 if (!cmd || moment.unix(cmd.Date).year() !== year)
                                     continue;
@@ -71,7 +63,9 @@ export class CacheService extends BaseService<any> {
                         })
                     }
                 }
-            });
+                
+                return a;
+            },{});
         });
     }
     

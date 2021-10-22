@@ -4,8 +4,14 @@ import {computed, ComputedRef, reactive, Ref, ref, watchEffect, WritableComputed
 import {createPool, Pool, PoolOptions, RowDataPacket} from "mysql2/promise";
 import {BaseService} from "@/helper/baseService";
 
-export interface TableConfig{
+export interface TableConfig {
+    indexes?: readonly string[]
+}
 
+type IndexesByTable<T extends Record<string, TableConfig>> = {
+    [name in keyof T]: {
+        [index in T[name]["indexes"][number]]: ComputedRef<Record<number, number[] | undefined>>
+    }
 }
 
 export class DataService<T extends Record<string, TableConfig>> extends BaseService<T> {
@@ -16,7 +22,8 @@ export class DataService<T extends Record<string, TableConfig>> extends BaseServ
     private readonly tablesConfig: T;
     
     private readonly tablesRaw: Record<keyof T, WritableComputedRef<any[]>>;
-    private readonly tables: Record<keyof T, ComputedRef<Record<number, any>>>;
+    private readonly indexesByTable: IndexesByTable<T>;//TODO add reactivity
+    private readonly tables: Record<keyof T, ComputedRef<Record<number, ComputedRef<any>>>>;
     
     constructor(services: Services<T>, tables: T) {
         super(services);
@@ -28,15 +35,19 @@ export class DataService<T extends Record<string, TableConfig>> extends BaseServ
         
         this.tablesName = Object.keys(tables);
         this.tablesConfig = tables;
-    
+        
         this.tablesRaw = this._initRawDatas();
+        this.indexesByTable = Object.keys(tables).reduce((a, t) => {
+            a[t] = {};
+            return a;
+        }, {}) as IndexesByTable<T>;
         this.tables = this._initDatas();
     }
     
     private _initRawDatas(): Record<keyof T, WritableComputedRef<any[]>> {
         const datas = {}
         for (const table of this.tablesName) {
-            datas[table] = persistentStorage("table:"+table,{});
+            datas[table] = persistentStorage("table:" + table, {});
         }
         return datas as Record<keyof T, WritableComputedRef<any[]>>;
     }
@@ -44,26 +55,48 @@ export class DataService<T extends Record<string, TableConfig>> extends BaseServ
     private _initDatas(): Record<keyof T, ComputedRef<Record<number, any>>> {
         const datas = {}
         for (const table of this.tablesName) {
-            datas[table] = computed(()=>{
-                const result = this.tablesRaw[table].value;
-                const obj = {};
-                for (let i = 0; i < result.length; i++) {
-                    const id = result[i].ID ?? result[i].id;
-                    // @ts-ignore //TODO remove ts-ignore
-                    const mods = this.services.modification.get(table, id);
-        
-                    obj[id] = computed(() => {
-                        const entity = Object.assign({}, result[i]);
-                        Object.entries(entity).forEach(([field,val])=>{
-                            entity["$"+field] = entity[field];
-                            if(mods.value[field]!==undefined)
-                                entity[field] = mods.value[field].val;
+            datas[table] = computed(() => {
+                console.time(`table ${table}`);
+                try {
+                    const result = this.tablesRaw[table].value;
+                    const obj = {};
+                    for (let i = 0; i < result.length; i++) {
+                        const id = result[i].ID ?? result[i].id;
+                        
+                        // @ts-ignore //TODO remove ts-ignore
+                        const mods = this.services.modification.get(table, id);
+                        obj[id] = computed(() => {
+                            const entity = Object.assign({}, result[i]);
+                            Object.entries(entity).forEach(([field, val]) => {
+                                entity["$" + field] = entity[field];
+                                if (mods.value[field] !== undefined)
+                                    entity[field] = mods.value[field].val;
+                            });
+                            return Object.freeze(entity);
                         });
-                        return Object.freeze(entity);
-                    });
+                    }
+                    return obj;
+                } finally {
+                    console.timeEnd(`table ${table}`)
                 }
-                return obj;
             });
+            
+            this.tablesConfig[table].indexes?.forEach(index => {
+                console.log(table, index);
+                this.indexesByTable[table][index] = computed(() => {
+                    console.time(`index ${table} . ${index}`);
+                    try {
+                        const tableData = this.tablesRaw[table].value;
+                        return tableData.reduce((a, entity) => {
+                            a[entity[index]] = a[entity[index]] || [];
+                            a[entity[index]].push(entity.ID ?? entity.id);
+                            return a;
+                        }, {})
+                    } finally {
+                        console.timeEnd(`index ${table} . ${index}`)
+                    }
+                })
+            })
         }
         return datas as Record<keyof T, ComputedRef<Record<number, any>>>;
     }
@@ -87,13 +120,20 @@ export class DataService<T extends Record<string, TableConfig>> extends BaseServ
     
     get(table: keyof T, id?: number) {
         if (id !== undefined)
-            return computed(()=>this.tables[table].value[id]?.value); else
+            return computed(() => this.tables[table].value[id]?.value); else
             return this.tables[table];
     }
     
+    getByIndex<K extends keyof T>(table: K, index: keyof IndexesByTable<T>[K], id: number): ComputedRef<number[] | undefined>;
+    getByIndex<K extends keyof T>(table: K, index: keyof IndexesByTable<T>[K]): ComputedRef<Record<number, number[] | undefined>>;
     
+    getByIndex<K extends keyof T>(table: K, index: keyof IndexesByTable<T>[K], id?: number) {
+        if (id !== undefined)
+            return computed(() => this.indexesByTable[table][index].value[id]); else
+            return computed(() => this.indexesByTable[table][index].value || {});
+    }
 }
 
-function sleep(time:number){
-    return new Promise(resolve => setTimeout(resolve,time));
+function sleep(time: number) {
+    return new Promise(resolve => setTimeout(resolve, time));
 }

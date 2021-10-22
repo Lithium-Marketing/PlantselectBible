@@ -6,7 +6,7 @@ import store from './store'
 import "./style.scss";
 import moment from "moment";
 import {ContextMenu} from "@/helper/ContextMenu";
-import { ServicesPlugin} from "@/services";
+import {Services, ServicesPlugin} from "@/services";
 import {Const} from "@/helper/Const";
 
 ContextMenu.init();
@@ -19,7 +19,9 @@ const tables = {
     "bible_saves": {},
     "clients": {},
     "clients_commandes": {},
-    "clients_commandes_produits": {},
+    "clients_commandes_produits": {
+        indexes: ["Produit"]
+    },
     "produits_prix": {},
     "Archive": {},
 } as const;
