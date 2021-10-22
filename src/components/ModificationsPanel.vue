@@ -40,7 +40,7 @@ import {StoreState} from "@/store";
 import Pagination from "@/components/Pagination.vue";
 import {Services, useServices} from "@/services";
 import {Mod} from "@/services/ModificationService";
-import {Tables} from "@/main";
+import {Tables} from "@/dataConfig";
 
 export default defineComponent({
 	name: "ModificationsPanel",

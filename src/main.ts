@@ -6,26 +6,12 @@ import store from './store'
 import "./style.scss";
 import moment from "moment";
 import {ContextMenu} from "@/helper/ContextMenu";
-import {Services, ServicesPlugin} from "@/services";
+import {ServicesPlugin} from "@/services";
 import {Const} from "@/helper/Const";
+import {tables} from "@/dataConfig";
 
 ContextMenu.init();
 moment.locale('fr');
-
-const tables = {
-    "produits": {},
-    "ordres_assemblages": {},
-    "bible": {},
-    "bible_saves": {},
-    "clients": {},
-    "clients_commandes": {},
-    "clients_commandes_produits": {
-        indexes: ["Produit"]
-    },
-    "produits_prix": {},
-    "Archive": {},
-} as const;
-export type Tables = typeof tables;
 
 (async function () {
     const stateRaw = localStorage.getItem('state');
