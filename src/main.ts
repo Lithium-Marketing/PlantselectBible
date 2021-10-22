@@ -12,29 +12,24 @@ import {Const} from "@/helper/Const";
 ContextMenu.init();
 moment.locale('fr');
 
-// const oldLog = console.log;
-// const oldError = console.error;
-// function origin() {
-//     try {
-//         throw Error('');
-//     } catch (err) {
-//         return err.stack.split('\n')[3];
-//     }
-// }
-// console.log = function(){
-//     oldLog.call(console,...arguments,origin());
-//     store.commit("_log",[...arguments].join('\t'))
-// }
-// console.error = function(){
-//     oldError.call(console,...arguments,origin());
-//     store.commit("_log",[...arguments].join('\t'))
-// }
-
-const stateRaw = localStorage.getItem('state');
-const stateDeltaRaw = localStorage.getItem('stateDelta');
-const stateVersion = localStorage.getItem('version');
+const tables = {
+    "produits": {},
+    "ordres_assemblages": {},
+    "bible": {},
+    "bible_saves": {},
+    "clients": {},
+    "clients_commandes": {},
+    "clients_commandes_produits": {},
+    "produits_prix": {},
+    "Archive": {},
+} as const;
+export type Tables = typeof tables;
 
 (async function () {
+    const stateRaw = localStorage.getItem('state');
+    const stateDeltaRaw = localStorage.getItem('stateDelta');
+    const stateVersion = localStorage.getItem('version');
+    
     try {
         switch (stateVersion) {
             case "3":
@@ -76,21 +71,21 @@ const stateVersion = localStorage.getItem('version');
     const app = createApp(App);
     
     app.use(Const);
-    app.use(ServicesPlugin);
+    app.use(ServicesPlugin(tables));
     app.use(store);
     app.use(router);
     
     Object.assign(window,app.config.globalProperties);
     console.log(app.config.globalProperties);
+    watchEffect(()=>{
+        // @ts-ignore
+        console.log($services.data.get("produits",1001).value);
+    },{
+        onTrigger: console.warn
+    });
+    
     
     app.mount('#app');
     
     await store.dispatch('refresh');
 })();
-
-watchEffect(()=>{
-    // @ts-ignore
-    console.log($services.data.get("produits",1001).value);
-},{
-    onTrigger: console.warn
-});

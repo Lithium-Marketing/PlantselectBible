@@ -1,29 +1,16 @@
 import {App, inject, InjectionKey} from 'vue';
 import {ModificationService} from "@/services/ModificationService";
 import {CacheService} from "@/services/cacheService";
-import {DataService} from "@/services/dataService";
+import {DataService, TableConfig} from "@/services/dataService";
 import {JobService} from "@/services/jobService";
 
-const tables = [
-    "produits",
-    "ordres_assemblages",
-    "bible",
-    "bible_saves",
-    "clients",
-    "clients_commandes",
-    "clients_commandes_produits",
-    "produits_prix",
-    "Archive"
-] as const;
-export type Tables = typeof tables[number];
-
-export class Services {
+export class Services<T extends Record<string, TableConfig>> {
     public readonly job: JobService;
-    public readonly data: DataService<Tables>;
+    public readonly data: DataService<T>;
     public readonly cache: CacheService;
-    public readonly modification: ModificationService<Tables>;
+    public readonly modification: ModificationService<T>;
     
-    public constructor() {
+    public constructor(tables: T) {
         this.job = new JobService(this);
         this.data = new DataService(this, tables);
         this.cache = new CacheService(this);
@@ -32,14 +19,16 @@ export class Services {
     
 }
 
-export const key: InjectionKey<Services> = Symbol();
+export const key: InjectionKey<Services<any>> = Symbol();
 
-export function useServices(): Services {
+export function useServices<T extends Record<string, TableConfig>>(): Services<T> {
     return inject(key)
 }
 
-export function ServicesPlugin(app: App, ...options: any[]): any {
-    const s = new Services();
-    app.provide(key, s);
-    app.config.globalProperties.$services = s;
+export function ServicesPlugin<T extends Record<string, TableConfig>>(tables: T) {
+    return function(app: App, ...options: any[]): any{
+        const s = new Services<T>(tables);
+        app.provide(key, s);
+        app.config.globalProperties.$services = s;
+    }
 }

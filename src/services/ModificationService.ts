@@ -3,6 +3,7 @@ import {Services} from "@/services/index";
 import {computed, ComputedRef, reactive, Ref, ref, unref, watch} from "vue";
 import {now} from "moment";
 import {persistentStorage} from "@/helper/PersistentStorage";
+import {TableConfig} from "@/services/dataService";
 
 interface ModVal {
     val: any,
@@ -16,23 +17,23 @@ export interface Mod<T> {
     mod: ModVal
 }
 
-export class ModificationService<T extends string> extends BaseService {
-    private readonly mods: Record<T, Record<number, Record<string, ModVal>>>;
-    private readonly _list: ComputedRef<Mod<T>[]>;
+export class ModificationService<T extends Record<string, TableConfig>> extends BaseService<T> {
+    private readonly mods: Record<keyof T, Record<number, Record<string, ModVal>>>;
+    private readonly _list: ComputedRef<Mod<keyof T>[]>;
     
-    constructor(s: Services, tables: readonly T[]) {
+    constructor(s: Services<T>, tables: T) {
         super(s);
-        this.mods = tables.reduce((a, t) => {
-            const cache = persistentStorage("mod:"+t,{});
-            a[t] = reactive<Record<number, Record<string, any>>>({...cache.value});
-            watch(a[t],function saveToPersistentStorage(){
+        this.mods = Object.keys(tables).reduce((a, t) => {
+            const cache = persistentStorage("mod:" + t, {});
+            a[t as keyof T] = reactive<Record<number, Record<string, any>>>({...cache.value});
+            watch(a[t], function saveToPersistentStorage() {
                 cache.value = (a[t]);
-            },{
-                deep:true,
+            }, {
+                deep: true,
                 flush: "post"
             })
             return a;
-        }, {} as Record<T, Record<number, Record<string, any>>>);
+        }, {} as Record<keyof T, Record<number, Record<string, any>>>);
         
         this._list = computed(() => {
             return Object.entries<Record<number, Record<string, ModVal>>>(this.mods).reduce((a, [table, entities]) => {
@@ -46,7 +47,7 @@ export class ModificationService<T extends string> extends BaseService {
         });
     }
     
-    asList(): ComputedRef<Mod<T>[]> {
+    asList(): ComputedRef<Mod<keyof T>[]> {
         return this._list;
     }
     
@@ -60,7 +61,7 @@ export class ModificationService<T extends string> extends BaseService {
      *
      * @return the id used
      */
-    set(tableName: T, id: number | false, field: string, val: any, desc: string): number {
+    set(tableName: keyof T, id: number | false, field: string, val: any, desc: string): number {
         const table = this.mods[tableName];
         
         if (id === false)
@@ -74,14 +75,14 @@ export class ModificationService<T extends string> extends BaseService {
         return id;
     }
     
-    get(tableName: T, id: number) {
+    get(tableName: keyof T, id: number) {
         const table = this.mods[tableName];
         return computed(() => {
             return table[id] || {};
         });
     }
     
-    remove(tableName: T, id: number, field: string | false): void {
+    remove(tableName: keyof T, id: number, field: string | false): void {
         const table = this.mods[tableName];
         
         if (field === false)

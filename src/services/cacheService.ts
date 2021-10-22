@@ -3,7 +3,7 @@ import {BaseService} from "@/helper/baseService";
 import {computed, ComputedRef} from "vue";
 import moment from "moment";
 
-export class CacheService extends BaseService {
+export class CacheService extends BaseService<any> {
     public readonly pricesByProdById: ComputedRef<{ [prod: number]: { [id: number]: any } }>;
     /**
      * archives[type][year][id]
@@ -25,7 +25,7 @@ export class CacheService extends BaseService {
         }
     }>;
     
-    constructor(s: Services) {
+    constructor(s: Services<any>) {
         super(s);
         
         this.pricesByProdById = computed(function pricesByProdById() {
