@@ -113,6 +113,8 @@ export enum PricesId {
     Main=1
 }
 
+export const currentYear = moment().add(7,"month").year();
+
 ////
 
 export function Const(app: App, ...options: any[]):any{

@@ -40,7 +40,7 @@ export class DataService<T extends string> extends BaseService {
                 const result = this.tablesRaw[table].value;
                 const obj = {};
                 for (let i = 0; i < result.length; i++) {
-                    const id = result[i].ID;
+                    const id = result[i].ID ?? result[i].id;
                     // @ts-ignore //TODO remove ts-ignore
                     const mods = this.services.modification.get(table, id);
         
