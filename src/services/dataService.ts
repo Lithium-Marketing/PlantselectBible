@@ -46,9 +46,11 @@ export class DataService<T extends string> extends BaseService {
         
                     obj[id] = computed(() => {
                         const entity = Object.assign({}, result[i]);
-                        Object.entries(mods.value).forEach(([field, mod]) => {
-                            entity[field] = mod.val;
-                        })
+                        Object.entries(entity).forEach(([field,val])=>{
+                            entity["$"+field] = entity[field];
+                            if(mods.value[field]!==undefined)
+                                entity[field] = mods.value[field].val;
+                        });
                         return Object.freeze(entity);
                     });
                 }

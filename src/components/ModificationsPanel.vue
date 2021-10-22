@@ -123,7 +123,10 @@ export default defineComponent({
 function translateMod(mod: Mod<Tables>, services: Services) {
 	switch (mod.table) {
 		case "produits":
-			return services.data.get(mod.table,mod.id).value?.Code + " " + services.data.get(mod.table,mod.id).value?.Variete;
+			return services.data.get("produits",mod.id).value?.Code + " " + services.data.get("produits",mod.id).value?.Variete;
+		case "produits_prix":
+			const id = services.data.get("produits_prix",mod.id).value.Produit_ID;
+			return services.data.get("produits",id).value?.Code + " " + services.data.get("produits",id).value?.Variete;
 		default:
 			return mod.table + " " + mod.id
 	}

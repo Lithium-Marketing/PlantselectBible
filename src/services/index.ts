@@ -11,7 +11,9 @@ const tables = [
     "bible_saves",
     "clients",
     "clients_commandes",
-    "clients_commandes_produits"
+    "clients_commandes_produits",
+    "produits_prix",
+    "Archive"
 ] as const;
 export type Tables = typeof tables[number];
 

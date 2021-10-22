@@ -70,6 +70,8 @@ export const ColorMenu = (store: Store<any>, modifications: Modifications, row: 
     return menu;
 };
 
+////
+
 const colorText = {
     Variete: "Variete",
     Inventaire: "Inventaire",
@@ -104,6 +106,14 @@ const text = {
 export function toText(key: string) {
     return text[key] || key;
 }
+
+////
+
+export enum PricesId {
+    Main=1
+}
+
+////
 
 export function Const(app: App, ...options: any[]):any{
     const year = moment().add(7, 'M').year();
