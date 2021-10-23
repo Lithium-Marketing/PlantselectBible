@@ -3,6 +3,7 @@ import {persistentStorage} from "@/helper/PersistentStorage";
 import {computed, ComputedRef, reactive, Ref, ref, watchEffect, WritableComputedRef} from "vue";
 import {createPool, Pool, PoolOptions, RowDataPacket} from "mysql2/promise";
 import {BaseService} from "@/helper/baseService";
+import {loadWhenIdle} from "@/helper/JobHelper";
 
 export interface TableConfig {
     indexes?: readonly string[]
@@ -95,8 +96,12 @@ export class DataService<T extends Record<string, TableConfig>> extends BaseServ
                     } finally {
                         console.timeEnd(`index ${table} . ${index}`)
                     }
-                })
-            })
+                });
+                
+                loadWhenIdle(this.indexesByTable[table][index], `index ${table} ${index}`);
+            });
+            
+            loadWhenIdle(datas[table], `table ${table}`);
         }
         return datas as Record<keyof T, ComputedRef<Record<number, any>>>;
     }
