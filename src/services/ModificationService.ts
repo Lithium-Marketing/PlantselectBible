@@ -19,7 +19,7 @@ export interface Mod<T> {
 
 export class ModificationService<T extends Record<string, TableConfig>> extends BaseService<T> {
     private readonly mods: Record<keyof T, Record<number, Record<string, ModVal>>>;
-    private readonly _list: ComputedRef<Mod<keyof T>[]>;
+    private readonly creations: Record<keyof T, Record<number, ModVal>>;
     
     constructor(s: Services<T>, tables: T) {
         super(s);
@@ -35,7 +35,21 @@ export class ModificationService<T extends Record<string, TableConfig>> extends 
             return a;
         }, {} as Record<keyof T, Record<number, Record<string, any>>>);
         
-        this._list = computed(() => {
+        this.creations = Object.keys(tables).reduce((a, t) => {
+            const cache = persistentStorage("modc:" + t, {});
+            a[t as keyof T] = reactive<Record<number, ModVal>>({...cache.value});
+            watch(a[t], function saveToPersistentStorage() {
+                cache.value = (a[t]);
+            }, {
+                deep: true,
+                flush: "post"
+            })
+            return a;
+        }, {} as Record<keyof T, Record<number, ModVal>>);
+    }
+    
+    asListMod(): ComputedRef<Mod<keyof T>[]> {
+        return computed(() => {
             return Object.entries<Record<number, Record<string, ModVal>>>(this.mods).reduce((a, [table, entities]) => {
                 Object.entries(entities).forEach(([id, fields]) => {
                     Object.entries(fields).forEach(([field, mod]) => {
@@ -47,8 +61,15 @@ export class ModificationService<T extends Record<string, TableConfig>> extends 
         });
     }
     
-    asList(): ComputedRef<Mod<keyof T>[]> {
-        return this._list;
+    asListCreation(table: keyof T): ComputedRef<Record<number, ModVal>> {
+        return computed(() => {
+            return Object.entries(this.creations[table]).reduce((a, [id, mod]) => {
+                a[id as unknown as number] = {
+                    ...mod
+                }
+                return a;
+            }, {} as Record<number, ModVal>)
+        });
     }
     
     /**
@@ -61,11 +82,8 @@ export class ModificationService<T extends Record<string, TableConfig>> extends 
      *
      * @return the id used
      */
-    set(tableName: keyof T, id: number | false, field: string, val: any, desc: string): number {
+    set(tableName: keyof T, id: number, field: string, val: any, desc: string): number {
         const table = this.mods[tableName];
-        
-        if (id === false)
-            id = -now();
         
         if (!table[id])
             table[id] = {};
@@ -82,11 +100,23 @@ export class ModificationService<T extends Record<string, TableConfig>> extends 
         });
     }
     
+    create(tableName: keyof T, fields: any, desc: string) {
+        const id = -now();
+        
+        //TODO validate with schema
+        this.creations[tableName][id] = {val: fields, desc};
+        
+        return id;
+    }
+    
     remove(tableName: keyof T, id: number, field: string | false): void {
         const table = this.mods[tableName];
-        
-        if (field === false)
-            table[id] = {}; else
-            delete table[id][field];
+        const creat = this.creations[tableName];
+    
+        if (field === false) {
+            table[id] = {};
+            delete creat[id];
+        }else
+            delete table[id]?.[field];
     }
 }

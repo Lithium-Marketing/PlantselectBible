@@ -61,7 +61,7 @@
 					</td>
 					<td>{{ $value(line.years_pastT0) }}</td>
 					<td :class="line.c?.v0">
-						<TableInput :modelValue="line.years_pastV0" :original="line.$years_pastV0" @update:modelValue="upPrice($event,line)"/>
+						<TableInput :always="true" :modelValue="line.years_pastV0" :original="line.$years_pastV0" @update:modelValue="upPrice($event,line)"/>
 					</td>
 					<td>{{ $value(line.years_pastC1) }}</td>
 					<td>{{ $value(line.years_pastT1) }}</td>
@@ -119,7 +119,7 @@ export default defineComponent({
 				return Object.values(services.data.get("produits").value).map(v => v.value).sort((a, b) => {
 					return a.Type - b.Type || a.Variete?.localeCompare(b.Variete) || a.Format - b.Format;
 				}).flatMap(function allFlatMap(product) {
-					const prices = services.cache.pricesByProdById.value[product.ID];
+					const prices = services.cache.pricesByProdById.value[product.ID] || {};
 
 					return oasByProd[product.ID]?.map(function oasByProdMap(oa) {
 						return {
@@ -171,7 +171,17 @@ export default defineComponent({
 			}),
 
 			upPrice(val, line) {
-				services.modification.set("produits_prix", line.prices[PricesId.Main].ID, "Prix", val, "Prix principal")
+				let id = line.prices?.[PricesId.Main]?.ID
+				if(!id){
+					id = services.modification.create("produits_prix",{
+						Prix_ID: PricesId.Main,
+						Produit_ID: line.product.ID,
+						Date: moment().unix(),
+						Date_Modification: moment().unix(),
+					},"Creation d'un prix produit");
+				}
+				services.modification.set("produits_prix", id, "Prix", val, "Prix principal");
+
 			}
 		};
 	}

@@ -40,7 +40,7 @@ import {StoreState} from "@/store";
 import Pagination from "@/components/Pagination.vue";
 import {Services, useServices} from "@/services";
 import {Mod} from "@/services/ModificationService";
-import {Tables} from "@/dataConfig";
+import {tables, Tables} from "@/dataConfig";
 
 export default defineComponent({
 	name: "ModificationsPanel",
@@ -57,11 +57,35 @@ export default defineComponent({
 
 		const coches = ref({});
 
-		const changes = computed<(Mod<keyof Tables> & { key: string,txt:string })[]>(() => {
-			return services.modification.asList().value.reduce((a, v) => {
-				a.push({...v, key: Object.values(v).join(),txt: translateMod(v,services)})
-				return a;
-			}, [])
+		const changes = computed<(Mod<keyof Tables> & { key: string, txt: string })[]>(() => {
+			return [
+				...services.modification.asListMod().value.reduce((a, v) => {
+					const key = [v.table, v.id, v.field].join();
+					a.push({...v, key, txt: translateMod(v, services)})
+					return a;
+				}, []),
+				...Object.keys(tables).flatMap((table) => {
+					return Object.entries(services.modification.asListCreation(table as any).value).reduce((a, [id, v]) => {
+						const key = [table, id].join();
+						a.push({
+							desc: v.desc,
+							table,
+							id,
+							val:"Object",
+							key, txt: translateMod({
+								table:table as any,
+								id: id as unknown as number,
+								field:"",
+								mod: {
+									val: "Object",
+									desc: ""
+								}
+							}, services)
+						})
+						return a;
+					}, [])
+				})
+			]
 		});
 
 		const page = ref(0);
@@ -72,10 +96,10 @@ export default defineComponent({
 			filters,
 
 			changes: computed(() => {
-				const filterA = Object.entries(filters).map(v=>[v[0],v[1].toUpperCase()]);
-				return changes.value.filter(v=>{
-					return filterA.filter(([name,val])=>{
-						return val==="" || v[name].toUpperCase().indexOf(val)!==-1;
+				const filterA = Object.entries(filters).map(v => [v[0], v[1].toUpperCase()]);
+				return changes.value.filter(v => {
+					return filterA.filter(([name, val]) => {
+						return val === "" || v[name].toUpperCase().indexOf(val) !== -1;
 					}).length == filterA.length;
 				}).slice(page.value * store.state.settings.ipp, (page.value + 1) * store.state.settings.ipp).reduce((a, v) => {
 					a[v.key] = v
@@ -102,7 +126,7 @@ export default defineComponent({
 			async annule() {
 				changes.value.forEach(v => {
 					if (coches.value[v.key] === undefined ? true : coches.value[v.key]) {
-						services.modification.remove(v.table, v.id, v.field);
+						services.modification.remove(v.table, v.id, v.field ?? false);
 						coches.value[v.key] = undefined;
 					}
 				});
@@ -124,10 +148,10 @@ export default defineComponent({
 function translateMod(mod: Mod<keyof Tables>, services: Services<Tables>) {
 	switch (mod.table) {
 		case "produits":
-			return services.data.get("produits",mod.id).value?.Code + " " + services.data.get("produits",mod.id).value?.Variete;
+			return services.data.get("produits", mod.id).value?.Code + " " + services.data.get("produits", mod.id).value?.Variete;
 		case "produits_prix":
-			const id = services.data.get("produits_prix",mod.id).value.Produit_ID;
-			return services.data.get("produits",id).value?.Code + " " + services.data.get("produits",id).value?.Variete;
+			const id = services.data.get("produits_prix", mod.id).value.Produit_ID;
+			return services.data.get("produits", id).value?.Code + " " + services.data.get("produits", id).value?.Variete;
 		default:
 			return mod.table + " " + mod.id
 	}

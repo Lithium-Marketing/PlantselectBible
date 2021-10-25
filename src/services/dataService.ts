@@ -15,16 +15,31 @@ type IndexesByTable<T extends Record<string, TableConfig>> = {
     }
 }
 
+export interface SchemaField<K extends string> {
+    Field: K
+    Type: string
+    Null: boolean,
+    Key: string,
+    Default: any | null | undefined,
+    Extra: string
+}
+
+export type Schema = {
+    [key: string]: SchemaField<typeof key>
+}
+
 export class DataService<T extends Record<string, TableConfig>> extends BaseService<T> {
-    private mysqlLogin: WritableComputedRef<PoolOptions>;
+    public readonly mysqlLogin: WritableComputedRef<PoolOptions>;
     private conn: Pool;
     
     private readonly tablesName: string[];
     private readonly tablesConfig: T;
     
     private readonly tablesRaw: Record<keyof T, WritableComputedRef<any[]>>;
+    private readonly tablesSchema: Record<keyof T, WritableComputedRef<Schema>>;
     private readonly indexesByTable: IndexesByTable<T>;//TODO add reactivity
     private readonly tables: Record<keyof T, ComputedRef<Record<number, ComputedRef<any>>>>;
+    private readonly tableDefault: ComputedRef<Record<keyof T, any>>;
     
     constructor(services: Services<T>, tables: T) {
         super(services);
@@ -38,11 +53,30 @@ export class DataService<T extends Record<string, TableConfig>> extends BaseServ
         this.tablesConfig = tables;
         
         this.tablesRaw = this._initRawDatas();
+        this.tablesSchema = this._initSchema();
         this.indexesByTable = Object.keys(tables).reduce((a, t) => {
             a[t] = {};
             return a;
         }, {}) as IndexesByTable<T>;
         this.tables = this._initDatas();
+        
+        this.tableDefault = computed(() => {
+            return Object.entries(this.tablesSchema).reduce((a, v) => {
+                a[v[0] as keyof T] = Object.values(v[1].value).reduce((a, v) => {
+                    a[v.Field] = v.Default;
+                    return a;
+                }, {} as any)
+                return a;
+            }, {} as Record<keyof T, any>);
+        })
+    }
+    
+    private _initSchema() {
+        const datas = {}
+        for (const table of this.tablesName) {
+            datas[table] = persistentStorage("schema:" + table, {});
+        }
+        return datas as Record<keyof T, WritableComputedRef<Schema>>;
     }
     
     private _initRawDatas(): Record<keyof T, WritableComputedRef<any[]>> {
@@ -76,6 +110,21 @@ export class DataService<T extends Record<string, TableConfig>> extends BaseServ
                             return Object.freeze(entity);
                         });
                     }
+                    
+                    const creations = this.services.modification.asListCreation(table).value;
+                    Object.entries(creations).forEach(([id, mod]) => {
+                        const mods = this.services.modification.get(table, id as unknown as number);
+                        obj[id] = computed(() => {
+                            const entity = Object.assign({}, this.tableDefault.value[table] ,mod.val);
+                            Object.entries(entity).forEach(([field, val]) => {
+                                entity["$" + field] = entity[field];
+                                if (mods.value[field] !== undefined)
+                                    entity[field] = mods.value[field].val;
+                            });
+                            return Object.freeze(entity);
+                        });
+                    });
+                    
                     return obj;
                 } finally {
                     console.timeEnd(`table ${table}`)
@@ -109,6 +158,8 @@ export class DataService<T extends Record<string, TableConfig>> extends BaseServ
     refresh(table: T | true = true) {
         for (const table of this.tablesName) {
             this.services.job.add((async () => {
+                this.tablesSchema[table].value = await this.refreshSchema(table);
+                
                 const sql = `SELECT *
 				             FROM ${table}`;
                 const result = (await this.conn.execute(sql))[0] as any[];
@@ -118,6 +169,24 @@ export class DataService<T extends Record<string, TableConfig>> extends BaseServ
                 console.log(table, result.length);
             })(), "Downloading data from " + table)
         }
+    }
+    
+    private async refreshSchema(table: keyof T) {
+        const sql = `show columns from ${table}`;
+        const result = (await this.conn.execute(sql))[0] as RowDataPacket[];
+        
+        return result.reduce((a, v) => {
+            a[v.Field] = {
+                ...v,
+                Field: v.Field,
+                Null: v.Null === 'yes',
+                Type: v.Type,
+                Key: v.Key,
+                Default: v.Default,
+                Extra: v.Extra
+            };
+            return a;
+        }, {} as Schema);
     }
     
     get(table: keyof T, id: number): ComputedRef<any>;
