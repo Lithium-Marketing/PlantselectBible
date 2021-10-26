@@ -8,7 +8,9 @@ export const tables = {
     "clients_commandes_produits": {
         indexes: ["Produit"]
     },
-    "produits_prix": {},
+    "produits_prix": {
+        indexes: ["Produit_ID"]
+    },
     "Archive": {},
 } as const;
 export type Tables = typeof tables;

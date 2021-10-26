@@ -119,7 +119,8 @@ export default defineComponent({
 				return Object.values(services.data.get("produits").value).map(v => v.value).sort((a, b) => {
 					return a.Type - b.Type || a.Variete?.localeCompare(b.Variete) || a.Format - b.Format;
 				}).flatMap(function allFlatMap(product) {
-					const prices = services.cache.pricesByProdById.value[product.ID] || {};
+					const prodCache = services.cache.byProd.value[product.ID].value;
+					const prices = prodCache.prices;
 
 					return oasByProd[product.ID]?.map(function oasByProdMap(oa) {
 						return {
@@ -150,8 +151,11 @@ export default defineComponent({
 						} catch (e) {
 						}
 
-						line.years_pastV0 = services.cache.pricesByProdById.value[line.product.ID]?.[PricesId.Main].Prix;
-						line.$years_pastV0 = services.cache.pricesByProdById.value[line.product.ID]?.[PricesId.Main].$Prix;
+						const prodCache = services.cache.byProd.value[line.product.ID].value;
+						const price = prodCache.price(PricesId.Main);
+
+						line.years_pastV0 = price?.Prix;
+						line.$years_pastV0 = price?.$Prix;
 
 						line.years_pastV1 = services.cache.archives.value[0][currentYear - 1]?.[line.product.ID]?.value;
 						line.years_pastV1 = (line.years_pastV1 ?? 0) / 100;
@@ -159,9 +163,9 @@ export default defineComponent({
 						line.years_pastV2 = services.cache.archives.value[0][currentYear - 2]?.[line.product.ID]?.value;
 						line.years_pastV2 = (line.years_pastV2 ?? 0) / 100;
 
-						line.years_pastVe0 = services.cache.cmdsByProdByYear.value[line.product.ID]?.vente(currentYear).value;
-						line.years_pastVe1 = services.cache.cmdsByProdByYear.value[line.product.ID]?.vente(currentYear-1).value;
-						line.years_pastVe2 = services.cache.cmdsByProdByYear.value[line.product.ID]?.vente(currentYear-2).value;
+						line.years_pastVe0 = prodCache.vente(currentYear);
+						line.years_pastVe1 = prodCache.vente(currentYear-1);
+						line.years_pastVe2 = prodCache.vente(currentYear-2);
 
 						return line;
 					});
