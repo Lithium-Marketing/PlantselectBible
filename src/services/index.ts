@@ -3,18 +3,25 @@ import {ModificationService} from "@/services/ModificationService";
 import {CacheService} from "@/services/cacheService";
 import {DataService, TableConfig} from "@/services/dataService";
 import {JobService} from "@/services/jobService";
+import {SaveService} from "@/services/saveService";
 
 export class Services<T extends Record<string, TableConfig>> {
     public readonly job: JobService;
     public readonly data: DataService<T>;
     public readonly cache: CacheService;
     public readonly modification: ModificationService<T>;
+    public readonly save: SaveService<T>;
+    
+    public readonly tables: T;
     
     public constructor(tables: T) {
+        this.tables = Object.freeze(tables);
+        
         this.job = new JobService(this);
         this.data = new DataService(this, tables);
         this.cache = new CacheService(this);
         this.modification = new ModificationService(this, tables);
+        this.save = new SaveService(this);
     }
     
 }

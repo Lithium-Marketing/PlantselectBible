@@ -76,10 +76,8 @@ export default defineComponent({
 								table:table as any,
 								id: id as unknown as number,
 								field:"",
-								mod: {
-									val: "Object",
-									desc: ""
-								}
+								val: "Object",
+								desc: ""
 							}, services)
 						})
 						return a;

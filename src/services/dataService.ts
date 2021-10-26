@@ -189,6 +189,12 @@ export class DataService<T extends Record<string, TableConfig>> extends BaseServ
         }, {} as Schema);
     }
     
+    getSchema(table:T){
+        return computed(()=>{
+            return this.tablesSchema[table as any].value;
+        })
+    }
+    
     get(table: keyof T, id: number): ComputedRef<any>;
     get(table: keyof T): ComputedRef<Record<number, ComputedRef<any>>>;
     

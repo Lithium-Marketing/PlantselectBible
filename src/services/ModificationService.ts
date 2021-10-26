@@ -10,11 +10,10 @@ interface ModVal {
     desc: string
 }
 
-export interface Mod<T> {
+export interface Mod<T> extends ModVal{
     table: T,
     id: number,
-    field: string,
-    mod: ModVal
+    field: string
 }
 
 export class ModificationService<T extends Record<string, TableConfig>> extends BaseService<T> {
