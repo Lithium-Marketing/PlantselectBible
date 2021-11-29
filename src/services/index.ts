@@ -33,7 +33,7 @@ export function useServices<T extends Record<string, TableConfig>>(): Services<T
 }
 
 export function ServicesPlugin<T extends Record<string, TableConfig>>(tables: T) {
-    return function(app: App, ...options: any[]): any{
+    return function (app: App, ...options: any[]): any {
         const s = new Services<T>(tables);
         app.provide(key, s);
         app.config.globalProperties.$services = s;

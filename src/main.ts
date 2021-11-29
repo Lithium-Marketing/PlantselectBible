@@ -9,6 +9,9 @@ import {ContextMenu} from "@/helper/ContextMenu";
 import {ServicesPlugin} from "@/services";
 import {Const} from "@/helper/Const";
 import {tables} from "@/dataConfig";
+import {LogService} from "@/services/logService";
+
+const logger = LogService.logger({name: "main"})
 
 ContextMenu.init();
 moment.locale('fr');
@@ -37,10 +40,10 @@ moment.locale('fr');
                 }
                 break;
             default:
-                console.log("State could not be loaded");
+                logger.warn("State could not be loaded");
         }
     } catch (e) {
-        console.error(e);
+        logger.error(e);
     }
     
     store.subscribe(function storeSubscriber(mutation, state) {
@@ -63,13 +66,13 @@ moment.locale('fr');
     app.use(store);
     app.use(router);
     
-    Object.assign(window,app.config.globalProperties);
+    Object.assign(window, app.config.globalProperties);
     console.log(app.config.globalProperties);
-    watchEffect(()=>{
+    watchEffect(() => {
         // @ts-ignore
-        console.log($services.data.get("produits",1001).value);
-    },{
-        onTrigger: console.warn
+        logger.log($services.data.get("produits", 1001).value);
+    }, {
+        onTrigger: logger.warn
     });
     
     

@@ -64,7 +64,7 @@ export default defineComponent({
 					headers: {
 					},
 				});
-				console.log(response.data);
+				//console.log(response.data);
 
 				await router.push({name: "ExcelViewer", params: {file: response.data}})
 

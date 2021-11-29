@@ -2,7 +2,9 @@ import {BaseService} from "@/helper/baseService";
 import {Schema, SchemaField, TableConfig} from "@/services/dataService";
 import {Mod} from "@/services/ModificationService";
 import {format} from 'sql-formatter';
+import {LogService} from "@/services/logService";
 
+const logger = LogService.logger({name:"SaveService"});
 
 export class SaveService<T extends Record<string, TableConfig>> extends BaseService<T> {
     
@@ -63,8 +65,8 @@ export class SaveService<T extends Record<string, TableConfig>> extends BaseServ
                 });
             }
         }
-        
-        console.log(format(sqls.reduce((a, v) => {
+    
+        logger.log(format(sqls.reduce((a, v) => {
             return a + v + ";";
         }, ""),{
             linesBetweenQueries:3,

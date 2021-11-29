@@ -8,5 +8,9 @@ export abstract class BaseService<T extends Record<string, TableConfig>> {
     constructor(services: Services<T>) {
         this.services = services;
         this._tables = services.tables;
+        
+        this._init();
     }
+    
+    protected _init(){}
 }

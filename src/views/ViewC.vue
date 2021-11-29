@@ -99,6 +99,9 @@ import Pagination from "@/components/Pagination.vue";
 import TableInput from "@/components/TableInput.vue";
 import {currentYear, PricesId} from "@/helper/Const";
 import moment from "moment";
+import {LogService} from "@/services/logService";
+
+const logger = LogService.logger({name:"ViewC"});
 
 export default defineComponent({
 	name: "ViewC",
@@ -108,7 +111,7 @@ export default defineComponent({
 		const services = useServices();
 
 		const all = computed(function allCompute() {//`produits`.`Type` asc,`vue_produits`.`Variete` asc,`vue_produits`.`Format` asc"
-			console.time("all viewc");
+			logger.time("all viewc");
 			try {
 				const oasByProd: Record<any, any[]> = Object.values(services.data.get("ordres_assemblages").value).reduce(function oasByProdReduce(a, oa) {
 					a[oa.value.Produit] = a[oa.value.Produit] || [];
@@ -134,16 +137,16 @@ export default defineComponent({
 					}]
 				})
 			} finally {
-				console.timeEnd("all viewc");
+				logger.timeEnd("all viewc");
 			}
 		});
 
 		const {len, ipp, lines, page} = table(all, store);
-		console.log(moment().add(7, "month").year());
+		logger.log(moment().add(7, "month").year());
 		return {
 			len, ipp, page,
 			lines: computed(() => {
-				console.time("page viewc");
+				logger.time("page viewc");
 				try {
 					return lines.value.map(line => {
 						try {
@@ -170,7 +173,7 @@ export default defineComponent({
 						return line;
 					});
 				} finally {
-					console.timeEnd("page viewc");
+					logger.timeEnd("page viewc");
 				}
 			}),
 

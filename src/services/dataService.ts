@@ -4,6 +4,9 @@ import {computed, ComputedRef, reactive, Ref, ref, watchEffect, WritableComputed
 import {createPool, Pool, PoolOptions, RowDataPacket} from "mysql2/promise";
 import {BaseService} from "@/helper/baseService";
 import {loadWhenIdle} from "@/helper/JobHelper";
+import {LogService} from "@/services/logService";
+
+const logger = LogService.logger({name: "DataService"})
 
 export interface TableConfig {
     indexes?: readonly string[]
@@ -91,7 +94,7 @@ export class DataService<T extends Record<string, TableConfig>> extends BaseServ
         const datas = {}
         for (const table of this.tablesName) {
             datas[table] = computed(() => {
-                console.time(`table ${table}`);
+                logger.time(`table ${table}`);
                 try {
                     const result = this.tablesRaw[table].value;
                     const obj = {};
@@ -115,7 +118,7 @@ export class DataService<T extends Record<string, TableConfig>> extends BaseServ
                     Object.entries(creations).forEach(([id, mod]) => {
                         const mods = this.services.modification.get(table, id as unknown as number);
                         obj[id] = computed(() => {
-                            const entity = Object.assign({}, this.tableDefault.value[table] ,mod.val);
+                            const entity = Object.assign({}, this.tableDefault.value[table], mod.val);
                             Object.entries(entity).forEach(([field, val]) => {
                                 entity["$" + field] = entity[field];
                                 if (mods.value[field] !== undefined)
@@ -127,14 +130,14 @@ export class DataService<T extends Record<string, TableConfig>> extends BaseServ
                     
                     return obj;
                 } finally {
-                    console.timeEnd(`table ${table}`)
+                    logger.timeEnd(`table ${table}`)
                 }
             });
             
             this.tablesConfig[table].indexes?.forEach(index => {
-                console.log(table, index);
+                logger.log(table, index);
                 this.indexesByTable[table][index] = computed(() => {
-                    console.time(`index ${table} . ${index}`);
+                    logger.time(`index ${table} . ${index}`);
                     try {
                         const tableData = this.tablesRaw[table].value;
                         return tableData.reduce((a, entity) => {
@@ -143,7 +146,7 @@ export class DataService<T extends Record<string, TableConfig>> extends BaseServ
                             return a;
                         }, {})
                     } finally {
-                        console.timeEnd(`index ${table} . ${index}`)
+                        logger.timeEnd(`index ${table} . ${index}`)
                     }
                 });
                 
@@ -166,7 +169,7 @@ export class DataService<T extends Record<string, TableConfig>> extends BaseServ
                 
                 this.tablesRaw[table].value = result;
                 
-                console.log(table, result.length);
+                logger.log(table, result.length);
             })(), "Downloading data from " + table)
         }
     }
@@ -189,8 +192,8 @@ export class DataService<T extends Record<string, TableConfig>> extends BaseServ
         }, {} as Schema);
     }
     
-    getSchema(table:T){
-        return computed(()=>{
+    getSchema(table: T) {
+        return computed(() => {
             return this.tablesSchema[table as any].value;
         })
     }

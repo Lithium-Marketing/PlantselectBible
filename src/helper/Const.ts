@@ -5,6 +5,9 @@ import {App} from "vue";
 import moment from "moment";
 import store from "@/store";
 import router from "@/router";
+import {LogService} from "@/services/logService";
+
+const logger = LogService.logger({name:"Const"})
 
 export const ColorMenu = (store: Store<any>, modifications: Modifications, row: HTMLTableRowElement): MenuItemConstructorOptions[] => {
     function oaColor(val, type) {
@@ -33,9 +36,9 @@ export const ColorMenu = (store: Store<any>, modifications: Modifications, row: 
         let color = "n/a";
         try {
             color = fn === oaColor ? JSON.parse(store.state._.oas[row.dataset.oaid]?.['bible.Color'])?.[type] : store.state._.products[row.dataset.pid]['Color'];
-            console.log(color);
+            logger.log(color);
         } catch (e) {
-            console.error(e)
+            logger.error(e)
         }
         return [
             {label: "Rouge", click: fn("red", type), type: "checkbox", checked: color === "red"},
