@@ -1,5 +1,7 @@
 export const tables = {
-    "produits": {},
+    "produits": {
+        sql: "SELECT * FROM produits WHERE Active=1"
+    },
     "ordres_assemblages": {},
     "bible": {},
     "bible_saves": {},

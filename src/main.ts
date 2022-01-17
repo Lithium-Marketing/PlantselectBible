@@ -72,7 +72,7 @@ moment.locale('fr');
         // @ts-ignore
         logger.log($services.data.get("produits", 1001).value);
     }, {
-        onTrigger: logger.warn
+        onTrigger: console.log
     });
     
     

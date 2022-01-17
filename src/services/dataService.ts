@@ -9,7 +9,8 @@ import {LogService} from "@/services/logService";
 const logger = LogService.logger({name: "DataService"})
 
 export interface TableConfig {
-    indexes?: readonly string[]
+    indexes?: readonly string[],
+    sql?: string
 }
 
 type IndexesByTable<T extends Record<string, TableConfig>> = {
@@ -163,7 +164,7 @@ export class DataService<T extends Record<string, TableConfig>> extends BaseServ
             this.services.job.add((async () => {
                 this.tablesSchema[table].value = await this.refreshSchema(table);
                 
-                const sql = `SELECT *
+                const sql = this.tablesConfig[table].sql ?? `SELECT *
 				             FROM ${table}`;
                 const result = (await this.conn.execute(sql))[0] as any[];
                 
