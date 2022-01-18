@@ -15,7 +15,11 @@ export function persistentStorage<T>(name: string, def?: T): WritableComputedRef
         set(val) {
             const str = JSON.stringify(val);
             _value.value = str;
-            localStorage.setItem(name, str);
+            try{
+                localStorage.setItem(name, str);
+            }catch (e) {
+                localStorage.removeItem(name);
+            }
         }
     });
     
