@@ -1,9 +1,8 @@
 import {BaseService} from "@/helper/baseService";
-import {Services} from "@/services/index";
+import {Services, TableConfig, TableConfigs, TablesDef} from "@/services/index";
 import {computed, ComputedRef, reactive, Ref, ref, unref, watch} from "vue";
 import {now} from "moment";
 import {persistentStorage} from "@/helper/PersistentStorage";
-import {TableConfig} from "@/services/dataService";
 
 interface ModVal {
     val: any,
@@ -16,11 +15,11 @@ export interface Mod<T> extends ModVal {
     field: string
 }
 
-export class ModificationService<T extends Record<string, TableConfig>> extends BaseService<T> {
+export class ModificationService<T extends TablesDef, C extends TableConfigs<T>> extends BaseService<T, C> {
     public readonly mods: Record<keyof T, Record<number, Record<string, ModVal>>>;
     public readonly creations: Record<keyof T, Record<number, ModVal>>;
     
-    constructor(s: Services<T>, tables: T) {
+    constructor(s: Services<T, C>, tables: C) {
         super(s);
         this.mods = Object.keys(tables).reduce((a, t) => {
             const cache = persistentStorage("mod:" + t, {});

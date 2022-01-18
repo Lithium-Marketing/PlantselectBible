@@ -3,7 +3,7 @@ import {BaseService} from "@/helper/baseService";
 import {computed, ComputedRef} from "vue";
 import moment from "moment";
 
-export class CacheService extends BaseService<any> {
+export class CacheService extends BaseService<any, any> {
     /**
      * archives[type][year][id]
      */
@@ -26,7 +26,7 @@ export class CacheService extends BaseService<any> {
         }>
     }>;
     
-    constructor(s: Services<any>) {
+    constructor(s: Services<any, any>) {
         super(s);
         
         this.archives = computed(function archives() {

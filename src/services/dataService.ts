@@ -1,4 +1,4 @@
-import {Services} from "@/services/index";
+import {Services, TableConfig, TableConfigs, TablesDef} from "@/services/index";
 import {persistentStorage} from "@/helper/PersistentStorage";
 import {computed, ComputedRef, watchEffect, WritableComputedRef} from "vue";
 import {createPool, Pool, PoolOptions, RowDataPacket} from "mysql2/promise";
@@ -7,13 +7,7 @@ import {LogService} from "@/services/logService";
 
 const logger = LogService.logger({name: "DataService"})
 
-export interface TableConfig {
-    indexes?: readonly string[],
-    sql?: string,
-    key?: string
-}
-
-type IndexesByTable<T extends Record<string, TableConfig>> = {
+type IndexesByTable<T extends TablesDef, C extends TableConfigs<T>> = {
     [name in keyof T]: {
         [index in T[name]["indexes"][number]]: ComputedRef<Record<number, number[] | undefined>>
     }
@@ -32,24 +26,24 @@ export type Schema = {
     [key: string]: SchemaField<typeof key>
 }
 
-export class DataService<T extends Record<string, TableConfig>> extends BaseService<T> {
+export class DataService<T extends TablesDef, C extends TableConfigs<T>> extends BaseService<T, C> {
     public readonly mysqlLogin: WritableComputedRef<PoolOptions>;
     private conn: Pool;
     
     private readonly tablesName: string[];
-    private readonly tablesConfig: T;
+    private readonly tablesConfig: C;
     
-    public readonly raw: { [table in keyof T]: WritableComputedRef<Record<number, any>> };
+    public readonly raw: { [table in keyof T]: WritableComputedRef<Record<number, T[table]>> };
     public readonly tables: { [table in keyof T]: ComputedRef<Record<number, any>> };
     
     
     //private readonly tablesRaw: Record<keyof T, WritableComputedRef<any[]>>;
     private readonly tablesSchema: Record<keyof T, WritableComputedRef<Schema>>;
-    private readonly indexesByTable: IndexesByTable<T>;//TODO add reactivity
+    private readonly indexesByTable: IndexesByTable<T, C>;//TODO add reactivity
     
     private readonly tableDefault: ComputedRef<Record<keyof T, any>>;
     
-    constructor(services: Services<T>, tables: T) {
+    constructor(services: Services<T, C>, tables: C) {
         super(services);
         
         this.mysqlLogin = persistentStorage<PoolOptions>("mysqlLogin", {});
@@ -81,6 +75,7 @@ export class DataService<T extends Record<string, TableConfig>> extends BaseServ
                     if (this.services.modification.mods[table][id]) {
                         const obj = result[id] = {...this.raw[table].value[id]};
                         Object.entries(this.services.modification.mods[table][id]).forEach(([key, value]) => {
+                            // @ts-ignore
                             obj[key] = value.val;
                         });
                         Object.freeze(obj);
@@ -121,7 +116,7 @@ export class DataService<T extends Record<string, TableConfig>> extends BaseServ
                 })
             });
             return a;
-        }, {}) as IndexesByTable<T>;
+        }, {}) as IndexesByTable<T, C>;
         
         
         this.tableDefault = computed(() => {
@@ -187,11 +182,11 @@ export class DataService<T extends Record<string, TableConfig>> extends BaseServ
         })
     }
     
-    get(table: keyof T, id: number, field: string): WritableComputedRef<any>;
-    get(table: keyof T, id: number): ComputedRef<any>;
-    get(table: keyof T): ComputedRef<Record<number, any>>;
+    get<K extends keyof T>(table: K, id: number, field: string): WritableComputedRef<any>;
+    get<K extends keyof T>(table: K, id: number): ComputedRef<T[K]>;
+    get<K extends keyof T>(table: K): ComputedRef<Record<number, T[K]>>;
     
-    get(table: keyof T, id?: number, field?: string) {
+    get<K extends keyof T>(table: K, id?: number, field?: string) {
         if (field !== undefined)
             return computed({
                 get() {
@@ -219,10 +214,10 @@ export class DataService<T extends Record<string, TableConfig>> extends BaseServ
             return this.tables[table];
     }
     
-    getByIndex<K extends keyof T>(table: K, index: keyof IndexesByTable<T>[K], id: number): ComputedRef<number[] | undefined>;
-    getByIndex<K extends keyof T>(table: K, index: keyof IndexesByTable<T>[K]): ComputedRef<Record<number, number[] | undefined>>;
+    getByIndex<K extends keyof T>(table: K, index: keyof IndexesByTable<T, C>[K], id: number): ComputedRef<number[] | undefined>;
+    getByIndex<K extends keyof T>(table: K, index: keyof IndexesByTable<T, C>[K]): ComputedRef<Record<number, number[] | undefined>>;
     
-    getByIndex<K extends keyof T>(table: K, index: keyof IndexesByTable<T>[K], id?: number) {
+    getByIndex<K extends keyof T>(table: K, index: keyof IndexesByTable<T, C>[K], id?: number) {
         if (id !== undefined)
             return computed(() => this.indexesByTable[table][index].value[id]); else
             return computed(() => this.indexesByTable[table][index].value || {});

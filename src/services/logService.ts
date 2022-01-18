@@ -19,7 +19,7 @@ type LogEntry = {
     val: any
 }
 
-export class LogService extends BaseService<any> {
+export class LogService extends BaseService<any, any> {
     
     private static stack: LogGroup[] = [{
         group: false,

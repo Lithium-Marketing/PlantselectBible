@@ -40,14 +40,14 @@ import {StoreState} from "@/store";
 import Pagination from "@/components/Pagination.vue";
 import {Services, useServices} from "@/services";
 import {Mod} from "@/services/ModificationService";
-import {tables, Tables} from "@/dataConfig";
+import {tablesConfig, MyTablesConfig, MyTablesDef} from "@/dataConfig";
 
 export default defineComponent({
 	name: "ModificationsPanel",
 	components: {Pagination, ButtonConfirm},
 	setup() {
 		const store = useStore<StoreState>();
-		const services = useServices<Tables>();
+		const services = useServices<MyTablesDef, MyTablesConfig>();
 
 		const filters = reactive({
 			txt: "",
@@ -57,14 +57,14 @@ export default defineComponent({
 
 		const coches = ref({});
 
-		const changes = computed<(Mod<keyof Tables> & { key: string, txt: string })[]>(() => {
+		const changes = computed<(Mod<keyof MyTablesConfig> & { key: string, txt: string })[]>(() => {
 			return [
 				...services.modification.asListMod().value.reduce((a, v) => {
 					const key = [v.table, v.id, v.field].join();
-					a.push({...v, key, txt: translateMod(v, services)})
+					a.push({...v, key, txt: translateMod(v as Mod<keyof MyTablesConfig>, services)})
 					return a;
 				}, []),
-				...Object.keys(tables).flatMap((table) => {
+				...Object.keys(tablesConfig).flatMap((table) => {
 					return Object.entries(services.modification.asListCreation(table as any).value).reduce((a, [id, v]) => {
 						const key = [table, id].join();
 						a.push({
@@ -143,7 +143,7 @@ export default defineComponent({
 	}
 });
 
-function translateMod(mod: Mod<keyof Tables>, services: Services<Tables>) {
+function translateMod(mod: Mod<keyof MyTablesConfig>, services: Services<MyTablesDef, MyTablesConfig>) {
 	switch (mod.table) {
 		case "produits":
 			return services.data.get("produits", mod.id).value?.Code + " " + services.data.get("produits", mod.id).value?.Variete;

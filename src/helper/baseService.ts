@@ -1,11 +1,10 @@
-import {Services} from "@/services";
-import {TableConfig} from "@/services/dataService";
+import {Services, TableConfig, TableConfigs, TablesDef} from "@/services";
 
-export abstract class BaseService<T extends Record<string, TableConfig>> {
-    protected services: Services<T>;
-    protected _tables: T;
+export abstract class BaseService<T extends TablesDef, C extends TableConfigs<T>> {
+    protected services: Services<T, C>;
+    protected _tables: C;
     
-    constructor(services: Services<T>) {
+    constructor(services: Services<T, C>) {
         this.services = services;
         this._tables = services.tables;
         

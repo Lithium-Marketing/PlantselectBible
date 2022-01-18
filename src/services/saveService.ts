@@ -1,12 +1,13 @@
 import {BaseService} from "@/helper/baseService";
-import {Schema, SchemaField, TableConfig} from "@/services/dataService";
+import {Schema, SchemaField} from "@/services/dataService";
 import {Mod} from "@/services/ModificationService";
 import {format} from 'sql-formatter';
 import {LogService} from "@/services/logService";
+import {TableConfig, TableConfigs, TablesDef} from "@/services/index";
 
 const logger = LogService.logger({name: "SaveService"});
 
-export class SaveService<T extends Record<string, TableConfig>> extends BaseService<T> {
+export class SaveService<T extends TablesDef, C extends TableConfigs<T>> extends BaseService<T, C> {
     
     public apply() {
         const sqls = [];

@@ -1,20 +1,36 @@
 import {App, inject, InjectionKey} from 'vue';
 import {ModificationService} from "@/services/ModificationService";
 import {CacheService} from "@/services/cacheService";
-import {DataService, TableConfig} from "@/services/dataService";
+import {DataService} from "@/services/dataService";
 import {JobService} from "@/services/jobService";
 import {SaveService} from "@/services/saveService";
 
-export class Services<T extends Record<string, TableConfig>> {
+export interface TableConfig {
+    indexes?: readonly string[],
+    sql?: string,
+    key?: string
+}
+
+export type TableConfigs<T> = {
+    [table in keyof T]: TableConfig
+}
+
+export type TablesDef = {
+    [table: string]: {
+        [field: string]: any
+    }
+}
+
+export class Services<T extends TablesDef, C extends TableConfigs<T>> {
     public readonly job: JobService;
-    public readonly data: DataService<T>;
+    public readonly data: DataService<T, C>;
     public readonly cache: CacheService;
-    public readonly modification: ModificationService<T>;
-    public readonly save: SaveService<T>;
+    public readonly modification: ModificationService<T, C>;
+    public readonly save: SaveService<T, C>;
     
-    public readonly tables: T;
+    public readonly tables: C;
     
-    public constructor(tables: T) {
+    public constructor(tables: C) {
         this.tables = Object.freeze(tables);
         
         this.job = new JobService(this);
@@ -26,15 +42,15 @@ export class Services<T extends Record<string, TableConfig>> {
     
 }
 
-export const key: InjectionKey<Services<any>> = Symbol();
+export const key: InjectionKey<Services<any, any>> = Symbol();
 
-export function useServices<T extends Record<string, TableConfig>>(): Services<T> {
+export function useServices<T extends TablesDef, C extends TableConfigs<T>>(): Services<T, C> {
     return inject(key)
 }
 
-export function ServicesPlugin<T extends Record<string, TableConfig>>(tables: T) {
+export function ServicesPlugin<T extends TablesDef, C extends TableConfigs<T>>(tables: C) {
     return function (app: App, ...options: any[]): any {
-        const s = new Services<T>(tables);
+        const s = new Services<T, C>(tables);
         app.provide(key, s);
         app.config.globalProperties.$services = s;
         app.config.globalProperties.$v = function (table: keyof T, id: number, field: string) {
