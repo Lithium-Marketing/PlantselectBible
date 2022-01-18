@@ -15,12 +15,12 @@ import {useRoute} from "vue-router";
 export default {
 	name: "ExcelViewer",
 	components: {LoadingBar},
-	setup(props,{}) {
+	setup(props, {}) {
 		const route = useRoute();
 
 		const loading = ref(false);
 		// "https://file-examples-com.github.io/uploads/2017/02/file_example_XLS_10.xls"
-		const src = computed(()=>{
+		const src = computed(() => {
 			return route.params.file
 		});
 

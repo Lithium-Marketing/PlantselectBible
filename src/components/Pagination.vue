@@ -32,8 +32,8 @@ export default defineComponent({
 	props: ["page", "len"],
 	setup(props, {emit}) {
 
-		watchEffect(()=>{
-			if(props.page>props.len)
+		watchEffect(() => {
+			if (props.page > props.len)
 				emit("update:page", 0);
 		})
 

@@ -28,14 +28,14 @@ export interface StoreState {
         '%': number,
         loadingSaves: boolean
         logs: { date: number, text: string }[];
-    
+        
         products: {};
         productsOrder: string[],
-    
+        
         oas: Record<any, any>;
         prices: Record<any, Price>;
         priceTitles: Record<any, PriceTitle>;
-    
+        
         changes: Record<any, Change>;
         failed: Modification[],
     };
@@ -69,12 +69,12 @@ export default createStore<StoreState>({
             
             products: {},//key is products.ID
             productsOrder: [],
-    
+            
             oas: {},//key is oa.ID
             //oasByProduct: {},//key ia products.ID value is array of oa.ID
             prices: {},
             priceTitles: {},
-    
+            
             changes: {},//key is generated ID for operation
             failed: [],
         },
@@ -195,9 +195,9 @@ export default createStore<StoreState>({
                         if (newValue === undefined)
                             continue;
                         
-                        state._[resourceKey] ={
+                        state._[resourceKey] = {
                             ...state._[resourceKey],
-                            [change.create]:  Object.freeze({
+                            [change.create]: Object.freeze({
                                 ...newValue,
                                 ID: change.create
                             })
@@ -237,7 +237,7 @@ export default createStore<StoreState>({
             console.log(payload);
         },
         
-        async applyMod(context, payload:Record<any, Change>) {
+        async applyMod(context, payload: Record<any, Change>) {
             context.commit("_loading", true);
             
             const connection = await mysql.createConnection(context.state.mysqlLogin)
@@ -352,7 +352,7 @@ export default createStore<StoreState>({
                     return true;
                 
                 //if (showLoading && i % 10 === 0)
-                    //context.commit("_loading", i / entries.length / 2)
+                //context.commit("_loading", i / entries.length / 2)
                 compiler.apply(entries[i]);
                 //console.timeLog("Modification Compilation");
                 
@@ -368,7 +368,7 @@ export default createStore<StoreState>({
                 context.commit("_loading", false);
         },
         
-        async createSave(context, {name,mods}:{name:string,mods:Record<any, Modification>}) {
+        async createSave(context, {name, mods}: { name: string, mods: Record<any, Modification> }) {
             const connection = await mysql.createConnection(context.state.mysqlLogin);
             const data = JSON.stringify(mods).replace(/'/g, "\\'");
             try {

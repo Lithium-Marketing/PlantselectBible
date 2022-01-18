@@ -10,7 +10,7 @@ interface ModVal {
     desc: string
 }
 
-export interface Mod<T> extends ModVal{
+export interface Mod<T> extends ModVal {
     table: T,
     id: number,
     field: string
@@ -111,11 +111,11 @@ export class ModificationService<T extends Record<string, TableConfig>> extends 
     remove(tableName: keyof T, id: number, field: string | false): void {
         const table = this.mods[tableName];
         const creat = this.creations[tableName];
-    
+        
         if (field === false) {
             table[id] = {};
             delete creat[id];
-        }else
+        } else
             delete table[id]?.[field];
     }
 }

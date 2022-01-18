@@ -40,7 +40,7 @@ export class DataService<T extends Record<string, TableConfig>> extends BaseServ
     private readonly tablesConfig: T;
     
     public readonly raw: { [table in keyof T]: WritableComputedRef<Record<number, any>> };
-    public readonly tables: {[table in keyof T]: ComputedRef<Record<number, any>>};
+    public readonly tables: { [table in keyof T]: ComputedRef<Record<number, any>> };
     
     
     //private readonly tablesRaw: Record<keyof T, WritableComputedRef<any[]>>;
@@ -73,10 +73,10 @@ export class DataService<T extends Record<string, TableConfig>> extends BaseServ
             return a;
         }, {} as Record<keyof T, WritableComputedRef<Record<number, any>>>);
         
-        this.tables = Object.keys(tables).reduce((a,table)=>{
+        this.tables = Object.keys(tables).reduce((a, table) => {
             a[table as keyof T] = computed(() => {//add all modifications to all rows of the table (heavy)
                 const result = {};
-        
+                
                 for (const id in this.raw[table].value) {
                     if (this.services.modification.mods[table][id]) {
                         const obj = result[id] = {...this.raw[table].value[id]};
@@ -84,20 +84,20 @@ export class DataService<T extends Record<string, TableConfig>> extends BaseServ
                             obj[key] = value.val;
                         });
                         Object.freeze(obj);
-                    }else
+                    } else
                         result[id] = this.raw[table].value[id];
                 }
-        
+                
                 for (const id in this.services.modification.creations[table]) {
                     if (result[id])
                         logger.error("creation overlap with existing id", id)
                     result[id] = this.services.modification.creations[table][id].val;
                 }
-        
+                
                 return result;
             });
             return a;
-        },{} as Record<keyof T, ComputedRef<Record<number, any>>>)
+        }, {} as Record<keyof T, ComputedRef<Record<number, any>>>)
         
         //this.tablesRaw = this._initRawDatas();
         this.tablesSchema = this._initSchema();
@@ -110,7 +110,7 @@ export class DataService<T extends Record<string, TableConfig>> extends BaseServ
                     console.time(`index ${table} . ${index}`);
                     try {
                         const tableData = this.raw[table].value;
-                        return Object.entries(tableData).reduce((a, [id,entity]) => {
+                        return Object.entries(tableData).reduce((a, [id, entity]) => {
                             a[entity[index]] = a[entity[index]] || [];
                             a[entity[index]].push(entity.ID ?? entity.id);
                             return a;
@@ -150,7 +150,7 @@ export class DataService<T extends Record<string, TableConfig>> extends BaseServ
                 
                 const sql = this.tablesConfig[table].sql ?? `SELECT *
 				                                             FROM ${table}`;
-                logger.log(table,this.tablesConfig[table])
+                logger.log(table, this.tablesConfig[table])
                 const result = ((await this.conn.execute(sql))[0] as any[]).reduce((a, v) => {
                     a[v[this.tablesConfig[table].key ?? "ID"]] = v;
                     return a;
@@ -187,18 +187,18 @@ export class DataService<T extends Record<string, TableConfig>> extends BaseServ
         })
     }
     
-    get(table: keyof T, id: number, field:string): WritableComputedRef<any>;
+    get(table: keyof T, id: number, field: string): WritableComputedRef<any>;
     get(table: keyof T, id: number): ComputedRef<any>;
     get(table: keyof T): ComputedRef<Record<number, any>>;
     
-    get(table: keyof T, id?: number, field?:string) {
-        if(field !==undefined)
+    get(table: keyof T, id?: number, field?: string) {
+        if (field !== undefined)
             return computed({
-                get(){
+                get() {
                     return this.services.modification.mods[table]?.[id]?.[field] ?? this.raw[table][id][field];
                 },
-                set(val){
-                    this.services.modification.set(table,id,field,val,"auto");
+                set(val) {
+                    this.services.modification.set(table, id, field, val, "auto");
                 }
             });
         if (id !== undefined)

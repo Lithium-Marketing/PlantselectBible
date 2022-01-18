@@ -13,7 +13,6 @@ export abstract class EntityService<T> extends BaseService {
         super(s);
         
         
-        
         //watch()
     }
     

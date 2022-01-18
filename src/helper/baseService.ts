@@ -12,5 +12,6 @@ export abstract class BaseService<T extends Record<string, TableConfig>> {
         this._init();
     }
     
-    protected _init(){}
+    protected _init() {
+    }
 }

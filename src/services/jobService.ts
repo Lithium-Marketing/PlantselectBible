@@ -32,7 +32,7 @@ export class JobService extends BaseService<any> {
             percent = -1;
         }
         
-        this.jobs.push({cb, name,percent});
+        this.jobs.push({cb, name, percent});
         
         if (this.timeout === false)
             this.run();
@@ -50,7 +50,7 @@ export class JobService extends BaseService<any> {
                 if (percent >= 1)
                     this.jobs.shift();
                 
-                if(percent <= -1)
+                if (percent <= -1)
                     break;
                 
                 if (!this.jobs.length) {
@@ -58,7 +58,7 @@ export class JobService extends BaseService<any> {
                     return;
                 }
             }
-    
+            
             this.timeout = false;
             this.run();
         }) as unknown as number;

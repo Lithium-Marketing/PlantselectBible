@@ -71,11 +71,11 @@ export default defineComponent({
 							desc: v.desc,
 							table,
 							id,
-							val:"Object",
+							val: "Object",
 							key, txt: translateMod({
-								table:table as any,
+								table: table as any,
 								id: id as unknown as number,
-								field:"",
+								field: "",
 								val: "Object",
 								desc: ""
 							}, services)

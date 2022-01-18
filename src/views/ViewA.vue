@@ -73,7 +73,7 @@
 					<td>
 						<button class="tooltip" :style="{'background-color':oa.Note ? '#8daa26':'#888'}" @click="$load(oa.ID,oa.product.ID,'note')">
 							N
-							<span class="tooltiptext" v-if="oa.Note"><pre>{{oa.Note}}</pre></span>
+							<span class="tooltiptext" v-if="oa.Note"><pre>{{ oa.Note }}</pre></span>
 						</button>
 					</td>
 					<td :class="oa.c?.Variete">{{ oa.product.Variete }}</td>
@@ -193,7 +193,7 @@ export default defineComponent({
 
 			for (const productsKey of productIds) {
 				const prod = products[productsKey];
-				if(prod.Variete && prod.Variete.toLowerCase().indexOf(search.variete.toLowerCase())===-1)
+				if (prod.Variete && prod.Variete.toLowerCase().indexOf(search.variete.toLowerCase()) === -1)
 					continue;
 
 				if (oasByProd[productsKey])
@@ -350,7 +350,7 @@ table {
 		position: absolute;
 		z-index: 1;
 
-		pre{
+		pre {
 			font-size: 1rem;
 		}
 	}

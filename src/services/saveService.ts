@@ -4,7 +4,7 @@ import {Mod} from "@/services/ModificationService";
 import {format} from 'sql-formatter';
 import {LogService} from "@/services/logService";
 
-const logger = LogService.logger({name:"SaveService"});
+const logger = LogService.logger({name: "SaveService"});
 
 export class SaveService<T extends Record<string, TableConfig>> extends BaseService<T> {
     
@@ -65,12 +65,12 @@ export class SaveService<T extends Record<string, TableConfig>> extends BaseServ
                 });
             }
         }
-    
+        
         logger.log(format(sqls.reduce((a, v) => {
             return a + v + ";";
-        }, ""),{
-            linesBetweenQueries:3,
-            uppercase:true
+        }, ""), {
+            linesBetweenQueries: 3,
+            uppercase: true
         }));
     }
     

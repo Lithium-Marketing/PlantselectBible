@@ -37,8 +37,8 @@ export function ServicesPlugin<T extends Record<string, TableConfig>>(tables: T)
         const s = new Services<T>(tables);
         app.provide(key, s);
         app.config.globalProperties.$services = s;
-        app.config.globalProperties.$v = function (table: keyof T, id: number,field:string) {
-            return s.data.get(table, id,field);
+        app.config.globalProperties.$v = function (table: keyof T, id: number, field: string) {
+            return s.data.get(table, id, field);
         }
     }
 }

@@ -7,7 +7,7 @@ import store from "@/store";
 import router from "@/router";
 import {LogService} from "@/services/logService";
 
-const logger = LogService.logger({name:"Const"})
+const logger = LogService.logger({name: "Const"})
 
 export const ColorMenu = (store: Store<any>, modifications: Modifications, row: HTMLTableRowElement): MenuItemConstructorOptions[] => {
     function oaColor(val, type) {
@@ -113,14 +113,14 @@ export function toText(key: string) {
 ////
 
 export enum PricesId {
-    Main=1
+    Main = 1
 }
 
-export const currentYear = moment().add(7,"month").year();
+export const currentYear = moment().add(7, "month").year();
 
 ////
 
-export function Const(app: App, ...options: any[]):any{
+export function Const(app: App, ...options: any[]): any {
     const year = moment().add(7, 'M').year();
     app.config.globalProperties.$pastTitle = {
         years_pastM0: "Mort " + year,

@@ -113,7 +113,7 @@ export default defineComponent({
 					a[v.Prix_ID] = v;
 					return a;
 				}, {});
-				return Object.values(store.state._.priceTitles).map(t => ({...pricesByTitle[t.ID], Titre: t.Titre, Prix_ID:t.ID ,Produit_ID: prodID}));
+				return Object.values(store.state._.priceTitles).map(t => ({...pricesByTitle[t.ID], Titre: t.Titre, Prix_ID: t.ID, Produit_ID: prodID}));
 			}),
 
 			oas: computed(() => {
@@ -126,7 +126,7 @@ export default defineComponent({
 				return store.state._.oas[oaID];
 			}),
 
-			updatePrice(val, Prix_ID,Produit_ID) {
+			updatePrice(val, Prix_ID, Produit_ID) {
 				modifications.add({
 					type: "setPrice",
 					val,

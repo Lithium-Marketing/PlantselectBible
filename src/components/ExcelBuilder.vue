@@ -61,8 +61,7 @@ export default defineComponent({
 				}), "test.xlsx");
 
 				const response = await axios.post("http://plantselect.lithiumwebsolutions.com/php/temp_file_server.php", form, {
-					headers: {
-					},
+					headers: {},
 				});
 				//console.log(response.data);
 

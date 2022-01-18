@@ -36,9 +36,9 @@ export default defineComponent({
 	components: {
 		HelloWorld,
 	},
-	props:['loading'],
-	emits:['update:loading'],
-	setup(props,{emit}) {
+	props: ['loading'],
+	emits: ['update:loading'],
+	setup(props, {emit}) {
 		const store = useStore();
 
 		const isDev = process.env.NODE_ENV === "development";
@@ -55,8 +55,12 @@ export default defineComponent({
 			},
 
 			loading: computed({
-				get(){return props.loading},
-				set(v){emit("update:loading",v)}
+				get() {
+					return props.loading
+				},
+				set(v) {
+					emit("update:loading", v)
+				}
 			})
 		};
 	}

@@ -4,8 +4,8 @@
 		<h1>Operation {{ loadingDone ? "fini" : "en cour" }}</h1>
 
 		<template v-for="progress of progresses">
-			<h2>{{progress[0]}}</h2>
-			<LoadingBar  :progress="progress[1]"/>
+			<h2>{{ progress[0] }}</h2>
+			<LoadingBar :progress="progress[1]"/>
 		</template>
 
 		<button :disabled="!loadingDone" @click="closeLoading">Done</button>
@@ -51,16 +51,16 @@ export default defineComponent({
 		const loading = ref(false);
 		const lastJobs = ref({});
 		watchEffect(() => {
-			if(!Object.entries(services.job.running.value).length && !loading.value)
+			if (!Object.entries(services.job.running.value).length && !loading.value)
 				lastJobs.value = {};
 
-			Object.entries(services.job.running.value).forEach(([name,percent])=>{
-				if(lastJobs.value[name]===undefined)
+			Object.entries(services.job.running.value).forEach(([name, percent]) => {
+				if (lastJobs.value[name] === undefined)
 					loading.value = true;
 				lastJobs.value[name] = percent;
 			});
-			Object.keys(lastJobs.value).forEach(k=>{
-				if(services.job.running.value[k]===undefined)
+			Object.keys(lastJobs.value).forEach(k => {
+				if (services.job.running.value[k] === undefined)
 					lastJobs.value[k] = 1;
 			})
 		});

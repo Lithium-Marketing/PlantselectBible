@@ -11,13 +11,15 @@
 				</table>
 			</Tab>
 			<Tab header="Modifications">
-				<ModificationsPanel />
+				<ModificationsPanel/>
 			</Tab>
 			<Tab header="Sauvegarde">
 				<div class="saves">
 					<loading-bar :progress="-1" v-if="$store.state._.loadingSaves"/>
 					<table v-else>
-						<tr><th colspan="2" style="background-color: red;color: white">!!Attention!! Charger une sauvegarde va effacer les modification en cours</th></tr>
+						<tr>
+							<th colspan="2" style="background-color: red;color: white">!!Attention!! Charger une sauvegarde va effacer les modification en cours</th>
+						</tr>
 						<tr>
 							<td>
 								<button @click="$store.dispatch('refreshSaves')" style="background-color: rgb(160 160 160)">Rafraichir</button>
