@@ -92,7 +92,7 @@
 
 <script lang="ts">
 import {computed, ComputedRef, defineComponent, ref} from "vue";
-import {useServices} from "@/services";
+import {Services, useServices} from "@/services";
 import {Store, useStore} from "vuex";
 import {StoreState} from "@/store";
 import Pagination from "@/components/Pagination.vue";
@@ -100,26 +100,27 @@ import TableInput from "@/components/TableInput.vue";
 import {currentYear, PricesId} from "@/helper/Const";
 import moment from "moment";
 import {LogService} from "@/services/logService";
+import {Tables} from "@/dataConfig";
 
-const logger = LogService.logger({name:"ViewC"});
+const logger = LogService.logger({name: "ViewC"});
 
 export default defineComponent({
 	name: "ViewC",
 	components: {TableInput, Pagination},
 	setup() {
 		const store = useStore<StoreState>();
-		const services = useServices();
+		const services = useServices<Tables>();
 
 		const all = computed(function allCompute() {//`produits`.`Type` asc,`vue_produits`.`Variete` asc,`vue_produits`.`Format` asc"
 			logger.time("all viewc");
 			try {
 				const oasByProd: Record<any, any[]> = Object.values(services.data.get("ordres_assemblages").value).reduce(function oasByProdReduce(a, oa) {
-					a[oa.value.Produit] = a[oa.value.Produit] || [];
-					a[oa.value.Produit].push(oa.value);
+					a[oa.Produit] = a[oa.Produit] || [];
+					a[oa.Produit].push(oa);
 					return a;
 				}, {});
 
-				return Object.values(services.data.get("produits").value).map(v => v.value).sort((a, b) => {
+				return Object.values(services.data.get("produits").value).sort((a, b) => {
 					return a.Type - b.Type || a.Variete?.localeCompare(b.Variete) || a.Format - b.Format;
 				}).flatMap(function allFlatMap(product) {
 					const prodCache = services.cache.byProd.value[product.ID].value;
@@ -148,6 +149,7 @@ export default defineComponent({
 			lines: computed(() => {
 				logger.time("page viewc");
 				try {
+					console.log(services.cache.archives.value);
 					return lines.value.map(line => {
 						try {
 							line.c = JSON.parse(line['bible.Color']);
@@ -160,15 +162,15 @@ export default defineComponent({
 						line.years_pastV0 = price?.Prix;
 						line.$years_pastV0 = price?.$Prix;
 
-						line.years_pastV1 = services.cache.archives.value[0][currentYear - 1]?.[line.product.ID]?.value;
+						line.years_pastV1 = services.cache.archives.value[0]?.[currentYear - 1]?.[line.product.ID]?.value;
 						line.years_pastV1 = (line.years_pastV1 ?? 0) / 100;
 
-						line.years_pastV2 = services.cache.archives.value[0][currentYear - 2]?.[line.product.ID]?.value;
+						line.years_pastV2 = services.cache.archives.value[0]?.[currentYear - 2]?.[line.product.ID]?.value;
 						line.years_pastV2 = (line.years_pastV2 ?? 0) / 100;
 
 						line.years_pastVe0 = prodCache.vente(currentYear);
-						line.years_pastVe1 = prodCache.vente(currentYear-1);
-						line.years_pastVe2 = prodCache.vente(currentYear-2);
+						line.years_pastVe1 = prodCache.vente(currentYear - 1);
+						line.years_pastVe2 = prodCache.vente(currentYear - 2);
 
 						return line;
 					});
@@ -179,16 +181,15 @@ export default defineComponent({
 
 			upPrice(val, line) {
 				let id = line.prices?.[PricesId.Main]?.ID
-				if(!id){
-					id = services.modification.create("produits_prix",{
+				if (!id) {
+					id = services.modification.create("produits_prix", {
 						Prix_ID: PricesId.Main,
 						Produit_ID: line.product.ID,
 						Date: moment().unix(),
 						Date_Modification: moment().unix(),
-					},"Creation d'un prix produit");
+					}, "Creation d'un prix produit");
 				}
 				services.modification.set("produits_prix", id, "Prix", val, "Prix principal");
-
 			}
 		};
 	}

@@ -17,8 +17,8 @@ export interface Mod<T> extends ModVal{
 }
 
 export class ModificationService<T extends Record<string, TableConfig>> extends BaseService<T> {
-    private readonly mods: Record<keyof T, Record<number, Record<string, ModVal>>>;
-    private readonly creations: Record<keyof T, Record<number, ModVal>>;
+    public readonly mods: Record<keyof T, Record<number, Record<string, ModVal>>>;
+    public readonly creations: Record<keyof T, Record<number, ModVal>>;
     
     constructor(s: Services<T>, tables: T) {
         super(s);

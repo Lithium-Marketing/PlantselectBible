@@ -13,7 +13,9 @@ export const tables = {
     "produits_prix": {
         indexes: ["Produit_ID"]
     },
-    "Archive": {},
+    "Archive": {
+        key: "id"
+    },
 } as const;
 export type Tables = typeof tables;
 

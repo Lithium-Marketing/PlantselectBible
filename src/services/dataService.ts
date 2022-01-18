@@ -1,16 +1,16 @@
 import {Services} from "@/services/index";
 import {persistentStorage} from "@/helper/PersistentStorage";
-import {computed, ComputedRef, reactive, Ref, ref, watchEffect, WritableComputedRef} from "vue";
+import {computed, ComputedRef, watchEffect, WritableComputedRef} from "vue";
 import {createPool, Pool, PoolOptions, RowDataPacket} from "mysql2/promise";
 import {BaseService} from "@/helper/baseService";
-import {loadWhenIdle} from "@/helper/JobHelper";
 import {LogService} from "@/services/logService";
 
 const logger = LogService.logger({name: "DataService"})
 
 export interface TableConfig {
     indexes?: readonly string[],
-    sql?: string
+    sql?: string,
+    key?: string
 }
 
 type IndexesByTable<T extends Record<string, TableConfig>> = {
@@ -39,10 +39,14 @@ export class DataService<T extends Record<string, TableConfig>> extends BaseServ
     private readonly tablesName: string[];
     private readonly tablesConfig: T;
     
-    private readonly tablesRaw: Record<keyof T, WritableComputedRef<any[]>>;
+    public readonly raw: { [table in keyof T]: WritableComputedRef<Record<number, any>> };
+    public readonly tables: {[table in keyof T]: ComputedRef<Record<number, any>>};
+    
+    
+    //private readonly tablesRaw: Record<keyof T, WritableComputedRef<any[]>>;
     private readonly tablesSchema: Record<keyof T, WritableComputedRef<Schema>>;
     private readonly indexesByTable: IndexesByTable<T>;//TODO add reactivity
-    private readonly tables: Record<keyof T, ComputedRef<Record<number, ComputedRef<any>>>>;
+    
     private readonly tableDefault: ComputedRef<Record<keyof T, any>>;
     
     constructor(services: Services<T>, tables: T) {
@@ -56,13 +60,69 @@ export class DataService<T extends Record<string, TableConfig>> extends BaseServ
         this.tablesName = Object.keys(tables);
         this.tablesConfig = tables;
         
-        this.tablesRaw = this._initRawDatas();
+        this.raw = Object.keys(tables).reduce((a, t) => {
+            const cache = persistentStorage("raw:" + t, {});
+            a[t as keyof T] = computed({
+                get() {
+                    return cache.value;
+                },
+                set(val) {
+                    cache.value = val;
+                }
+            });
+            return a;
+        }, {} as Record<keyof T, WritableComputedRef<Record<number, any>>>);
+        
+        this.tables = Object.keys(tables).reduce((a,table)=>{
+            a[table as keyof T] = computed(() => {//add all modifications to all rows of the table (heavy)
+                const result = {};
+        
+                for (const id in this.raw[table].value) {
+                    if (this.services.modification.mods[table][id]) {
+                        const obj = result[id] = {...this.raw[table].value[id]};
+                        Object.entries(this.services.modification.mods[table][id]).forEach(([key, value]) => {
+                            obj[key] = value.val;
+                        });
+                        Object.freeze(obj);
+                    }else
+                        result[id] = this.raw[table].value[id];
+                }
+        
+                for (const id in this.services.modification.creations[table]) {
+                    if (result[id])
+                        logger.error("creation overlap with existing id", id)
+                    result[id] = this.services.modification.creations[table][id].val;
+                }
+        
+                return result;
+            });
+            return a;
+        },{} as Record<keyof T, ComputedRef<Record<number, any>>>)
+        
+        //this.tablesRaw = this._initRawDatas();
         this.tablesSchema = this._initSchema();
         this.indexesByTable = Object.keys(tables).reduce((a, t) => {
+            const table = t as keyof T;
             a[t] = {};
+            this.tablesConfig[table].indexes?.forEach(index => {
+                console.log(table, index);
+                a[t][index] = computed(() => {
+                    console.time(`index ${table} . ${index}`);
+                    try {
+                        const tableData = this.raw[table].value;
+                        return Object.entries(tableData).reduce((a, [id,entity]) => {
+                            a[entity[index]] = a[entity[index]] || [];
+                            a[entity[index]].push(entity.ID ?? entity.id);
+                            return a;
+                        }, {})
+                    } finally {
+                        console.timeEnd(`index ${table} . ${index}`)
+                    }
+                })
+            });
             return a;
         }, {}) as IndexesByTable<T>;
-        this.tables = this._initDatas();
+        
         
         this.tableDefault = computed(() => {
             return Object.entries(this.tablesSchema).reduce((a, v) => {
@@ -83,94 +143,22 @@ export class DataService<T extends Record<string, TableConfig>> extends BaseServ
         return datas as Record<keyof T, WritableComputedRef<Schema>>;
     }
     
-    private _initRawDatas(): Record<keyof T, WritableComputedRef<any[]>> {
-        const datas = {}
-        for (const table of this.tablesName) {
-            datas[table] = persistentStorage("table:" + table, {});
-        }
-        return datas as Record<keyof T, WritableComputedRef<any[]>>;
-    }
-    
-    private _initDatas(): Record<keyof T, ComputedRef<Record<number, any>>> {
-        const datas = {}
-        for (const table of this.tablesName) {
-            datas[table] = computed(() => {
-                logger.time(`table ${table}`);
-                try {
-                    const result = this.tablesRaw[table].value;
-                    const obj = {};
-                    for (let i = 0; i < result.length; i++) {
-                        const id = result[i].ID ?? result[i].id;
-                        
-                        // @ts-ignore //TODO remove ts-ignore
-                        const mods = this.services.modification.get(table, id);
-                        obj[id] = computed(() => {
-                            const entity = Object.assign({}, result[i]);
-                            Object.entries(entity).forEach(([field, val]) => {
-                                entity["$" + field] = entity[field];
-                                if (mods.value[field] !== undefined)
-                                    entity[field] = mods.value[field].val;
-                            });
-                            return Object.freeze(entity);
-                        });
-                    }
-                    
-                    const creations = this.services.modification.asListCreation(table).value;
-                    Object.entries(creations).forEach(([id, mod]) => {
-                        const mods = this.services.modification.get(table, id as unknown as number);
-                        obj[id] = computed(() => {
-                            const entity = Object.assign({}, this.tableDefault.value[table], mod.val);
-                            Object.entries(entity).forEach(([field, val]) => {
-                                entity["$" + field] = entity[field];
-                                if (mods.value[field] !== undefined)
-                                    entity[field] = mods.value[field].val;
-                            });
-                            return Object.freeze(entity);
-                        });
-                    });
-                    
-                    return obj;
-                } finally {
-                    logger.timeEnd(`table ${table}`)
-                }
-            });
-            
-            this.tablesConfig[table].indexes?.forEach(index => {
-                logger.log(table, index);
-                this.indexesByTable[table][index] = computed(() => {
-                    logger.time(`index ${table} . ${index}`);
-                    try {
-                        const tableData = this.tablesRaw[table].value;
-                        return tableData.reduce((a, entity) => {
-                            a[entity[index]] = a[entity[index]] || [];
-                            a[entity[index]].push(entity.ID ?? entity.id);
-                            return a;
-                        }, {})
-                    } finally {
-                        logger.timeEnd(`index ${table} . ${index}`)
-                    }
-                });
-                
-                loadWhenIdle(this.indexesByTable[table][index], `index ${table} ${index}`);
-            });
-            
-            loadWhenIdle(datas[table], `table ${table}`);
-        }
-        return datas as Record<keyof T, ComputedRef<Record<number, any>>>;
-    }
-    
     refresh(table: T | true = true) {
         for (const table of this.tablesName) {
             this.services.job.add((async () => {
                 this.tablesSchema[table].value = await this.refreshSchema(table);
                 
                 const sql = this.tablesConfig[table].sql ?? `SELECT *
-				             FROM ${table}`;
-                const result = (await this.conn.execute(sql))[0] as any[];
+				                                             FROM ${table}`;
+                logger.log(table,this.tablesConfig[table])
+                const result = ((await this.conn.execute(sql))[0] as any[]).reduce((a, v) => {
+                    a[v[this.tablesConfig[table].key ?? "ID"]] = v;
+                    return a;
+                }, {});
                 
-                this.tablesRaw[table].value = result;
+                this.raw[table as keyof T].value = result;
                 
-                logger.log(table, result.length);
+                logger.log(table, Object.entries(result).length);
             })(), "Downloading data from " + table)
         }
     }
@@ -199,12 +187,35 @@ export class DataService<T extends Record<string, TableConfig>> extends BaseServ
         })
     }
     
+    get(table: keyof T, id: number, field:string): WritableComputedRef<any>;
     get(table: keyof T, id: number): ComputedRef<any>;
-    get(table: keyof T): ComputedRef<Record<number, ComputedRef<any>>>;
+    get(table: keyof T): ComputedRef<Record<number, any>>;
     
-    get(table: keyof T, id?: number) {
+    get(table: keyof T, id?: number, field?:string) {
+        if(field !==undefined)
+            return computed({
+                get(){
+                    return this.services.modification.mods[table]?.[id]?.[field] ?? this.raw[table][id][field];
+                },
+                set(val){
+                    this.services.modification.set(table,id,field,val,"auto");
+                }
+            });
         if (id !== undefined)
-            return computed(() => this.tables[table].value[id]?.value); else
+            if (id >= 0)
+                return computed(() => {//add modification to the row of the table
+                    const obj = {...this.raw[table][id]};
+                    if (this.services.modification.mods[table][id])
+                        Object.entries(this.services.modification.mods[table][id]).forEach(([key, value]) => {
+                            obj[key] = value.val;
+                        });
+                    return obj;
+                });
+            else
+                return computed(() => {//return created row
+                    return this.services.modification.creations[table][id]?.val;
+                });
+        else
             return this.tables[table];
     }
     

@@ -30,8 +30,7 @@ export class CacheService extends BaseService<any> {
         super(s);
         
         this.archives = computed(function archives() {
-            return Object.values(s.data.get("Archive").value).reduce((a, v) => {
-                const entry = v.value;
+            return Object.values(s.data.get("Archive").value).reduce((a, entry) => {
                 a[entry.type] = a[entry.type] || {};
                 a[entry.type][entry.year] = a[entry.type][entry.year] || {};
                 a[entry.type][entry.year][entry.produit] = entry;

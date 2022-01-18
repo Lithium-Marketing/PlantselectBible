@@ -29,7 +29,7 @@
 import {computed, defineComponent, ref} from "vue";
 import HelloWorld from "@/components/HelloWorld";
 import {useStore} from "vuex";
-import {app, autoUpdater} from "@electron/remote";
+//import {app, autoUpdater} from "@electron/remote";
 
 export default defineComponent({
 	name: 'Menu',
@@ -44,9 +44,9 @@ export default defineComponent({
 		const isDev = process.env.NODE_ENV === "development";
 		const canUpdate = ref(false);
 
-		autoUpdater.on("update-downloaded", () => {
-			canUpdate.value = true;
-		});
+		// autoUpdater.on("update-downloaded", () => {
+		// 	canUpdate.value = true;
+		// });
 
 		return {
 			canUpdate,
