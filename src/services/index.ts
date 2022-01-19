@@ -4,6 +4,7 @@ import {CacheService} from "@/services/cacheService";
 import {DataService} from "@/services/dataService";
 import {JobService} from "@/services/jobService";
 import {SaveService} from "@/services/saveService";
+import {LogService} from "@/services/logService";
 
 export interface TableConfig {
     indexes?: readonly string[],
@@ -22,6 +23,8 @@ export type TablesDef = {
 }
 
 export class Services<T extends TablesDef, C extends TableConfigs<T>> {
+    public readonly logs = LogService
+    
     public readonly job: JobService;
     public readonly data: DataService<T, C>;
     public readonly cache: CacheService;
