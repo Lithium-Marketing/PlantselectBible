@@ -17,9 +17,23 @@ type LogEntry = {
     type: LogLevel
     prefix?: string
     val: any
+    logger?: string
 }
 
 export class LogService extends BaseService<any, any> {
+    
+    public static readonly outputLogLevel: Record<LogLevel, boolean> = {
+        [LogLevel.ERROR]: true,
+        [LogLevel.WARN]: true,
+        [LogLevel.INFO]: true,
+        [LogLevel.DEBUG]: true,
+        [LogLevel.TRACE]: true,
+    };
+    
+    /**
+     * undefined = true
+     */
+    public static readonly outputLoggers: Record<string, boolean> = {};
     
     private static stack: LogGroup[] = [{
         group: false,
@@ -41,7 +55,8 @@ export class LogService extends BaseService<any, any> {
             l.add({
                 type,
                 prefix: config.name,
-                val: typeof val === 'string' ? val : JSON.stringify(val)
+                val: typeof val === 'string' ? val : JSON.stringify(val),
+                logger: config.name
             });
         }
         
@@ -129,24 +144,24 @@ export class LogService extends BaseService<any, any> {
             log.prefix ? `[${log.prefix}]` : "",
             log.val
         ];
-        
-        switch (log.type) {
-            case LogLevel.ERROR:
-                console.error(...txt);
-                break;
-            case LogLevel.WARN:
-                console.warn(...txt);
-                break;
-            case LogLevel.INFO:
-                console.info(...txt);
-                break;
-            case LogLevel.DEBUG:
-                console.log(...txt);
-                break;
-            case LogLevel.TRACE:
-                console.trace(...txt);
-                break;
-        }
+        if (LogService.outputLogLevel[log.type] && LogService.outputLoggers[log.logger]!==false)
+            switch (log.type) {
+                case LogLevel.ERROR:
+                    console.error(...txt);
+                    break;
+                case LogLevel.WARN:
+                    console.warn(...txt);
+                    break;
+                case LogLevel.INFO:
+                    console.info(...txt);
+                    break;
+                case LogLevel.DEBUG:
+                    console.log(...txt);
+                    break;
+                case LogLevel.TRACE:
+                    console.trace(...txt);
+                    break;
+            }
     }
 }
 
@@ -180,3 +195,9 @@ export interface Logger {
 export interface LoggerConfig {
     name: string
 }
+
+declare global {
+    interface Window { LogService: typeof LogService; }
+}
+
+window.LogService = window.LogService || LogService;
