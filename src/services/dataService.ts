@@ -182,6 +182,8 @@ export class DataService<T extends TablesDef, C extends TableConfigs<T>> extends
         })
     }
     
+    private readonly getCache: Record<any, WeakRef<any>> = {};
+    
     get<K extends keyof T>(table: K, id: number, field: string): WritableComputedRef<any>;
     get<K extends keyof T>(table: K, id: number): ComputedRef<T[K]>;
     get<K extends keyof T>(table: K): ComputedRef<Record<number, T[K]>>;
@@ -198,14 +200,15 @@ export class DataService<T extends TablesDef, C extends TableConfigs<T>> extends
             });
         if (id !== undefined)
             if (id >= 0)
-                return computed(() => {//add modification to the row of the table
-                    const obj = {...this.raw[table][id]};
+                return this.getCache[table + ":::" + id]?.deref() ?? (this.getCache[table + ":::" + id] = new WeakRef(computed(() => {//add modification to the row of the table
+                    const obj = {...this.raw[table].value[id]};
                     if (this.services.modification.mods[table][id])
                         Object.entries(this.services.modification.mods[table][id]).forEach(([key, value]) => {
+                            // @ts-ignore
                             obj[key] = value.val;
                         });
-                    return obj;
-                });
+                    return Object.freeze(obj);
+                }))).deref();
             else
                 return computed(() => {//return created row
                     return this.services.modification.creations[table][id]?.val;
