@@ -54,10 +54,10 @@
 						<!--						<TableInput :modelValue="line.years_pastC0" :original="line.years_pastC0O" @update:modelValue="upCost($event,line)"/>-->
 					</td>
 					<td>
-						<TableInput :always="true" :modelValue="line.product['bible.Vendant']" :original="line.product['bible.VendantO']" @update:modelValue="upVendantF($event,line.product)"/>
+						<TableInput :always="true" :modelValue="line.bible.Vendant" :original="line.bible.$Vendant" @update:modelValue="upVendantF($event,line.product)"/>
 					</td>
 					<td>
-						<TableInput :modelValue="line.years_pastC0" :original="line.years_pastC0O" @update:modelValue="upCost($event,line)"/>
+						<TableInput :modelValue="line.years_pastC0" :original="line.$years_pastC0" @update:modelValue="upCost($event,line)"/>
 					</td>
 					<td>{{ $value(line.years_pastT0) }}</td>
 					<td :class="line.c?.v0">
@@ -69,14 +69,14 @@
 					<td>{{ $value(line.years_pastC2) }}</td>
 					<td>{{ $value(line.years_pastT2) }}</td>
 					<td>{{ $value(line.years_pastV2) }}</td>
-					<td>{{ line.oa?.Format }}</td>
-					<td>{{ line.oa?.Fournisseur }}</td>
-					<td :class="line.c?.Inventaire">{{ line.product.Quantite }}</td>
+					<td>{{ line.matiere_premiere?.Format }}</td>
+					<td>{{ line.fournisseur?.Code }}</td>
+					<td>{{ line.Inventaire }}</td>
 					<td :class="line.c?.qtyF">
-						<TableInput :always="true" :modelValue="line['bible.Quantite']" :original="line['bible.QuantiteO']" @update:modelValue="upAchat($event,line,line.product)"/>
+						<TableInput :always="true" :modelValue="line.bible.Quantite" :original="line.bible.$Quantite" @update:modelValue="upAchat($event,line,line.product)"/>
 					</td>
-					<td :class="line.c?.a0">{{ $valueI(line.product.years_pastA0) }}</td>
-					<td>{{ $valueI(line.product.years_pastA1) }}</td>
+					<td :class="line.c?.a0">{{ $valueI(line.achat.years_pastA0) }}</td>
+					<td>{{ $valueI(line.achat.years_pastA1) }}</td>
 					<td :class="line.c?.dateReception">{{ $date(line.oa?.Date_reception) }}</td>
 					<td>{{ $valueI(line.Quantite_recu) }}/{{ $valueI(line.oa?.Quantite_recevoir) }}</td>
 					<td>{{ $valueI(line.years_pastVe0) }}</td>
@@ -110,7 +110,7 @@ export default defineComponent({
 	setup() {
 		const store = useStore<StoreState>();
 		const services = useServices<MyTablesDef, MyTablesConfig>();
-
+		
 		const all = computed(function allCompute() {//`produits`.`Type` asc,`vue_produits`.`Variete` asc,`vue_produits`.`Format` asc"
 			logger.time("all viewc");
 			try {
@@ -119,29 +119,58 @@ export default defineComponent({
 					a[oa.Produit].push(oa);
 					return a;
 				}, {});
-
+				
+				const bibleByProd = services.data.indexesByTable.bible.Produit.value;
+				
 				return Object.values(services.data.get("produits").value).sort((a, b) => {
 					return a.Type - b.Type || a.Variete?.localeCompare(b.Variete) || a.Format - b.Format;
 				}).flatMap(function allFlatMap(product) {
 					const prodCache = services.cache.byProd.value[product.ID].value;
 					const prices = prodCache.prices;
-
+					
+					const bibleId = bibleByProd[product.ID]?.[0];
+					const bibleData = bibleId !== undefined ? services.data.get("bible", bibleId).value : undefined;
+					
+					const bible = {
+						Vendant: bibleData?.Vendant,
+						$Vendant: services.data.raw.bible.value[bibleId]?.Vendant,
+						Quantite: bibleData?.Quantite,
+						$Quantite: services.data.raw.bible.value[bibleId]?.Quantite
+					}
+					
+					const achat = {
+						years_pastA0: 0,
+						years_pastA1: 0,
+					};
+					
+					oasByProd[product.ID]?.forEach((oa) => {
+						const year = moment.unix(oa.Date_reception).year();
+						if (currentYear == year)
+							achat.years_pastA0 += oa.Quantite_recevoir;
+						if (currentYear - 1 == year)
+							achat.years_pastA1 += oa.Quantite_recevoir;
+					});
+					
 					return oasByProd[product.ID]?.map(function oasByProdMap(oa) {
 						return {
 							oa,
 							product,
-							prices
+							prices,
+							bible,
+							achat
 						}
 					}) || [{
 						product,
-						prices
+						prices,
+						bible,
+						achat
 					}]
 				})
 			} finally {
 				logger.timeEnd("all viewc");
 			}
 		});
-
+		
 		const {len, ipp, lines, page} = table(all, store);
 		logger.log(moment().add(7, "month").year());
 		return {
@@ -149,36 +178,62 @@ export default defineComponent({
 			lines: computed(() => {
 				logger.time("page viewc");
 				try {
-					console.log(services.cache.archives.value);
 					return lines.value.map(line => {
 						try {
 							line.c = JSON.parse(line['bible.Color']);
 						} catch (e) {
 						}
-
+						
 						const prodCache = services.cache.byProd.value[line.product.ID].value;
-						const price = prodCache.price(PricesId.Main);
-
+						const price = line.prices?.[PricesId.Main];
+						
 						line.years_pastV0 = price?.Prix;
-						line.$years_pastV0 = price?.$Prix;
-
+						line.$years_pastV0 = services.data.raw.produits_prix.value[price?.ID]?.Prix;
+						
 						line.years_pastV1 = services.cache.archives.value[0]?.[currentYear - 1]?.[line.product.ID]?.value;
 						line.years_pastV1 = (line.years_pastV1 ?? 0) / 100;
-
+						
 						line.years_pastV2 = services.cache.archives.value[0]?.[currentYear - 2]?.[line.product.ID]?.value;
 						line.years_pastV2 = (line.years_pastV2 ?? 0) / 100;
-
+						
 						line.years_pastVe0 = prodCache.vente(currentYear);
 						line.years_pastVe1 = prodCache.vente(currentYear - 1);
 						line.years_pastVe2 = prodCache.vente(currentYear - 2);
-
+						
+						const mp = services.data.get("matieres_premieres", line.oa?.Matiere_premiere ?? false).value;
+						
+						line.matiere_premiere = mp;
+						
+						line.years_pastC0 = mp?.Prix
+						line.$years_pastC0 = services.data.raw.matieres_premieres.value[line.oa?.Matiere_premiere]?.Prix
+						
+						line.years_pastC1 = services.cache.archives.value[1]?.[currentYear - 1]?.[line.oa?.Matiere_premiere]?.value;
+						line.years_pastC1 = (line.years_pastC1 ?? 0) / 100;
+						
+						line.years_pastC2 = services.cache.archives.value[1]?.[currentYear - 2]?.[line.oa?.Matiere_premiere]?.value;
+						line.years_pastC2 = (line.years_pastC2 ?? 0) / 100;
+						
+						const four = services.data.get("fournisseurs", mp?.Fournisseur ?? false).value;
+						
+						line.fournisseur = four;
+						
+						line.years_pastT0 = four?.Transport * (services.data.raw.currency_rates.value[four.Currency + ",CAD"]?.rate ?? -1);
+						
+						line.years_pastT1 = services.cache.archives.value[2]?.[currentYear - 1]?.[four?.ID]?.value;
+						line.years_pastT1 = (line.years_pastT1 ?? 0) / 100;
+						
+						line.years_pastT2 = services.cache.archives.value[2]?.[currentYear - 2]?.[four?.ID]?.value;
+						line.years_pastT2 = (line.years_pastT2 ?? 0) / 100;
+						
+						line.Inventaire = services.data.raw.vue_inventaire.value[line.product?.ID]?.Quantite
+						
 						return line;
 					});
 				} finally {
 					logger.timeEnd("page viewc");
 				}
 			}),
-
+			
 			upPrice(val, line) {
 				let id = line.prices?.[PricesId.Main]?.ID
 				if (!id) {
@@ -199,7 +254,7 @@ function table(all: ComputedRef<any[]>, store: Store<StoreState>) {
 	const page = ref(0);
 	const ipp = computed(() => store.state.settings.ipp);
 	const len = computed(() => Math.ceil(all.value.length / ipp.value));
-
+	
 	return {
 		page, ipp, len,
 		lines: computed(() => {

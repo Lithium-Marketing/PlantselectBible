@@ -2,8 +2,9 @@ import {Services} from "@/services/index";
 import {BaseService} from "@/helper/baseService";
 import {computed, ComputedRef} from "vue";
 import moment from "moment";
+import {MyTablesConfig, MyTablesDef} from "@/dataConfig";
 
-export class CacheService extends BaseService<any, any> {
+export class CacheService extends BaseService<MyTablesDef, MyTablesConfig> {
     /**
      * archives[type][year][id]
      */
@@ -20,14 +21,14 @@ export class CacheService extends BaseService<any, any> {
     
     public readonly byProd: ComputedRef<{
         [produit: number]: ComputedRef<{
-            prices: any[],
-            price(id: number): any | undefined;
+            prices: Record<number, MyTablesDef["produits_prix"]>,
             vente(year: number): number;
         }>
     }>;
     
-    constructor(s: Services<any, any>) {
-        super(s);
+    constructor(services: Services<any, any>) {
+        super(services);
+        const s = services as Services<MyTablesDef, MyTablesConfig>;
         
         this.archives = computed(function archives() {
             return Object.values(s.data.get("Archive").value).reduce((a, entry) => {
@@ -44,17 +45,14 @@ export class CacheService extends BaseService<any, any> {
             
             return Object.entries(s.data.get("produits").value).reduce((a, [prod_id, prod]) => {
                 a[prod_id] = computed(() => {
-                    const prices = priceByProd[prod_id]?.map(id => s.data.get("produits_prix", id).value);
+                    const prices: Record<number, MyTablesDef["produits_prix"]> = priceByProd[prod_id]?.reduce((a, id) => {
+                        const price = s.data.get("produits_prix", id).value;
+                        a[price.Prix_ID] = price;
+                        return a;
+                    }, {});
+                    
                     return {
                         prices,
-                        price(Prix_ID: number) {
-                            if (priceByProd[prod_id])
-                                for (const id of priceByProd[prod_id]) {
-                                    if (s.data.get("produits_prix", id).value.Prix_ID === Prix_ID)
-                                        return s.data.get("produits_prix", id).value;
-                                }
-                            return;
-                        },
                         vente(year: number) {
                             let result = 0;
                             if (cmdProdByProd[prod_id])
@@ -73,6 +71,10 @@ export class CacheService extends BaseService<any, any> {
                 return a;
             }, {});
         });
+        
+        // this.currencyRate = computed(()=>{
+        //
+        // });
     }
     
 }

@@ -1,6 +1,6 @@
 import {Services, TableConfig, TableConfigs, TablesDef} from "@/services/index";
 import {persistentStorage} from "@/helper/PersistentStorage";
-import {computed, ComputedRef, watchEffect, WritableComputedRef} from "vue";
+import {computed, ComputedRef, watch, watchEffect, WritableComputedRef} from "vue";
 import {createPool, Pool, PoolOptions, RowDataPacket} from "mysql2/promise";
 import {BaseService} from "@/helper/baseService";
 import {LogService} from "@/services/logService";
@@ -9,7 +9,7 @@ const logger = LogService.logger({name: "DataService"})
 
 type IndexesByTable<T extends TablesDef, C extends TableConfigs<T>> = {
     [name in keyof T]: {
-        [index in T[name]["indexes"][number]]: ComputedRef<Record<number, number[] | undefined>>
+        [index in C[name]["indexes"][number]]: ComputedRef<Record<number, number[] | undefined>>
     }
 }
 
@@ -39,7 +39,7 @@ export class DataService<T extends TablesDef, C extends TableConfigs<T>> extends
     
     //private readonly tablesRaw: Record<keyof T, WritableComputedRef<any[]>>;
     private readonly tablesSchema: Record<keyof T, WritableComputedRef<Schema>>;
-    private readonly indexesByTable: IndexesByTable<T, C>;//TODO add reactivity
+    public readonly indexesByTable: IndexesByTable<T, C>;//TODO add reactivity
     
     private readonly tableDefault: ComputedRef<Record<keyof T, any>>;
     
@@ -48,7 +48,9 @@ export class DataService<T extends TablesDef, C extends TableConfigs<T>> extends
         
         this.mysqlLogin = persistentStorage<PoolOptions>("mysqlLogin", {});
         watchEffect(() => {
-            this.conn = createPool(this.mysqlLogin.value);
+            this.conn = createPool(Object.assign({
+            
+            },this.mysqlLogin.value));
         });
         
         this.tablesName = Object.keys(tables);
@@ -70,7 +72,6 @@ export class DataService<T extends TablesDef, C extends TableConfigs<T>> extends
         this.tables = Object.keys(tables).reduce((a, table) => {
             a[table as keyof T] = computed(() => {//add all modifications to all rows of the table (heavy)
                 const result = {};
-                
                 for (const id in this.raw[table].value) {
                     if (this.services.modification.mods[table][id]) {
                         const obj = result[id] = {...this.raw[table].value[id]};
@@ -100,9 +101,9 @@ export class DataService<T extends TablesDef, C extends TableConfigs<T>> extends
             const table = t as keyof T;
             a[t] = {};
             this.tablesConfig[table].indexes?.forEach(index => {
-                console.log(table, index);
+                logger.debug("table index init", table, index);
                 a[t][index] = computed(() => {
-                    console.time(`index ${table} . ${index}`);
+                    logger.time(`index ${table} . ${index}`);
                     try {
                         const tableData = this.raw[table].value;
                         return Object.entries(tableData).reduce((a, [id, entity]) => {
@@ -111,7 +112,7 @@ export class DataService<T extends TablesDef, C extends TableConfigs<T>> extends
                             return a;
                         }, {})
                     } finally {
-                        console.timeEnd(`index ${table} . ${index}`)
+                        logger.timeEnd(`index ${table} . ${index}`)
                     }
                 })
             });
@@ -138,24 +139,42 @@ export class DataService<T extends TablesDef, C extends TableConfigs<T>> extends
         return datas as Record<keyof T, WritableComputedRef<Schema>>;
     }
     
-    refresh(table: T | true = true) {
-        for (const table of this.tablesName) {
+    refresh(table: keyof T | true = true) {
+        const refresh = (table: keyof T) => {
             this.services.job.add((async () => {
                 this.tablesSchema[table].value = await this.refreshSchema(table);
                 
                 const sql = this.tablesConfig[table].sql ?? `SELECT *
 				                                             FROM ${table}`;
-                logger.log(table, this.tablesConfig[table])
-                const result = ((await this.conn.execute(sql))[0] as any[]).reduce((a, v) => {
-                    a[v[this.tablesConfig[table].key ?? "ID"]] = v;
-                    return a;
-                }, {});
+                logger.log(table, this.tablesConfig[table]);
+                const register = (() => {
+                    const key = this.tablesConfig[table].key;
+                    if (key && key.indexOf(",") !== -1) {
+                        const keys = key.split(",");
+                        return (a, v) => {
+                            a[keys.map(k => v[k]).join(",")] = v;
+                            return a;
+                        };
+                    }
+                    return (a, v) => {
+                        a[v[key ?? "ID"]] = v
+                        return a;
+                    };
+                })();
+                
+                const result = ((await this.conn.query(sql))[0] as any[]).reduce(register, {});
                 
                 this.raw[table as keyof T].value = result;
                 
                 logger.log(table, Object.entries(result).length);
             })(), "Downloading data from " + table)
         }
+        
+        if (table !== true)
+            refresh(table);
+        else
+            for (const table of this.tablesName)
+                refresh(table);
     }
     
     private async refreshSchema(table: keyof T) {

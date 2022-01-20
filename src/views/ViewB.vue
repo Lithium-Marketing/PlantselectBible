@@ -8,14 +8,14 @@
 				<th>Produit</th>
 				<th>Format</th>
 				<th>Vendant Futur</th>
-				<th v-for="titles in $store.state.priceTitles">{{ titles.Titre }}</th>
+				<th v-for="titles in prices">{{ titles.Titre }}</th>
 			</tr>
 			<tr>
 				<th></th>
 				<th><input v-model="search.variete"/></th>
 				<th></th>
 				<th></th>
-				<th v-for="titles in $store.state.priceTitles"></th>
+				<th v-for="titles in prices"></th>
 			</tr>
 			</thead>
 			<tbody>
@@ -27,7 +27,7 @@
 					<td>{{ product.Variete }}</td>
 					<td>{{ product.Format }}</td>
 					<td>{{ product['bible.Vendant'] }}</td>
-					<td v-for="titles in $store.state.priceTitles" style="padding-inline: 1rem" :class="{diff:product.prices?.[titles.ID]?.diff}">
+					<td v-for="titles in prices" style="padding-inline: 1rem" :class="{diff:product.pricesDiff[titles.ID]}">
 						{{ product.prices?.[titles.ID]?.Prix }}
 					</td>
 				</tr>
@@ -51,6 +51,8 @@ import {useStore} from "vuex";
 import Pagination from "@/components/Pagination.vue";
 import TableInput from "@/components/TableInput.vue";
 import {StoreState} from "@/store";
+import {useServices} from "@/services";
+import {MyTablesConfig, MyTablesDef} from "@/dataConfig";
 
 export default defineComponent({
 	name: 'ViewB',
@@ -61,15 +63,7 @@ export default defineComponent({
 	},
 	setup() {
 		const store = useStore<StoreState>();
-
-		const pricesByProduct = computed(() => {
-			const result = {};
-			for (const price of Object.values(store.state._.prices)) {
-				result[price.Produit_ID] = result[price.Produit_ID] || [];
-				result[price.Produit_ID].push(price);
-			}
-			return result;
-		})
+		const services = useServices<MyTablesDef, MyTablesConfig>()
 
 		const page = ref(0);
 		const ipp = computed(() => store.state.settings.ipp);
@@ -82,7 +76,9 @@ export default defineComponent({
 		watchEffect(() => {
 			products.value.length = 0;
 
-			const filtered = Object.values(store.state._.products).filter((p: any) => {
+			const filtered = Object.values(services.data.get("produits").value).sort((a, b) => {
+				return a.Type - b.Type || a.Variete?.localeCompare(b.Variete) || a.Format - b.Format;
+			}).filter((p: any) => {
 				return !p.Variete || p.Variete.toLowerCase().indexOf(search.variete.toLowerCase()) !== -1
 			});
 
@@ -91,23 +87,26 @@ export default defineComponent({
 				page.value = 0;
 			len.value = newLen;
 
+			const byProd = services.cache.byProd.value;
 			filtered.slice(ipp.value * page.value, ipp.value * (page.value + 1)).forEach((p: any, i) => {
 				products.value[i] = {
 					...p,
-					prices: pricesByProduct.value[p.ID]?.reduce((a, v) => {
-						a[v.Prix_ID] = {
-							...v,
-							diff: v.Prix !== v.PrixO
-						};
+					prices: byProd[p.ID].value.prices,
+					pricesDiff: Object.entries(byProd[p.ID].value.prices ?? {}).reduce((a, v) => {
+						a[v[0]] = services.data.raw.produits_prix.value[v[1].ID].Prix !== v[1].Prix;
 						return a;
 					}, {})
 				};
 			});
 		})
 
+		const prices = computed(() => {
+			return services.data.raw.prix.value;
+		})
 		return {
 			search,
 			products,
+			prices,
 
 			page,
 			len

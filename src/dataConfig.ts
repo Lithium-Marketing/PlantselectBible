@@ -1,6 +1,6 @@
 import {TableConfig, TableConfigs, TablesDef} from "@/services";
 
-function defConfig<T extends TableConfig>(config: T): T{
+function defConfig<T extends TableConfig>(config: T): T {
     return config;
 }
 
@@ -8,7 +8,9 @@ export const tablesConfig = {
     Archive: {
         key: "id"
     },
-    bible: {},
+    bible: {
+        indexes: ["Produit", "OA"]
+    },
     // bible_saves: {},
     // clients: {},
     clients_commandes: {},
@@ -17,14 +19,16 @@ export const tablesConfig = {
     },
     // clients_previsions: {},
     // clients_prix_details: {},
-    // commandes: {},
-    // currency_rates: {},
+    commandes: {},
+    currency_rates: {
+        key: "from,to"
+    },
     // empotages: {},
-    // fournisseurs: {},
+    fournisseurs: {},
     // groups: {},
     InventaireBase: {},
     InventaireBaseEntry: {},
-    // matieres_premieres: {},
+    matieres_premieres: {},
     // mort: {},
     ordres_assemblages: {},
     prix: {},
@@ -34,29 +38,94 @@ export const tablesConfig = {
     },
     // receptions: {},
     // settings: {},
-    // utilisateurs: {}
+    // utilisateurs: {},
+    vue_inventaire: {}
 } as const;
 export type MyTablesConfig = typeof tablesConfig;
 
 export interface MyTablesDef extends TablesDef {
     Archive
-    bible
+    bible: {
+        ID
+        OA
+        Quantite
+        Note
+        Color
+        Produit
+        Vendant
+        prixC
+    }
     // bible_saves
     // clients
     clients_commandes
     clients_commandes_produits
     // clients_previsions
     // clients_prix_details
-    // commandes
-    // currency_rates
+    commandes:{
+        Date
+        Date_Modification
+        Oas
+        Fournisseur
+        Date_commande
+        Parent
+        Position
+        Visible
+        Creator
+        ID
+        Code
+    }
+    currency_rates: {
+        from
+        to
+        rate
+        date
+    }
     // empotages
-    // fournisseurs
+    fournisseurs: {
+        Date
+        Date_Modification
+        Titre
+        Abbreviation
+        Adresse
+        Ville
+        Province
+        Code_postal
+        Pays
+        Telephone
+        Telephone_2
+        Courriel
+        Transport
+        Parent
+        Position
+        Visible
+        Creator
+        ID
+        Code
+        Num
+        Currency
+    }
     // groups
     InventaireBase
     InventaireBaseEntry
-    // matieres_premieres
+    matieres_premieres: {
+        Date
+        Date_Modification
+        Code
+        Fournisseur
+        Format
+        Finition
+        Prix
+        Equivalences
+        Parent
+        Position
+        Visible
+        Creator
+        ID
+        Produit
+        pw
+    }
     // mort
-    ordres_assemblages:{
+    ordres_assemblages: {
         Date
         Date_Modification
         Recette
@@ -81,8 +150,17 @@ export interface MyTablesDef extends TablesDef {
         Code
         EtiquetteText
         Commande
-    },
-    prix
+    }
+    prix: {
+        Date
+        Date_Modification
+        Titre
+        Parent
+        Position
+        Visible
+        Creator
+        ID
+    }
     produits: {
         Date
         Date_Modification
@@ -132,11 +210,27 @@ export interface MyTablesDef extends TablesDef {
         Nouveau
         Modifier
         Valeur
-    },
-    produits_prix
+    }
+    produits_prix: {
+        Date
+        Date_Modification
+        Prix_ID
+        Produit_ID
+        Prix
+        Parent
+        Position
+        Visible
+        Creator
+        ID
+    }
     // receptions
     // settings
     // utilisateurs
+    vue_inventaire: {
+        Quantite
+        ID
+        Active
+    }
 }
 
 //TODO bring cacheService config here

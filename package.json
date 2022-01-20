@@ -22,7 +22,7 @@
     "electron-updater": "^4.3.9",
     "exceljs": "^4.3.0",
     "moment": "^2.29.1",
-    "mysql2": "^2.2.5",
+    "mysql2": "^2.3.3",
     "sql-formatter": "^4.0.2",
     "vue": "^3.2.27",
     "vue-router": "^4.0.12",

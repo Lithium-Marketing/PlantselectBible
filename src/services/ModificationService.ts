@@ -1,8 +1,11 @@
 import {BaseService} from "@/helper/baseService";
 import {Services, TableConfig, TableConfigs, TablesDef} from "@/services/index";
-import {computed, ComputedRef, reactive, Ref, ref, unref, watch} from "vue";
+import {computed, ComputedRef, reactive, Ref, ref, triggerRef, unref, watch} from "vue";
 import {now} from "moment";
 import {persistentStorage} from "@/helper/PersistentStorage";
+import {LogService} from "@/services/logService";
+
+const logger = LogService.logger({name: "ModificationService"})
 
 interface ModVal {
     val: any,
@@ -73,20 +76,24 @@ export class ModificationService<T extends TablesDef, C extends TableConfigs<T>>
     /**
      *
      * @param tableName
-     * @param id if false, a new id will be created
+     * @param id
      * @param field
      * @param val
      * @param desc
      *
      * @return the id used
      */
-    set(tableName: keyof T, id: number, field: string, val: any, desc: string): number {
+    set<K extends keyof T>(tableName: K, id: number, field: keyof T[K], val: any, desc: string): number {
+        logger.trace("set", tableName, field, val, desc);
         const table = this.mods[tableName];
         
         if (!table[id])
             table[id] = {};
         
-        table[id][field] = {val, desc};
+        table[id] = {
+            ...table[id],
+            [field]: {val, desc}
+        };
         
         return id;
     }
@@ -98,7 +105,8 @@ export class ModificationService<T extends TablesDef, C extends TableConfigs<T>>
         });
     }
     
-    create(tableName: keyof T, fields: any, desc: string) {
+    create<K extends keyof T>(tableName: K, fields: Partial<T[K]>, desc: string) {
+        logger.trace("create", tableName, fields, desc);
         const id = -now();
         
         //TODO validate with schema

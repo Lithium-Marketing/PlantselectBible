@@ -2,27 +2,18 @@
 	<div style="display: flex;flex-direction: column">
 		<div v-for="price of prices" class="priceCalc">
 			<span>{{ price.Titre }}.</span>
-			<input :value="price.val" @change="setVal($event.target.value,price)" :disabled="price.Titre==='1'" placeholder="-">
+			<input :value="vals[price.ID]" @change="setVal($event.target.value,price)" :disabled="price.Titre==='1'" placeholder="-">
 			<strong>%</strong>
 		</div>
 		<hr>
-		<button @click="apply(true)" style="margin: auto">
+		<button @click="apply(true,false)" style="margin: auto">
 			Appliquer sur tout les produits
 		</button>
 		<hr>
-		<button @click="apply(false)" style="margin: auto">
-			Appliquer sur {{ n }} produits
-		</button>
-		<button @click="apply(true,true)" style="margin: auto">
-			Appliquer sur les produits avec un vendant futur {{ nF }}
+		<button @click="apply(true,true)" style="margin: auto" disabled>
+			Appliquer sur les produits avec un vendant futur
 		</button>
 		<LoadingBar :progress="progress"/>
-		<h2 v-if="n && n<1000">Produits affectés</h2>
-		<ul v-if="n && n<1000" style="margin: auto">
-			<li v-for="prod of prods" style="text-align: left">
-				{{ prod?.Variete }}
-			</li>
-		</ul>
 	</div>
 </template>
 
@@ -33,60 +24,35 @@ import {useStore} from "vuex";
 import {Modifications} from "@/helper/Modifications";
 import {StoreState} from "@/store";
 import LoadingBar from "@/components/LoadingBar.vue";
+import {MyTablesConfig, MyTablesDef} from "@/dataConfig";
+import {useServices} from "@/services";
+import {PricesId} from "@/helper/Const";
+import {LogService} from "@/services/logService";
+
+const logger = LogService.logger({name: "PriceCalc"});
 
 export default defineComponent({
 	name: 'PriceCalc',
 	components: {LoadingBar},
 	setup() {
-		const store = useStore<StoreState>();
+		//const store = useStore<StoreState>();
+		const services = useServices<MyTablesDef, MyTablesConfig>()
 
 		const vals = ref({});
-		const mainPriceId = computed(() => {
-			return Object.values(store.state._.priceTitles).filter(p => p.Titre === '1')[0].ID
-		})
-
-		const prods = computed(() => {
-			return Object.values(store.state._.changes).filter(mod => {
-				return mod.changes.filter(c => c.resource === 'prices').length;
-			}).flatMap(mod => {
-				return mod.changes.filter(c => c.resource === 'prices').map(c => store.state._.products[store.state._.prices["create" in c ? c.create : c.key]?.Produit_ID]);
-			});
-		});
-
+		const mainPriceId = PricesId.Main;
 		const progress = ref(0);
 
-		function applyFor(prod, priceByProdID, modifications: Modifications, vF: boolean) {
-			const prices = priceByProdID[prod.ID];
-			if (!vF && (!prices || !prices[mainPriceId.value]))
-				return store.commit("_log", `Produit ${prod.Code} n'a pas de Prix 1`);
-
-			const main = parseFloat(vF ? prod['bible.Vendant'] : prices[mainPriceId.value].Prix);
-
-			const percents = vF ? {...vals.value, 1: 100} : vals.value
-
-			Object.entries(percents).forEach(([key, val]) => {
-				modifications.add({
-					type: "setPrice",
-					val: main * ((val as number) / 100),
-					Prix_ID: key,
-					Produit_ID: prod.ID
-				})
-			})
-		}
+		const prices = computed(() => {
+			return services.data.raw.prix.value;
+		})
 
 		return {
 			progress,
 
 			vals,
-			prices: computed(() => {
-				return Object.values(store.state._.priceTitles).map(p => {
-					return {
-						...p,
-						val: vals.value[p.ID]
-					};
-				});
-			}),
+			prices,
 			setVal(val, p) {
+				logger.trace("setVal",val,p)
 				val = parseFloat(val);
 				if (Number.isNaN(val))
 					vals.value[p.ID] = undefined;
@@ -94,40 +60,31 @@ export default defineComponent({
 					vals.value[p.ID] = val;
 			},
 
-			n: computed(() => prods.value.length),
-			nF: computed(() => Object.values(store.state._.products).filter(p => {
-				return p['bible.Vendant'] && p['bible.Vendant'].length;
-			}).length),
-			prods,
+			apply(all: boolean, vF: boolean) {
+				Object.values(services.data.raw.produits.value).forEach(p => {
+					const prod_prices = services.cache.byProd.value[p.ID].value.prices;
+					const mainPrice = prod_prices?.[PricesId.Main];
+					if (mainPrice === undefined)
+						logger.warn(`Product ${p.Code} doesn't have a price 1`);
+					else {
+						for (const id in prices.value) {
+							if(vals.value[id]===undefined)
+								continue;
 
-			apply(all, vF) {
-				const modifications = new Modifications(store);
-
-				const priceByProdID = Object.values(store.state._.prices).reduce((a, v) => {
-					a[v.Produit_ID] = a[v.Produit_ID] || {};
-					a[v.Produit_ID][v.Prix_ID] = (v);
-					return a;
-				}, {});
-
-				if (all) {
-					const prods = Object.values(store.state._.products).filter(p => {
-						return !vF || p['bible.Vendant'] && p['bible.Vendant'].length;
-					});
-					const len = prods.length;
-					let i = 0;
-					modifications.start(() => {
-						if (!(i % 100) || i + 1 === len)
-							progress.value = (i + 1) / len;
-
-						applyFor(prods[i], priceByProdID, modifications, vF);
-						return ++i === len;
-					})
-				} else {
-					prods.value.forEach(p => applyFor(p, priceByProdID, modifications, vF))
-					modifications.commit();
-				}
-			},
-			applyFor
+							const price = prod_prices[id];
+							if(price===undefined)
+								/*services.modification.create("produits_prix",{
+									Prix: mainPrice.Prix * vals.value[id],
+									Prix_ID: id,
+									Produit_ID: p.ID,
+									Visible: 1
+								},"Calculateur de prix")*/console.log("false");
+							else
+								services.modification.set("produits_prix", price.ID, "Prix", mainPrice.Prix * vals.value[id], "Calculateur de prix")
+						}
+					}
+				});
+			}
 		};
 	}
 });
