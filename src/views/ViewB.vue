@@ -53,6 +53,9 @@ import TableInput from "@/components/TableInput.vue";
 import {StoreState} from "@/store";
 import {useServices} from "@/services";
 import {MyTablesConfig, MyTablesDef, useMyServices} from "@/dataConfig";
+import {LogService} from "@/services/logService";
+
+const logger = LogService.logger({name:"ViewB"})
 
 export default defineComponent({
 	name: 'ViewB',
@@ -74,6 +77,8 @@ export default defineComponent({
 		});
 
 		watchEffect(() => {
+			logger.time("all");
+			
 			products.value.length = 0;
 
 			const filtered = Object.values(services.data.get("produits").value).sort((a, b) => {
@@ -98,6 +103,8 @@ export default defineComponent({
 					}, {})
 				};
 			});
+			
+			logger.timeEnd("all");
 		})
 
 		const prices = computed(() => {

@@ -73,7 +73,7 @@
 					<td>{{ line.fournisseur?.Code }}</td>
 					<td>{{ line.Inventaire }}</td>
 					<td :class="line.c?.qtyF">
-						<TableInput :always="true" :modelValue="line.bible.Quantite" :original="line.bible.$Quantite" @update:modelValue="upAchat($event,line,line.product)"/>
+						<TableInput :always="true" :modelValue="line.bible.Quantite" :original="line.bible.$Quantite" @update:modelValue="upAchat($event,line)"/>
 					</td>
 					<td :class="line.c?.a0">{{ $valueI(line.achat.years_pastA0) }}</td>
 					<td>{{ $valueI(line.achat.years_pastA1) }}</td>
@@ -123,7 +123,7 @@ export default defineComponent({
 				const bibleByProd = services.data.indexesByTable.bible.Produit.value;
 				
 				return Object.values(services.data.get("produits").value).sort((a, b) => {
-					return a.Type - b.Type || a.Variete?.localeCompare(b.Variete) || a.Format - b.Format;
+					return a.Type - b.Type || a.Variete?.localeCompare?.call(b.Variete) || a.Format - b.Format;
 				}).flatMap(function allFlatMap(product) {
 					const prodCache = services.cache.byProd.value[product.ID].value;
 					const prices = prodCache.prices;
@@ -132,6 +132,7 @@ export default defineComponent({
 					const bibleData = bibleId !== undefined ? services.data.get("bible", bibleId).value : undefined;
 					
 					const bible = {
+						ID: bibleData?.ID,
 						Vendant: bibleData?.Vendant,
 						$Vendant: services.data.raw.bible.value[bibleId]?.Vendant,
 						Quantite: bibleData?.Quantite,
