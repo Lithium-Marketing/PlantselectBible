@@ -60,7 +60,7 @@ export class DataService<T extends TablesDef, C extends TableConfigs<T>> extends
             const cache = persistentStorage("raw:" + t, {});
             a[t as keyof T] = computed({
                 get() {
-                    return cache.value;
+                    return Object.freeze(cache.value);
                 },
                 set(val) {
                     cache.value = val;

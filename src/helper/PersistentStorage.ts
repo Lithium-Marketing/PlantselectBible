@@ -10,7 +10,7 @@ export function persistentStorage<T>(name: string, def?: T): WritableComputedRef
     
     const c = computed<T>({
         get() {
-            return _value.value ? Object.freeze(JSON.parse(_value.value)) : def;
+            return _value.value ? JSON.parse(_value.value) : def;
         },
         set(val) {
             const str = JSON.stringify(val);
