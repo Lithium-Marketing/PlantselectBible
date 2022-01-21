@@ -7,7 +7,7 @@ import {TableConfig, TableConfigs, TablesDef} from "@/services/index";
 
 const logger = LogService.logger({name: "SaveService"});
 
-export class SaveService<T extends TablesDef, C extends TableConfigs<T>> extends BaseService<T, C> {
+export class SaveService<T extends TablesDef, C extends TableConfigs<T>> extends BaseService<T, C, any> {
     
     public apply() {
         const sqls = [];

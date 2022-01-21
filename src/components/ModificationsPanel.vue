@@ -38,16 +38,16 @@ import ButtonConfirm from "./ButtonConfirm.vue";
 import {useStore} from "vuex";
 import {StoreState} from "@/store";
 import Pagination from "@/components/Pagination.vue";
-import {Services, useServices} from "@/services";
+import {Services} from "@/services";
 import {Mod} from "@/services/ModificationService";
-import {tablesConfig, MyTablesConfig, MyTablesDef} from "@/dataConfig";
+import {tablesConfig, MyTablesConfig, MyTablesDef, useMyServices, MyServices} from "@/dataConfig";
 
 export default defineComponent({
 	name: "ModificationsPanel",
 	components: {Pagination, ButtonConfirm},
 	setup() {
 		const store = useStore<StoreState>();
-		const services = useServices<MyTablesDef, MyTablesConfig>();
+		const services = useMyServices();
 
 		const filters = reactive({
 			txt: "",
@@ -124,7 +124,7 @@ export default defineComponent({
 			async annule() {
 				changes.value.forEach(v => {
 					if (coches.value[v.key] === undefined ? true : coches.value[v.key]) {
-						services.modification.remove(v.table, v.id, v.field ?? false);
+						//services.modification.remove(v.table, v.id, v.field ?? false);
 						coches.value[v.key] = undefined;
 					}
 				});
@@ -143,7 +143,7 @@ export default defineComponent({
 	}
 });
 
-function translateMod(mod: Mod<keyof MyTablesConfig>, services: Services<MyTablesDef, MyTablesConfig>) {
+function translateMod(mod: Mod<keyof MyTablesConfig>, services: MyServices) {
 	switch (mod.table) {
 		case "produits":
 			return services.data.get("produits", mod.id).value?.Code + " " + services.data.get("produits", mod.id).value?.Variete;

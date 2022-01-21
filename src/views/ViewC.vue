@@ -100,7 +100,7 @@ import TableInput from "@/components/TableInput.vue";
 import {currentYear, PricesId} from "@/helper/Const";
 import moment from "moment";
 import {LogService} from "@/services/logService";
-import {MyTablesConfig, MyTablesDef} from "@/dataConfig";
+import {MyTablesConfig, MyTablesDef, useMyServices} from "@/dataConfig";
 
 const logger = LogService.logger({name: "ViewC"});
 
@@ -109,7 +109,7 @@ export default defineComponent({
 	components: {TableInput, Pagination},
 	setup() {
 		const store = useStore<StoreState>();
-		const services = useServices<MyTablesDef, MyTablesConfig>();
+		const services = useMyServices();
 		
 		const all = computed(function allCompute() {//`produits`.`Type` asc,`vue_produits`.`Variete` asc,`vue_produits`.`Format` asc"
 			logger.time("all viewc");
@@ -233,19 +233,6 @@ export default defineComponent({
 					logger.timeEnd("page viewc");
 				}
 			}),
-			
-			upPrice(val, line) {
-				let id = line.prices?.[PricesId.Main]?.ID
-				if (!id) {
-					id = services.modification.create("produits_prix", {
-						Prix_ID: PricesId.Main,
-						Produit_ID: line.product.ID,
-						Date: moment().unix(),
-						Date_Modification: moment().unix(),
-					}, "Creation d'un prix produit");
-				}
-				services.modification.set("produits_prix", id, "Prix", val, "Prix principal");
-			}
 		};
 	}
 });

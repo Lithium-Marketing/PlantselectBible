@@ -24,7 +24,7 @@ import {useStore} from "vuex";
 import {Modifications} from "@/helper/Modifications";
 import {StoreState} from "@/store";
 import LoadingBar from "@/components/LoadingBar.vue";
-import {MyTablesConfig, MyTablesDef} from "@/dataConfig";
+import {MyTablesConfig, MyTablesDef, useMyServices} from "@/dataConfig";
 import {useServices} from "@/services";
 import {PricesId} from "@/helper/Const";
 import {LogService} from "@/services/logService";
@@ -36,7 +36,7 @@ export default defineComponent({
 	components: {LoadingBar},
 	setup() {
 		//const store = useStore<StoreState>();
-		const services = useServices<MyTablesDef, MyTablesConfig>()
+		const services = useMyServices();
 
 		const vals = ref({});
 		const mainPriceId = PricesId.Main;

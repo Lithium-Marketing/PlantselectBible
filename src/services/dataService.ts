@@ -26,7 +26,7 @@ export type Schema = {
     [key: string]: SchemaField<typeof key>
 }
 
-export class DataService<T extends TablesDef, C extends TableConfigs<T>> extends BaseService<T, C> {
+export class DataService<T extends TablesDef, C extends TableConfigs<T>> extends BaseService<T, C, any> {
     public readonly mysqlLogin: WritableComputedRef<PoolOptions>;
     private conn: Pool;
     
@@ -43,7 +43,7 @@ export class DataService<T extends TablesDef, C extends TableConfigs<T>> extends
     
     private readonly tableDefault: ComputedRef<Record<keyof T, any>>;
     
-    constructor(services: Services<T, C>, tables: C) {
+    constructor(services: Services<T, C, any>, tables: C) {
         super(services);
         
         this.mysqlLogin = persistentStorage<PoolOptions>("mysqlLogin", {});
@@ -76,8 +76,7 @@ export class DataService<T extends TablesDef, C extends TableConfigs<T>> extends
                     if (this.services.modification.mods[table][id]) {
                         const obj = result[id] = {...this.raw[table].value[id]};
                         Object.entries(this.services.modification.mods[table][id]).forEach(([key, value]) => {
-                            // @ts-ignore
-                            obj[key] = value.val;
+                            obj[key as keyof T[string]] = value;
                         });
                         Object.freeze(obj);
                     } else
@@ -223,8 +222,7 @@ export class DataService<T extends TablesDef, C extends TableConfigs<T>> extends
                     const obj = {...this.raw[table].value[id]};
                     if (this.services.modification.mods[table][id])
                         Object.entries(this.services.modification.mods[table][id]).forEach(([key, value]) => {
-                            // @ts-ignore
-                            obj[key] = value.val;
+                            obj[key as keyof T[K]] = value;
                         });
                     return Object.freeze(obj);
                 }))).deref();

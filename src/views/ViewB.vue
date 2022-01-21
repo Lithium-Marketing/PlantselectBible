@@ -52,7 +52,7 @@ import Pagination from "@/components/Pagination.vue";
 import TableInput from "@/components/TableInput.vue";
 import {StoreState} from "@/store";
 import {useServices} from "@/services";
-import {MyTablesConfig, MyTablesDef} from "@/dataConfig";
+import {MyTablesConfig, MyTablesDef, useMyServices} from "@/dataConfig";
 
 export default defineComponent({
 	name: 'ViewB',
@@ -63,7 +63,7 @@ export default defineComponent({
 	},
 	setup() {
 		const store = useStore<StoreState>();
-		const services = useServices<MyTablesDef, MyTablesConfig>()
+		const services = useMyServices();
 
 		const page = ref(0);
 		const ipp = computed(() => store.state.settings.ipp);

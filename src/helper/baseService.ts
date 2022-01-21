@@ -1,10 +1,10 @@
 import {Services, TableConfig, TableConfigs, TablesDef} from "@/services";
 
-export abstract class BaseService<T extends TablesDef, C extends TableConfigs<T>> {
-    protected services: Services<T, C>;
+export abstract class BaseService<T extends TablesDef, C extends TableConfigs<T>,M> {
+    protected services: Services<T, C,M>;
     protected _tables: C;
     
-    constructor(services: Services<T, C>) {
+    constructor(services: Services<T, C,M>) {
         this.services = services;
         this._tables = services.tables;
         

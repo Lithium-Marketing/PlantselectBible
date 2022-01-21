@@ -1,8 +1,21 @@
-import {TableConfig, TableConfigs, TablesDef} from "@/services";
+import {Services, TablesDef, useServices} from "@/services";
+import {ToModifications} from "@/services/ModificationService";
 
-function defConfig<T extends TableConfig>(config: T): T {
-    return config;
+export type MyServices = Services<MyTablesDef, MyTablesConfig, MyModifications>;
+
+export function useMyServices(): MyServices {
+    return useServices()
 }
+
+export const modifications = {
+    priceCalc(payload: {
+        vals: Record<number, number>
+    }, services: MyServices): any {
+        //services.data.indexesByTable.produits_prix.Produit_ID
+        return {}
+    }
+} as const;
+export type MyModifications = ToModifications<MyServices, MyTablesDef, typeof modifications>;
 
 export const tablesConfig = {
     Archive: {

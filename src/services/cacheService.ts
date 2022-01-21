@@ -4,7 +4,7 @@ import {computed, ComputedRef} from "vue";
 import moment from "moment";
 import {MyTablesConfig, MyTablesDef} from "@/dataConfig";
 
-export class CacheService extends BaseService<MyTablesDef, MyTablesConfig> {
+export class CacheService extends BaseService<MyTablesDef, MyTablesConfig, any> {
     /**
      * archives[type][year][id]
      */
@@ -26,9 +26,9 @@ export class CacheService extends BaseService<MyTablesDef, MyTablesConfig> {
         }>
     }>;
     
-    constructor(services: Services<any, any>) {
+    constructor(services: Services<any, any, any>) {
         super(services);
-        const s = services as Services<MyTablesDef, MyTablesConfig>;
+        const s = services as Services<MyTablesDef, MyTablesConfig, any>;
         
         this.archives = computed(function archives() {
             return Object.values(s.data.get("Archive").value).reduce((a, entry) => {

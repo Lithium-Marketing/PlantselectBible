@@ -3,13 +3,13 @@ import {Services} from "@/services/index";
 import {computed, ComputedRef, reactive, Ref, ref} from "vue";
 import {BaseService} from "@/helper/baseService";
 
-export class JobService extends BaseService<any, any> {
+export class JobService extends BaseService<any, any, any> {
     public readonly running: ComputedRef<{ [name: string]: number }>;
     
     private readonly jobs: { cb: (() => number), name: string, percent: number }[];
     private timeout: false | number;
     
-    constructor(s: Services<any, any>) {
+    constructor(s: Services<any, any, any>) {
         super(s);
         
         this.jobs = reactive([]);

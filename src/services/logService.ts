@@ -20,7 +20,7 @@ type LogEntry = {
     logger?: string
 }
 
-export class LogService extends BaseService<any, any> {
+export class LogService extends BaseService<any, any, any> {
     
     public static readonly outputLogLevel: Record<LogLevel, boolean> = {
         [LogLevel.ERROR]: true,

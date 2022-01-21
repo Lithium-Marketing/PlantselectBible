@@ -18,15 +18,41 @@ export interface Mod<T> extends ModVal {
     field: string
 }
 
-export class ModificationService<T extends TablesDef, C extends TableConfigs<T>> extends BaseService<T, C> {
-    public readonly mods: Record<keyof T, Record<number, Record<string, ModVal>>>;
+type ModDict<T extends TablesDef> = {
+    [table in keyof T]: Record<number, Record<keyof T[table], any>>
+}
+
+export type ModificationFn<S, T extends TablesDef> = (payload: any, services: S) => {
+    id: string,
+    mods: ModDict<T>
+};
+
+export type ToModifications<S extends Services<any, any, any>, T extends TablesDef, M extends Record<string, ModificationFn<S, T>>> = {
+    [name in keyof M]: Parameters<M[name]>[0];
+}
+
+type RawMod<M, N extends keyof M> = {
+    name: N,
+    desc: string,
+    payload: M[N],
+    result?: ReturnType<ModificationFn<any, any>>
+}
+
+export class ModificationService<T extends TablesDef, C extends TableConfigs<T>, M> extends BaseService<T, C, M> {
+    public readonly mods: ModDict<T>;
     public readonly creations: Record<keyof T, Record<number, ModVal>>;
     
-    constructor(s: Services<T, C>, tables: C) {
+    private readonly raw: { [id: string]: RawMod<M, keyof M> }
+    
+    private readonly modifications: Record<keyof M, ModificationFn<Services<T, C, M>, T>>;
+    
+    constructor(s: Services<T, C, M>, tables: C, modifications: Record<keyof M, ModificationFn<Services<T, C, M>, T>>) {
         super(s);
+        this.modifications = modifications;
+        
         this.mods = Object.keys(tables).reduce((a, t) => {
             const cache = persistentStorage("mod:" + t, {});
-            a[t as keyof T] = reactive<Record<number, Record<string, any>>>({...cache.value});
+            a[t as keyof T] = reactive({...cache.value});
             watch(a[t], function saveToPersistentStorage() {
                 cache.value = (a[t]);
             }, {
@@ -34,7 +60,7 @@ export class ModificationService<T extends TablesDef, C extends TableConfigs<T>>
                 flush: "post"
             })
             return a;
-        }, {} as Record<keyof T, Record<number, Record<string, any>>>);
+        }, {} as ModDict<T>);
         
         this.creations = Object.keys(tables).reduce((a, t) => {
             const cache = persistentStorage("modc:" + t, {});
@@ -73,56 +99,69 @@ export class ModificationService<T extends TablesDef, C extends TableConfigs<T>>
         });
     }
     
-    /**
-     *
-     * @param tableName
-     * @param id
-     * @param field
-     * @param val
-     * @param desc
-     *
-     * @return the id used
-     */
-    set<K extends keyof T>(tableName: K, id: number, field: keyof T[K], val: any, desc: string): number {
-        logger.trace("set", tableName, field, val, desc);
-        const table = this.mods[tableName];
+    mod<K extends keyof M>(modName: K, payload: M[K], desc: string) {
+        logger.trace("mod", modName, payload, desc);
         
-        if (!table[id])
-            table[id] = {};
+        const result = this.modifications[modName](payload, this.services);
         
-        table[id] = {
-            ...table[id],
-            [field]: {val, desc}
+        if (this.raw[result.id])
+            this.unapply(result);
+        
+        this.apply(result);
+        
+        this.raw[result.id] = {
+            payload: payload,
+            name: modName,
+            desc,
+            result
         };
         
-        return id;
+        //
+        // const raw = this.services.data.raw[tableName].value[id];
+        // this.mods[tableName];
+        // this.creations[tableName];
+        // //this._tables[tableName]; //TODO mod Date if standard
+        //
     }
     
-    get(tableName: keyof T, id: number) {
-        const table = this.mods[tableName];
-        return computed(() => {
-            return table[id] || {};
-        });
+    remove<K extends keyof T>(modId: string){
+        this.unapply(this.raw[modId].result);
+        delete this.raw[modId];
     }
     
-    create<K extends keyof T>(tableName: K, fields: Partial<T[K]>, desc: string) {
-        logger.trace("create", tableName, fields, desc);
-        const id = -now();
-        
-        //TODO validate with schema
-        this.creations[tableName][id] = {val: fields, desc};
-        
-        return id;
+    private apply(result: ReturnType<ModificationFn<any, T>>) {
+        for (const table in result.mods) {
+            const mappedIds: Record<number, number> = {};
+            
+            for (const id in result.mods[table]) {
+                const mappedId = (id < 0 ? -now() : id) as Extract<keyof ModDict<T>[Extract<keyof T, string>], string>;
+                if (id < 0)
+                    mappedIds[id] = mappedId as number;
+                for (const field in result.mods[table][id]) {
+                    this.mods[table][mappedId] = {
+                        ...this.mods[table][mappedId],
+                        [field]: result.mods[table][id]
+                    }
+                }
+            }
+            
+            Object.entries(mappedIds).forEach(([id, mapped]) => {
+                result.mods[table][mapped] = result.mods[table][id];
+                delete result.mods[table][id];
+            })
+        }
     }
     
-    remove(tableName: keyof T, id: number, field: string | false): void {
-        const table = this.mods[tableName];
-        const creat = this.creations[tableName];
-        
-        if (field === false) {
-            table[id] = {};
-            delete creat[id];
-        } else
-            delete table[id]?.[field];
+    private unapply(result: ReturnType<ModificationFn<any, T>>) {
+        for (const table in result.mods) {
+            for (const id in result.mods[table]) {
+                for (const field in result.mods[table][id]) {
+                    this.mods[table][id] = {
+                        ...this.mods[table][id]
+                    };
+                    delete this.mods[table][id][field];
+                }
+            }
+        }
     }
 }
