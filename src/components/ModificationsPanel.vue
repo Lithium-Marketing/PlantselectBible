@@ -12,21 +12,27 @@
 		<table style="width: 100%">
 			<tr>
 				<th><span class="case" @click="coche(true)">☑</span><span class="case" @click="coche(false)">☒</span></th>
+				<th>Op.</th>
 				<th>Nom</th>
 				<th>Desc</th>
+				<th>Champ</th>
 				<th>Valeur</th>
 			</tr>
 			<tr>
 				<th>{{ cocheTotal }}</th>
+				<th><input v-model="filters.op"/></th>
 				<th><input v-model="filters.txt"/></th>
 				<th><input v-model="filters.desc"/></th>
+				<th><input v-model="filters.field"/></th>
 				<th><input v-model="filters.val"/></th>
 			</tr>
-			<tr v-for="(change,key) in changes">
-				<td><input type="checkbox" :checked="coches[key]===undefined?true:coches[key]" @input="coches[key] = $event.target.checked"/></td>
-				<th>{{ change.txt }}</th>
-				<th>{{ change.desc }}</th>
-				<th>{{ change.val }}</th>
+			<tr v-for="(change,key) in changes" :key="key">
+				<td><input type="checkbox" :checked="coches[change.modId]===undefined?true:coches[change.modId]" @input="coches[change.modId] = $event.target.checked"/></td>
+				<th>{{ change.data.op }}</th>
+				<th>{{ change.data.txt }}</th>
+				<th>{{ change.data.desc }}</th>
+				<th>{{ change.data.field }}</th>
+				<th>{{ change.data.val }}</th>
 			</tr>
 		</table>
 	</div>
@@ -48,63 +54,60 @@ export default defineComponent({
 	setup() {
 		const store = useStore<StoreState>();
 		const services = useMyServices();
-
+		
 		const filters = reactive({
+			modId: "",
 			txt: "",
 			desc: "",
+			field: "",
 			val: "",
 		});
-
+		
 		const coches = ref({});
-
-		const changes = computed<(Mod<keyof MyTablesConfig> & { key: string, txt: string })[]>(() => {
-			return [
-				...services.modification.asListMod().value.reduce((a, v) => {
-					const key = [v.table, v.id, v.field].join();
-					a.push({...v, key, txt: translateMod(v as Mod<keyof MyTablesConfig>, services)})
-					return a;
-				}, []),
-				...Object.keys(tablesConfig).flatMap((table) => {
-					return Object.entries(services.modification.asListCreation(table as any).value).reduce((a, [id, v]) => {
-						const key = [table, id].join();
-						a.push({
-							desc: v.desc,
-							table,
-							id,
-							val: "Object",
-							key, txt: translateMod({
-								table: table as any,
-								id: id as unknown as number,
-								field: "",
-								val: "Object",
-								desc: ""
-							}, services)
+		
+		const changes = computed(() => {
+			return Object.values(services.modification.raw).flatMap((v) => {
+				return Object.entries(v.result.mods).flatMap(([table, mods]) => {
+					return Object.entries(mods).flatMap(([id, fields]) => {
+						return Object.entries(fields).map(([field, value]) => {
+							return {
+								modId: v.result.id,
+								key: [table, id, field].join(":"),
+								data: {
+									op: v.name,
+									txt: translateMod(services, table, id),
+									desc: v.desc,
+									field: field,
+									val: value
+								}
+							};
 						})
-						return a;
-					}, [])
+					})
 				})
-			]
+			}).filter(s => s);
 		});
-
+		
 		const page = ref(0);
 		const saveName = ref("");
-
-
+		
+		
 		return {
 			filters,
-
+			
 			changes: computed(() => {
 				const filterA = Object.entries(filters).map(v => [v[0], v[1].toUpperCase()]);
 				return changes.value.filter(v => {
 					return filterA.filter(([name, val]) => {
-						return val === "" || v[name].toUpperCase().indexOf(val) !== -1;
+						return val === "" ||
+							(typeof v.data[name] === "string" && v.data[name].toUpperCase().indexOf(val) !== -1) ||
+							(typeof v.data[name] === "number" && Math.abs(v.data[name] - parseFloat(val)) < 1.1)
 					}).length == filterA.length;
 				}).slice(page.value * store.state.settings.ipp, (page.value + 1) * store.state.settings.ipp).reduce((a, v) => {
 					a[v.key] = v
 					return a;
 				}, {})
 			}),
-
+			
 			coches,
 			async coche(b: boolean) {
 				changes.value.forEach(v => {
@@ -112,46 +115,47 @@ export default defineComponent({
 				});
 			},
 			cocheTotal: computed(() => {
-				const sel = changes.value.filter((v) => coches.value[v.key] === undefined ? true : coches.value[v.key]).length
+				const sel = changes.value.filter((v) => coches.value[v.modId] === undefined ? true : coches.value[v.modId]).length
 				return sel + "/" + changes.value.length
 			}),
-
+			
 			len: computed(() => {
 				return Math.ceil(changes.value.length / store.state.settings.ipp);
 			}),
 			page,
-
+			
 			async annule() {
 				changes.value.forEach(v => {
-					if (coches.value[v.key] === undefined ? true : coches.value[v.key]) {
+					if (coches.value[v.modId] === undefined ? true : coches.value[v.modId]) {
 						//services.modification.remove(v.table, v.id, v.field ?? false);
-						coches.value[v.key] = undefined;
+						coches.value[v.modId] = undefined;
 					}
 				});
 			},
-
+			
 			saveName,
 			save() {
-
+			
 			},
 			async apply() {
 			},
 			refresh() {
 				services.data.refresh();
+				
 			},
 		};
 	}
 });
 
-function translateMod(mod: Mod<keyof MyTablesConfig>, services: MyServices) {
-	switch (mod.table) {
+function translateMod(services: MyServices, table: string, id: any) {
+	switch (table) {
 		case "produits":
-			return services.data.get("produits", mod.id).value?.Code + " " + services.data.get("produits", mod.id).value?.Variete;
-		case "produits_prix":
-			const id = services.data.get("produits_prix", mod.id).value?.Produit_ID;
 			return services.data.get("produits", id).value?.Code + " " + services.data.get("produits", id).value?.Variete;
+		case "produits_prix":
+			const prod_id = services.data.get("produits_prix", id).value?.Produit_ID;
+			return services.data.get("produits", prod_id).value?.Code + " " + services.data.get("produits", prod_id).value?.Variete;
 		default:
-			return mod.table + " " + mod.id
+			return table + " " + id
 	}
 }
 
@@ -160,7 +164,7 @@ function translateMod(mod: Mod<keyof MyTablesConfig>, services: MyServices) {
 <style lang="scss" scoped>
 .header {
 	display: flex;
-
+	
 	input {
 		padding: 0.5rem 1rem;
 		font-size: 1rem;

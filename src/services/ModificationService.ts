@@ -42,7 +42,7 @@ export class ModificationService<T extends TablesDef, C extends TableConfigs<T>,
     public readonly mods: ModDict<T>;
     public readonly creations: Record<keyof T, Record<number, ModVal>>;
     
-    private readonly raw: { [id: string]: RawMod<M, keyof M> }
+    public readonly raw: { [id: string]: RawMod<M, keyof M> }
     
     private readonly modifications: Record<keyof M, ModificationFn<Services<T, C, M>, T>>;
     
