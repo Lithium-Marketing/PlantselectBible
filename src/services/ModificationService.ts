@@ -1,6 +1,6 @@
 import {BaseService} from "@/helper/baseService";
 import {Services, TableConfig, TableConfigs, TablesDef} from "@/services/index";
-import {computed, ComputedRef, reactive, Ref, ref, triggerRef, unref, watch} from "vue";
+import {computed, ComputedRef, reactive, Ref, ref, triggerRef, unref, watch, watchEffect} from "vue";
 import {now} from "moment";
 import {persistentStorage} from "@/helper/PersistentStorage";
 import {LogService} from "@/services/logService";
@@ -19,12 +19,12 @@ export interface Mod<T> extends ModVal {
 }
 
 type ModDict<T extends TablesDef> = {
-    [table in keyof T]: Record<number, Record<keyof T[table], any>>
+    [table in keyof T]: Record<number, Partial<Record<keyof T[table], any>>>
 }
 
 export type ModificationFn<S, T extends TablesDef> = (payload: any, services: S) => {
     id: string,
-    mods: ModDict<T>
+    mods: Partial<ModDict<T>>
 };
 
 export type ToModifications<S extends Services<any, any, any>, T extends TablesDef, M extends Record<string, ModificationFn<S, T>>> = {
@@ -50,29 +50,26 @@ export class ModificationService<T extends TablesDef, C extends TableConfigs<T>,
         super(s);
         this.modifications = modifications;
         
-        this.mods = Object.keys(tables).reduce((a, t) => {
-            const cache = persistentStorage("mod:" + t, {});
-            a[t as keyof T] = reactive({...cache.value});
-            watch(a[t], function saveToPersistentStorage() {
-                cache.value = (a[t]);
-            }, {
-                deep: true,
-                flush: "post"
-            })
-            return a;
-        }, {} as ModDict<T>);
+        const rawStorage = persistentStorage("modRaw", {});
+        this.raw = reactive(rawStorage.value);
+        watch(this.raw, () => {
+            rawStorage.value = this.raw;
+        }, {
+            deep: true
+        })
         
-        this.creations = Object.keys(tables).reduce((a, t) => {
-            const cache = persistentStorage("modc:" + t, {});
-            a[t as keyof T] = reactive<Record<number, ModVal>>({...cache.value});
-            watch(a[t], function saveToPersistentStorage() {
-                cache.value = (a[t]);
-            }, {
-                deep: true,
-                flush: "post"
-            })
+        this.mods = reactive(Object.keys(tables).reduce((a, t) => {
+            a[t] = {};
             return a;
-        }, {} as Record<keyof T, Record<number, ModVal>>);
+        }, {})) as ModDict<T>;
+        
+        this.creations = reactive(Object.keys(tables).reduce((a, t) => {
+            a[t] = {};
+            return a;
+        }, {})) as Record<keyof T, Record<number, ModVal>>;
+        
+        this.reapply();
+        
     }
     
     asListMod(): ComputedRef<Mod<keyof T>[]> {
@@ -124,7 +121,7 @@ export class ModificationService<T extends TablesDef, C extends TableConfigs<T>,
         //
     }
     
-    remove<K extends keyof T>(modId: string){
+    remove<K extends keyof T>(modId: string) {
         this.unapply(this.raw[modId].result);
         delete this.raw[modId];
     }
@@ -140,7 +137,7 @@ export class ModificationService<T extends TablesDef, C extends TableConfigs<T>,
                 for (const field in result.mods[table][id]) {
                     this.mods[table][mappedId] = {
                         ...this.mods[table][mappedId],
-                        [field]: result.mods[table][id]
+                        [field]: result.mods[table][id][field]
                     }
                 }
             }
@@ -163,5 +160,14 @@ export class ModificationService<T extends TablesDef, C extends TableConfigs<T>,
                 }
             }
         }
+    }
+    
+    public reapply() {
+        Object.keys(this._tables).forEach(table => {
+            this.mods[table as keyof T] = {};
+            this.creations[table as keyof T] = {};
+        });
+        
+        Object.values(this.raw).forEach(r => this.apply(r.result));
     }
 }
