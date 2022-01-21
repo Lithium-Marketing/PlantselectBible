@@ -1,5 +1,6 @@
 import {Services, TablesDef, useServices} from "@/services";
-import {ToModifications} from "@/services/ModificationService";
+import {ModificationFn, ToModifications} from "@/services/ModificationService";
+import {PricesId} from "@/helper/Const";
 
 export type MyServices = Services<MyTablesDef, MyTablesConfig, MyModifications>;
 
@@ -7,12 +8,48 @@ export function useMyServices(): MyServices {
     return useServices()
 }
 
+type ReturnMods = ReturnType<ModificationFn<any, MyTablesDef>>;
+
 export const modifications = {
     priceCalc(payload: {
-        vals: Record<number, number>
-    }, services: MyServices): any {
-        //services.data.indexesByTable.produits_prix.Produit_ID
-        return {}
+        vals: Record<number, number>,
+        vF: boolean
+    }, services: MyServices): ReturnMods {
+        const mods: ReturnMods["mods"] = {
+            produits_prix: {}
+        };
+        const prices = services.data.raw.prix.value;
+        const {vals, vF} = payload;
+        let cnt = -1;
+        
+        Object.values(services.data.raw.produits.value).forEach(p => {
+            const prod_prices = services.cache.byProd.value[p.ID].value.prices;
+            const bible = services.data.raw.bible.value[services.data.indexesByTable.bible.Produit.value[p.ID]?.[0]];
+            const mainPrice = vF ? bible?.Vendant : prod_prices?.[PricesId.Main]?.Prix;
+            if (mainPrice !== undefined)
+                for (const id in prices) {
+                    if (vals[id] === undefined)
+                        continue;
+                    
+                    const price = prod_prices?.[id];
+                    if (price === undefined)
+                        mods["produits_prix"][--cnt] = {
+                            Prix: mainPrice * vals[id],
+                            Prix_ID: id,
+                            Produit_ID: p.ID,
+                            Visible: 1
+                        }
+                    else
+                        mods["produits_prix"][price.ID] = {
+                            Prix: mainPrice * vals[id],
+                        }
+                }
+        });
+        
+        return {
+            id: "priceCalc",
+            mods
+        }
     }
 } as const;
 export type MyModifications = ToModifications<MyServices, MyTablesDef, typeof modifications>;
