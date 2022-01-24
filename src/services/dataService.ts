@@ -104,10 +104,10 @@ export class DataService<T extends TablesDef, C extends TableConfigs<T>> extends
                 a[t][index] = computed(() => {
                     logger.time(`index ${table} . ${index}`);
                     try {
-                        const tableData = this.raw[table].value;
+                        const tableData = this.tables[table].value;
                         return Object.entries(tableData).reduce((a, [id, entity]) => {
                             a[entity[index]] = a[entity[index]] || [];
-                            a[entity[index]].push(entity.ID ?? entity.id);
+                            a[entity[index]].push(id);
                             return a;
                         }, {})
                     } finally {
