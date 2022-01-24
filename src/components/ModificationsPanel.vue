@@ -3,7 +3,7 @@
 		<div class="header">
 			<ButtonConfirm @action="annule" style="background-color: rgb(165 0 0)">Annuler selection</ButtonConfirm>
 			<ButtonConfirm @action="refresh" style="background-color: rgb(0 0 145)">Rafraîchir</ButtonConfirm>
-			<ButtonConfirm @action="apply" disabled>Appliquer sélection</ButtonConfirm>
+			<ButtonConfirm @action="apply">Appliquer sélection</ButtonConfirm>
 			<hr style="opacity: 0;">
 			<input v-model="saveName"/>
 			<button @click="save" disabled>Sauvegarder sélection</button>
@@ -127,7 +127,7 @@ export default defineComponent({
 			async annule() {
 				changes.value.forEach(v => {
 					if (coches.value[v.modId] === undefined ? true : coches.value[v.modId]) {
-						//services.modification.remove(v.table, v.id, v.field ?? false);
+						delete services.modification.raw[v.modId];
 						coches.value[v.modId] = undefined;
 					}
 				});
@@ -138,6 +138,7 @@ export default defineComponent({
 			
 			},
 			async apply() {
+				services.save.apply();
 			},
 			refresh() {
 				services.data.refresh();
