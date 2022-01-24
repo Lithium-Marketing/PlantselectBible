@@ -27,6 +27,12 @@ type RawMod<M, N extends keyof M> = {
     result?: ReturnType<ModificationFn<any, any>>
 }
 
+const genCreatedId = (function* () {
+    let cnt = 0;
+    while (true) yield --cnt
+})();
+const createdId = () => genCreatedId.next().value;
+
 export class ModificationService<T extends TablesDef, C extends TableConfigs<T>, M> extends BaseService<T, C, M> {
     public readonly mods: ModDict<T>;
     
@@ -50,20 +56,12 @@ export class ModificationService<T extends TablesDef, C extends TableConfigs<T>,
             a[t] = {};
             return a;
         }, {})) as ModDict<T>;
-        
-        this.reapply();
-        
     }
     
     mod<K extends keyof M>(modName: K, payload: M[K], desc: string) {
         logger.trace("mod", modName, payload, desc);
         
-        const result = this.modifications[modName](payload, this.services);
-        
-        if (this.raw[result.id])
-            this.unapply(result);
-        
-        this.apply(result);
+        const result = this._mod(modName, payload);
         
         this.raw[result.id] = {
             payload: payload,
@@ -71,51 +69,35 @@ export class ModificationService<T extends TablesDef, C extends TableConfigs<T>,
             desc,
             result
         };
+    }
+    
+    private _mod<K extends keyof M>(modName: K, payload: M[K]) {
+        const result = this.modifications[modName](payload, this.services);
         
-        //
-        // const raw = this.services.data.raw[tableName].value[id];
-        // this.mods[tableName];
-        // this.creations[tableName];
-        // //this._tables[tableName]; //TODO mod Date if standard
-        //
+        if (this.raw[result.id]) {
+            delete this.raw[result.id];
+            this.reapply();
+        } else
+            this.apply(result);
+        
+        return result;
     }
     
     remove<K extends keyof T>(modId: string) {
-        this.unapply(this.raw[modId].result);
         delete this.raw[modId];
+        this.reapply();
     }
     
     private apply(result: ReturnType<ModificationFn<any, T>>) {
         for (const table in result.mods) {
-            const mappedIds: Record<number, number> = {};
-            
             for (const id in result.mods[table]) {
-                const mappedId = (id < 0 ? -now() : id) as Extract<keyof ModDict<T>[Extract<keyof T, string>], string>;
-                if (id < 0)
-                    mappedIds[id] = mappedId as number;
+                const mappedId = (id < 0 ? createdId() : id) as Extract<keyof ModDict<T>[Extract<keyof T, string>], string>;
+                
                 for (const field in result.mods[table][id]) {
                     this.mods[table][mappedId] = {
                         ...this.mods[table][mappedId],
                         [field]: result.mods[table][id][field]
                     }
-                }
-            }
-            
-            Object.entries(mappedIds).forEach(([id, mapped]) => {
-                result.mods[table][mapped] = result.mods[table][id];
-                delete result.mods[table][id];
-            })
-        }
-    }
-    
-    private unapply(result: ReturnType<ModificationFn<any, T>>) {
-        for (const table in result.mods) {
-            for (const id in result.mods[table]) {
-                for (const field in result.mods[table][id]) {
-                    this.mods[table][id] = {
-                        ...this.mods[table][id]
-                    };
-                    delete this.mods[table][id][field];
                 }
             }
         }
@@ -126,6 +108,6 @@ export class ModificationService<T extends TablesDef, C extends TableConfigs<T>,
             this.mods[table as keyof T] = {};
         });
         
-        Object.values(this.raw).forEach(r => this.apply(r.result));
+        Object.values(this.raw).forEach(r => this._mod(r.name, r.payload));
     }
 }

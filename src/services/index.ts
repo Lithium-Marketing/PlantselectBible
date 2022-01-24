@@ -41,6 +41,8 @@ export class Services<T extends TablesDef, C extends TableConfigs<T>, M> {
         this.cache = new CacheService(this);
         this.modification = new ModificationService(this, tables, modifications);
         this.save = new SaveService(this);
+    
+        this.modification.reapply();
     }
     
 }

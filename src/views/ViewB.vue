@@ -98,7 +98,7 @@ export default defineComponent({
 					...p,
 					prices: byProd[p.ID].value.prices,
 					pricesDiff: Object.entries(byProd[p.ID].value.prices ?? {}).reduce((a, v) => {
-						a[v[0]] = services.data.raw.produits_prix.value[v[1].ID].Prix !== v[1].Prix;
+						a[v[0]] = services.data.raw.produits_prix.value[v[1].ID]?.Prix !== v[1].Prix;
 						return a;
 					}, {})
 				};
