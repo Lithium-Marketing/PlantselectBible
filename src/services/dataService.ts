@@ -83,11 +83,12 @@ export class DataService<T extends TablesDef, C extends TableConfigs<T>> extends
                         result[id] = this.raw[table].value[id];
                 }
                 
-                for (const id in this.services.modification.creations[table]) {
-                    if (result[id])
-                        logger.error("creation overlap with existing id", id)
-                    result[id] = this.services.modification.creations[table][id].val;
-                }
+                Object.entries(this.services.modification.mods[table]).forEach(([id,val])=>{
+                    if(this.raw[table].value[id])
+                        return;
+    
+                    result[id] = Object.freeze(Object.assign({},val));
+                })
                 
                 return result;
             });
@@ -228,7 +229,7 @@ export class DataService<T extends TablesDef, C extends TableConfigs<T>> extends
                 }))).deref();
             else
                 return computed(() => {//return created row
-                    return this.services.modification.creations[table][id]?.val;
+                    return this.tables[id].value;
                 });
         else
             return this.tables[table];

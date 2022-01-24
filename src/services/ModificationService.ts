@@ -7,17 +7,6 @@ import {LogService} from "@/services/logService";
 
 const logger = LogService.logger({name: "ModificationService"})
 
-interface ModVal {
-    val: any,
-    desc: string
-}
-
-export interface Mod<T> extends ModVal {
-    table: T,
-    id: number,
-    field: string
-}
-
 type ModDict<T extends TablesDef> = {
     [table in keyof T]: Record<number, Partial<Record<keyof T[table], any>>>
 }
@@ -40,7 +29,6 @@ type RawMod<M, N extends keyof M> = {
 
 export class ModificationService<T extends TablesDef, C extends TableConfigs<T>, M> extends BaseService<T, C, M> {
     public readonly mods: ModDict<T>;
-    public readonly creations: Record<keyof T, Record<number, ModVal>>;
     
     public readonly raw: { [id: string]: RawMod<M, keyof M> }
     
@@ -63,37 +51,8 @@ export class ModificationService<T extends TablesDef, C extends TableConfigs<T>,
             return a;
         }, {})) as ModDict<T>;
         
-        this.creations = reactive(Object.keys(tables).reduce((a, t) => {
-            a[t] = {};
-            return a;
-        }, {})) as Record<keyof T, Record<number, ModVal>>;
-        
         this.reapply();
         
-    }
-    
-    asListMod(): ComputedRef<Mod<keyof T>[]> {
-        return computed(() => {
-            return Object.entries<Record<number, Record<string, ModVal>>>(this.mods).reduce((a, [table, entities]) => {
-                Object.entries(entities).forEach(([id, fields]) => {
-                    Object.entries(fields).forEach(([field, mod]) => {
-                        a.push({table, id, field, ...mod});
-                    })
-                })
-                return a;
-            }, [])
-        });
-    }
-    
-    asListCreation(table: keyof T): ComputedRef<Record<number, ModVal>> {
-        return computed(() => {
-            return Object.entries(this.creations[table]).reduce((a, [id, mod]) => {
-                a[id as unknown as number] = {
-                    ...mod
-                }
-                return a;
-            }, {} as Record<number, ModVal>)
-        });
     }
     
     mod<K extends keyof M>(modName: K, payload: M[K], desc: string) {
@@ -165,7 +124,6 @@ export class ModificationService<T extends TablesDef, C extends TableConfigs<T>,
     public reapply() {
         Object.keys(this._tables).forEach(table => {
             this.mods[table as keyof T] = {};
-            this.creations[table as keyof T] = {};
         });
         
         Object.values(this.raw).forEach(r => this.apply(r.result));
