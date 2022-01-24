@@ -12,27 +12,24 @@
 		<table style="width: 100%">
 			<tr>
 				<th><span class="case" @click="coche(true)">☑</span><span class="case" @click="coche(false)">☒</span></th>
+				<th>Id.</th>
 				<th>Op.</th>
-				<th>Nom</th>
-				<th>Desc</th>
-				<th>Champ</th>
-				<th>Valeur</th>
+				<th>Desc.</th>
+				<th># Mod.</th>
 			</tr>
 			<tr>
 				<th>{{ cocheTotal }}</th>
+				<th><input v-model="filters.modId"/></th>
 				<th><input v-model="filters.op"/></th>
-				<th><input v-model="filters.txt"/></th>
 				<th><input v-model="filters.desc"/></th>
-				<th><input v-model="filters.field"/></th>
-				<th><input v-model="filters.val"/></th>
+				<th></th>
 			</tr>
 			<tr v-for="(change,key) in changes" :key="key">
 				<td><input type="checkbox" :checked="coches[change.modId]===undefined?true:coches[change.modId]" @input="coches[change.modId] = $event.target.checked"/></td>
+				<th>{{ change.data.modId }}</th>
 				<th>{{ change.data.op }}</th>
-				<th>{{ change.data.txt }}</th>
 				<th>{{ change.data.desc }}</th>
-				<th>{{ change.data.field }}</th>
-				<th>{{ change.data.val }}</th>
+				<th>{{ change.data.nMod }}</th>
 			</tr>
 		</table>
 	</div>
@@ -54,34 +51,32 @@ export default defineComponent({
 		const services = useMyServices();
 		
 		const filters = reactive({
+			op: "",
 			modId: "",
-			txt: "",
 			desc: "",
-			field: "",
-			val: "",
 		});
 		
 		const coches = ref({});
 		
 		const changes = computed(() => {
 			return Object.values(services.modification.raw).flatMap((v) => {
-				return Object.entries(v.result.mods).flatMap(([table, mods]) => {
-					return Object.entries(mods).flatMap(([id, fields]) => {
-						return Object.entries(fields).map(([field, value]) => {
-							return {
-								modId: v.result.id,
-								key: [table, id, field].join(":"),
-								data: {
-									op: v.name,
-									txt: translateMod(services, table, id),
-									desc: v.desc,
-									field: field,
-									val: value
-								}
-							};
-						})
-					})
-				})
+				const nMod = Object.entries(v.result.mods).reduce((a, [table, mods]) => {
+					return Object.entries(mods).reduce((a, [id, fields]) => {
+						return Object.entries(fields).length + a;
+					}, 0) + a;
+				}, 0);
+				
+				return {
+					modId: v.result.id,
+					key: [v.result.id].join(":"),
+					data: {
+						modId: v.result.id,
+						op: v.name,
+						desc: v.desc,
+						nMod
+					}
+				};
+				
 			}).filter(s => s);
 		});
 		
