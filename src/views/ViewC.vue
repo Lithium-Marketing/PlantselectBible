@@ -33,6 +33,36 @@
 				<th>{{ $pastTitle.years_pastVe1 }}</th>
 				<th>{{ $pastTitle.years_pastVe2 }}</th>
 			</tr>
+			<tr>
+				<th></th>
+				<th></th>
+				<th><input v-model="search.variete"/></th>
+				<th></th>
+				<th></th>
+				<th></th>
+				<th></th>
+				<th></th>
+				<th></th>
+				<th></th>
+				<th></th>
+				<th></th>
+				<th></th>
+				<th></th>
+				<th></th>
+				<th></th>
+				<th></th>
+				<th></th>
+				<th></th>
+				<th></th>
+				<th></th>
+				<th></th>
+				<th></th>
+				<th></th>
+				<th></th>
+				<th></th>
+				<th></th>
+				<th></th>
+			</tr>
 			</thead>
 			<tbody>
 			<template v-for="line of lines" :key="line.oa?.ID">
@@ -91,7 +121,7 @@
 </template>
 
 <script lang="ts">
-import {computed, ComputedRef, defineComponent, ref} from "vue";
+import {computed, ComputedRef, defineComponent, reactive, ref} from "vue";
 import {Services, useServices} from "@/services";
 import {Store, useStore} from "vuex";
 import {StoreState} from "@/store";
@@ -111,6 +141,10 @@ export default defineComponent({
 		const store = useStore<StoreState>();
 		const services = useMyServices();
 		
+		const search = reactive({
+			variete: ""
+		});
+		
 		const all = computed(function allCompute() {//`produits`.`Type` asc,`vue_produits`.`Variete` asc,`vue_produits`.`Format` asc"
 			logger.time("all viewc");
 			try {
@@ -122,7 +156,9 @@ export default defineComponent({
 				
 				const bibleByProd = services.data.indexesByTable.bible.Produit.value;
 				
-				return Object.values(services.data.get("produits").value).sort((a, b) => {
+				return Object.values(services.data.get("produits").value).filter(p=> {
+					return p.Variete?.toLowerCase()?.indexOf(search.variete.toLocaleLowerCase()) !== -1;
+				}).sort((a, b) => {
 					return a.Type - b.Type || a.Variete?.localeCompare?.call(b.Variete) || a.Format - b.Format;
 				}).flatMap(function allFlatMap(product) {
 					const prodCache = services.cache.byProd.value[product.ID].value;
@@ -175,6 +211,7 @@ export default defineComponent({
 		const {len, ipp, lines, page} = table(all, store);
 		logger.log(moment().add(7, "month").year());
 		return {
+			search,
 			len, ipp, page,
 			lines: computed(() => {
 				logger.time("page viewc");
