@@ -47,7 +47,7 @@ export const modifications = {
         });
         
         return {
-            id: "priceCalc",
+            id: "priceCalc" + vF ? "F" : "P",
             mods
         }
     }
