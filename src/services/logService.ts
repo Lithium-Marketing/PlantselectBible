@@ -163,6 +163,10 @@ export class LogService extends BaseService<any, any, any> {
                     break;
             }
     }
+    
+    static json(){
+        return JSON.stringify(this.stack[0]);
+    }
 }
 
 

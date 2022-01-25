@@ -8,11 +8,13 @@
 			</div>
 		</Fatals>
 		<button-confirm @click="clearAll()">Supprimer tout les donner en memoire (non reversible)</button-confirm>
+		<button @click="copy()">Copier les logs dans le press-papier</button>
 	</div>
 	<template v-else>
 		<Menu v-if="!loading" v-model:loading="loading"/>
 		<div v-if="loading" class="loading">
 			<h1>Operation {{ loadingDone ? "fini" : "en cour" }}</h1>
+			<button :disabled="!loadingDone" @click="closeLoading">Done</button>
 			
 			<template v-for="progress of progresses">
 				<h2>{{ progress[0] }}</h2>
@@ -20,6 +22,7 @@
 			</template>
 			
 			<button :disabled="!loadingDone" @click="closeLoading">Done</button>
+			<button @click="copy()">Copier les logs dans le press-papier</button>
 			<hr/>
 			<h2>Logs</h2>
 			<div class="logContainer">
@@ -86,6 +89,9 @@ export default defineComponent({
 			clearAll(){
 				localStorage.clear();
 			},
+			copy(){
+				navigator.clipboard.writeText(services.logs.json())
+			},
 			
 			loading,
 			closeLoading() {
@@ -100,7 +106,7 @@ export default defineComponent({
 			version: isDev ? "dev" : app.getVersion(),
 
 			logs: computed(() => {
-				return [...store.state._.logs].reverse().map(l => moment(l.date).format('HH:ss') + ":" + l.text)
+				return ["TODO"]
 			}),
 		};
 	}
