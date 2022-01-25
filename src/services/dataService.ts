@@ -28,7 +28,7 @@ export type Schema = {
 
 export class DataService<T extends TablesDef, C extends TableConfigs<T>> extends BaseService<T, C, any> {
     public readonly mysqlLogin: WritableComputedRef<PoolOptions>;
-    private conn: Pool;
+    public conn: Pool;
     
     private readonly tablesName: string[];
     private readonly tablesConfig: C;
@@ -218,19 +218,9 @@ export class DataService<T extends TablesDef, C extends TableConfigs<T>> extends
                 }
             });
         if (id !== undefined)
-            if (id >= 0)
-                return this.getCache[table + ":::" + id]?.deref() ?? (this.getCache[table + ":::" + id] = new WeakRef(computed(() => {//add modification to the row of the table
-                    const obj = {...this.raw[table].value[id]};
-                    if (this.services.modification.mods[table][id])
-                        Object.entries(this.services.modification.mods[table][id]).forEach(([key, value]) => {
-                            obj[key as keyof T[K]] = value;
-                        });
-                    return Object.freeze(obj);
-                }))).deref();
-            else
-                return computed(() => {//return created row
-                    return this.tables[id].value;
-                });
+            return this.getCache[table + ":::" + id]?.deref() ?? (this.getCache[table + ":::" + id] = new WeakRef(computed(() => {//add modification to the row of the table
+                return this.tables[table].value[id];
+            }))).deref();
         else
             return this.tables[table];
     }
