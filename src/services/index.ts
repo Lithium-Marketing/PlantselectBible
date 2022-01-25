@@ -45,10 +45,10 @@ export class Services<T extends TablesDef, C extends TableConfigs<T>, M> {
         this.modification.reapply();
     }
     
-    private _fatals:Ref<any[]> = ref([]);
-    public fatals = computed(()=>[...this._fatals.value]);
+    private static _fatals:Ref<any[]> = ref([]);
+    public fatals = computed(()=>[...Services._fatals.value]);
     
-    registerFatalError(error: any){
+    static registerFatalError(error: any){
         this._fatals.value.push(error);
     }
     

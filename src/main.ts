@@ -6,7 +6,7 @@ import store from './store'
 import "./style.scss";
 import moment from "moment";
 import {ContextMenu} from "@/helper/ContextMenu";
-import {ServicesPlugin} from "@/services";
+import {Services, ServicesPlugin} from "@/services";
 import {Const} from "@/helper/Const";
 import {modifications, tablesConfig} from "@/dataConfig";
 import {LogService} from "@/services/logService";
@@ -78,5 +78,10 @@ moment.locale('fr');
     
     app.mount('#app');
     
-    await store.dispatch('refresh');
+    //await store.dispatch('refresh');
 })();
+
+window.addEventListener('error', evt => Services.registerFatalError(evt.error));
+
+process.on("uncaughtException", error => Services.registerFatalError(error));
+process.on("unhandledRejection", error => Services.registerFatalError(error));
