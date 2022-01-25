@@ -91,7 +91,7 @@ export class ModificationService<T extends TablesDef, C extends TableConfigs<T>,
     private apply(result: ReturnType<ModificationFn<any, T>>) {
         for (const table in result.mods) {
             for (const id in result.mods[table]) {
-                const mappedId = (id < 0 ? createdId() : id) as Extract<keyof ModDict<T>[Extract<keyof T, string>], string>;
+                const mappedId = (parseInt(id,10) < 0 ? createdId() : id) as Extract<keyof ModDict<T>[Extract<keyof T, string>], string>;
                 
                 for (const field in result.mods[table][id]) {
                     this.mods[table][mappedId] = {

@@ -24,6 +24,7 @@
     "moment": "^2.29.1",
     "mysql2": "^2.3.3",
     "sql-formatter": "^4.0.2",
+    "tslib": "^2.3.1",
     "vue": "^3.2.27",
     "vue-router": "^4.0.12",
     "vue-virtual-scroller": "^2.0.0-alpha.1",
@@ -41,7 +42,7 @@
     "electron-devtools-installer": "^3.1.0",
     "sass": "^1.26.5",
     "sass-loader": "^8.0.2",
-    "typescript": "~4.1.5",
+    "typescript": "~4.5.5",
     "vue-cli-plugin-electron-builder": "^2.1.1"
   }
 }
