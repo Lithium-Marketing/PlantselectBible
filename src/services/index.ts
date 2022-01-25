@@ -1,4 +1,4 @@
-import {App, inject, InjectionKey} from 'vue';
+import {App, computed, customRef, inject, InjectionKey, ref, Ref, triggerRef} from 'vue';
 import {ModificationFn, ModificationService} from "@/services/ModificationService";
 import {CacheService} from "@/services/cacheService";
 import {DataService} from "@/services/dataService";
@@ -43,6 +43,13 @@ export class Services<T extends TablesDef, C extends TableConfigs<T>, M> {
         this.save = new SaveService(this);
     
         this.modification.reapply();
+    }
+    
+    private _fatals:Ref<any[]> = ref([]);
+    public fatals = computed(()=>[...this._fatals.value]);
+    
+    registerFatalError(error: any){
+        this._fatals.value.push(error);
     }
     
 }
