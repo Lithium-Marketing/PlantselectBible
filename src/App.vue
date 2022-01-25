@@ -1,27 +1,39 @@
 <template>
-	<Menu v-if="!loading" v-model:loading="loading"/>
-	<div v-if="loading" class="loading">
-		<h1>Operation {{ loadingDone ? "fini" : "en cour" }}</h1>
-
-		<template v-for="progress of progresses">
-			<h2>{{ progress[0] }}</h2>
-			<LoadingBar :progress="progress[1]"/>
-		</template>
-
-		<button :disabled="!loadingDone" @click="closeLoading">Done</button>
-		<hr/>
-		<h2>Logs</h2>
-		<div class="logContainer">
-			<ul>
-				<li v-for="log in logs">{{ log }}</li>
-			</ul>
-		</div>
+	<div v-if="fatalError.length" class="fatals">
+		<h1>Une erreur Fatal est survenue</h1>
+		<Fatals :fatals="fatalError" #="{fatal}">
+			<div class="fatal">
+				<h2>{{ fatal?.message }}</h2>
+				<pre>{{ fatal?.stack }}</pre>
+			</div>
+		</Fatals>
+		<button-confirm @click="clearAll()">Supprimer tout les donner en memoire (non reversible)</button-confirm>
 	</div>
-	<router-view v-slot="{ Component }" v-else>
-		<keep-alive>
-			<component :is="Component"/>
-		</keep-alive>
-	</router-view>
+	<template v-else>
+		<Menu v-if="!loading" v-model:loading="loading"/>
+		<div v-if="loading" class="loading">
+			<h1>Operation {{ loadingDone ? "fini" : "en cour" }}</h1>
+			
+			<template v-for="progress of progresses">
+				<h2>{{ progress[0] }}</h2>
+				<LoadingBar :progress="progress[1]"/>
+			</template>
+			
+			<button :disabled="!loadingDone" @click="closeLoading">Done</button>
+			<hr/>
+			<h2>Logs</h2>
+			<div class="logContainer">
+				<ul>
+					<li v-for="log in logs">{{ log }}</li>
+				</ul>
+			</div>
+		</div>
+		<router-view v-slot="{ Component }" v-else>
+			<keep-alive>
+				<component :is="Component"/>
+			</keep-alive>
+		</router-view>
+	</template>
 </template>
 
 <script>
@@ -34,10 +46,14 @@ import Menu from "@/components/Menu";
 import LoadingBar from "@/components/LoadingBar";
 import moment from "moment";
 import {useServices} from "@/services";
+import Fatals from "@/components/Fatals";
+import ButtonConfirm from "@/components/ButtonConfirm";
 
 export default defineComponent({
 	name: 'Home',
 	components: {
+		ButtonConfirm,
+		Fatals,
 		LoadingBar,
 		Menu,
 		HelloWorld,
@@ -66,6 +82,11 @@ export default defineComponent({
 		});
 
 		return {
+			fatalError: services.fatals,
+			clearAll(){
+				localStorage.clear();
+			},
+			
 			loading,
 			closeLoading() {
 				loading.value = false;
@@ -99,6 +120,20 @@ export default defineComponent({
 
 	li {
 		text-align: left;
+	}
+}
+
+.fatals{
+	padding: 1rem;
+	margin: 0;
+	
+	.fatal{
+		padding: 1rem;
+		color: darkred;
+		
+		pre{
+			text-align: left;
+		}
 	}
 }
 
