@@ -4,6 +4,7 @@ import {format} from 'sql-formatter';
 import {LogService} from "@/services/logService";
 import {TableConfig, TableConfigs, TablesDef} from "@/services/index";
 import {now} from "moment";
+import {RowDataPacket} from "mysql2/promise";
 
 const logger = LogService.logger({name: "SaveService"});
 
@@ -65,6 +66,41 @@ export class SaveService<T extends TablesDef, C extends TableConfigs<T>> extends
         }
         
         return sqls;
+    }
+    
+    public async createSave(name: string, modsId: string[]) {
+        const conn = await this.services.data.conn.getConnection();
+        await conn.execute("INSERT INTO bible_saves (Name,Data,Version) VALUE (:name,:data,:version)", {
+            name,
+            version: 1,
+            data: this.services.modification.toJSON(modsId)
+        });
+    }
+    
+    public async loadSave(name: string) {
+        const conn = await this.services.data.conn.getConnection();
+        const [rows, metas] = await conn.query("SELECT * FROM bible_saves WHERE Version=1 AND Name=:name", {name});
+        if (Array.isArray(rows) && rows.length === 1) {
+            const row = rows[0] as RowDataPacket;
+            return this.services.modification.fromJSON(row.Data);
+        }
+        throw new Error("Could not load save")
+    }
+    
+    public async getSaves(): Promise<{ ID: number, Name: string, Data: string, Version: number, Date: Date }[]> {
+        const conn = await this.services.data.conn.getConnection();
+        const [rows, metas] = await conn.query("SELECT * FROM bible_saves WHERE Version=1");
+        if (Array.isArray(rows)) {
+            return rows as any;
+        }
+        throw new Error("Could not load save")
+    }
+    
+    public async delSave(id: number) {
+        const conn = await this.services.data.conn.getConnection();
+        await conn.execute("DELETE FROM bible_saves WHERE ID=:id AND Version=1", {
+            id
+        });
     }
     
 }

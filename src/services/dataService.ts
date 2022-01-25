@@ -48,7 +48,7 @@ export class DataService<T extends TablesDef, C extends TableConfigs<T>> extends
         
         this.mysqlLogin = persistentStorage<PoolOptions>("mysqlLogin", {});
         watchEffect(() => {
-            this.conn = createPool(Object.assign({}, this.mysqlLogin.value));
+            this.conn = createPool(Object.assign({namedPlaceholders:true}, this.mysqlLogin.value));
         });
         
         this.tablesName = Object.keys(tables);

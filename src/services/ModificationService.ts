@@ -110,4 +110,22 @@ export class ModificationService<T extends TablesDef, C extends TableConfigs<T>,
         
         Object.values(this.raw).forEach(r => this._mod(r.name, r.payload));
     }
+    
+    public toJSON(modsId?: string[]) {
+        const raw = Object.entries(this.raw).filter(r => modsId === undefined || modsId.indexOf(r[0]) !== -1).reduce((a, v) => {
+            a[v[0]] = {
+                ...v[1]
+            }
+            delete a[v[0]].result;
+            return a;
+        }, {});
+        return JSON.stringify(raw);
+    }
+    
+    public fromJSON(raw: string) {
+        const rawP: Record<string, RawMod<any, any>> = JSON.parse(raw);
+        Object.entries(rawP).forEach(([id, mod]) => {
+            this.mod(mod.name, mod.payload, mod.desc);
+        })
+    }
 }

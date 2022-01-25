@@ -15,24 +15,24 @@
 			</Tab>
 			<Tab header="Sauvegarde">
 				<div class="saves">
-					<loading-bar :progress="-1" v-if="$store.state._.loadingSaves"/>
-					<table v-else>
+					<table>
 						<tr>
-							<th colspan="2" style="background-color: red;color: white">!!Attention!! Charger une sauvegarde va effacer les modification en cours</th>
+							<th colspan="3" style="background-color: red;color: white">!!Attention!! Charger une sauvegarde va effacer les modification en cours</th>
 						</tr>
 						<tr>
 							<td>
-								<button @click="$store.dispatch('refreshSaves')" style="background-color: rgb(160 160 160)">Rafraichir</button>
+								<button @click="refresh()" style="background-color: rgb(160 160 160)">Rafraichir</button>
 							</td>
-							<td>
-							</td>
+							<td></td>
+							<td></td>
 						</tr>
-						<tr v-for="save of $store.state.saves">
+						<tr v-for="save of saves">
 							<td>
-								<ButtonConfirm @action="$store.dispatch('loadSave',save.Data)">load</ButtonConfirm>
-								<ButtonConfirm @action="$store.dispatch('deleteSave',save.ID)" style="background-color: rgb(165 0 0)">X</ButtonConfirm>
+								<ButtonConfirm @action="load(save)">load</ButtonConfirm>
+								<ButtonConfirm @action="del(save)" style="background-color: rgb(165 0 0)">X</ButtonConfirm>
 							</td>
 							<td>{{ save.Name }}</td>
+							<td>{{ save.Date }}</td>
 						</tr>
 					</table>
 				</div>
@@ -54,15 +54,37 @@ import ChangesPanel from "@/components/ChangesPanel.vue";
 import {Modification} from "@/helper/Modifications";
 import {toText} from "@/helper/Const";
 import ModificationsPanel from "@/components/ModificationsPanel.vue";
+import {useMyServices} from "@/dataConfig";
+import { SaveService } from '@/services/saveService';
 
 export default defineComponent({
 	name: 'Home',
 	components: {ModificationsPanel, ChangesPanel, Tab, Tabs, LoadingBar, ButtonConfirm},
 	setup() {
 		const store = useStore<StoreState>();
+		const services = useMyServices();
 
+		const saves = ref<any>([]);
+		
+		async function refresh(){
+			saves.value = (await services.save.getSaves()).map(s=>{
+				return {
+					...s,
+					Date: moment(s.Date).format('lll')
+				};
+			});
+		}
+		
 		return {
-
+			saves,
+			refresh,
+			load(save){
+				services.modification.fromJSON(save.Data)
+			},
+			async del(save){
+				await services.save.delSave(save.ID);
+				await refresh();
+			},
 			types: computed(() => {
 				return Object.values(store.state.modifications).reduce((a, v: Modification) => {
 					const t = toText(v.type);

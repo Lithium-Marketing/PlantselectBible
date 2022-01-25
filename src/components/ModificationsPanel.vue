@@ -3,10 +3,10 @@
 		<div class="header">
 			<ButtonConfirm @action="annule" style="background-color: rgb(165 0 0)">Annuler selection</ButtonConfirm>
 			<ButtonConfirm @action="refresh" style="background-color: rgb(0 0 145)">Rafraîchir</ButtonConfirm>
-			<ButtonConfirm @action="apply">Appliquer sélection</ButtonConfirm>
+			<ButtonConfirm @action="apply">Appliquer tout</ButtonConfirm>
 			<hr style="opacity: 0;">
 			<input v-model="saveName"/>
-			<button @click="save" disabled>Sauvegarder sélection</button>
+			<button @click="save" :disabled="saveName.length<3">Sauvegarder sélection</button>
 		</div>
 		<Pagination :len="len" v-model:page="page"/>
 		<table style="width: 100%">
@@ -83,6 +83,7 @@ export default defineComponent({
 		const page = ref(0);
 		const saveName = ref("");
 		
+		const selection = computed(() => changes.value.filter((v) => coches.value[v.modId] === undefined ? true : coches.value[v.modId]).map(v => v.modId))
 		
 		return {
 			filters,
@@ -128,14 +129,15 @@ export default defineComponent({
 			
 			saveName,
 			save() {
-			
+				services.save.createSave(saveName.value, selection.value);
 			},
 			async apply() {
 				await services.save.apply(false);
+				Object.keys(services.modification.raw).forEach(k => delete services.modification.raw[k])
 			},
-			refresh() {
-				services.data.refresh();
-				
+			async refresh() {
+				await services.data.refresh();
+				services.modification.reapply();
 			},
 		};
 	}
