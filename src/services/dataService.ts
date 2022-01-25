@@ -48,9 +48,7 @@ export class DataService<T extends TablesDef, C extends TableConfigs<T>> extends
         
         this.mysqlLogin = persistentStorage<PoolOptions>("mysqlLogin", {});
         watchEffect(() => {
-            this.conn = createPool(Object.assign({
-            
-            },this.mysqlLogin.value));
+            this.conn = createPool(Object.assign({}, this.mysqlLogin.value));
         });
         
         this.tablesName = Object.keys(tables);
@@ -83,11 +81,11 @@ export class DataService<T extends TablesDef, C extends TableConfigs<T>> extends
                         result[id] = this.raw[table].value[id];
                 }
                 
-                Object.entries(this.services.modification.mods[table]).forEach(([id,val])=>{
-                    if(this.raw[table].value[id])
+                Object.entries(this.services.modification.mods[table]).forEach(([id, val]) => {
+                    if (this.raw[table].value[id])
                         return;
-    
-                    result[id] = Object.freeze(Object.assign({},val));
+                    
+                    result[id] = Object.freeze(Object.assign({}, val));
                 })
                 
                 return result;
@@ -140,8 +138,10 @@ export class DataService<T extends TablesDef, C extends TableConfigs<T>> extends
     }
     
     refresh(table: keyof T | true = true) {
+        const promises: Promise<unknown>[] = [];
+        
         const refresh = (table: keyof T) => {
-            this.services.job.add((async () => {
+            const promise = (async () => {
                 this.tablesSchema[table].value = await this.refreshSchema(table);
                 
                 const sql = this.tablesConfig[table].sql ?? `SELECT *
@@ -167,7 +167,9 @@ export class DataService<T extends TablesDef, C extends TableConfigs<T>> extends
                 this.raw[table as keyof T].value = result;
                 
                 logger.log(table, Object.entries(result).length);
-            })(), "Downloading data from " + table)
+            })();
+            promises.push(promise);
+            this.services.job.add(promise, "Downloading data from " + table)
         }
         
         if (table !== true)
@@ -175,6 +177,7 @@ export class DataService<T extends TablesDef, C extends TableConfigs<T>> extends
         else
             for (const table of this.tablesName)
                 refresh(table);
+        return Promise.all(promises);
     }
     
     private async refreshSchema(table: keyof T) {
