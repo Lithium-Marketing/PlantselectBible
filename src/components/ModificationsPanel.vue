@@ -131,7 +131,7 @@ export default defineComponent({
 			
 			},
 			async apply() {
-				services.save.apply();
+				await services.save.apply(false);
 			},
 			refresh() {
 				services.data.refresh();
