@@ -218,7 +218,7 @@ export default defineComponent({
 						
 						line.fournisseur = four;
 						
-						line.years_pastT0 = four?.Transport * (services.data.raw.currency_rates.value[four.Currency + ",CAD"]?.rate ?? -1);
+						line.years_pastT0 = four?.Transport * (services.data.raw.currency_rates.value[four?.Currency + ",CAD"]?.rate ?? -1);
 						
 						line.years_pastT1 = services.cache.archives.value[2]?.[currentYear - 1]?.[four?.ID]?.value;
 						line.years_pastT1 = (line.years_pastT1 ?? 0) / 100;

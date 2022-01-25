@@ -7,14 +7,14 @@
 				<pre>{{ fatal?.stack }}</pre>
 			</div>
 		</Fatals>
-		<button-confirm @click="clearAll()">Supprimer tout les donner en memoire (non reversible)</button-confirm>
+		<button-confirm @action="clearAll()">Supprimer tout les donner en memoire (non reversible)</button-confirm>
 		<button @click="copy()">Copier les logs dans le press-papier</button>
 	</div>
 	<template v-else>
 		<Menu v-if="!loading" v-model:loading="loading"/>
 		<div v-if="loading" class="loading">
 			<h1>Operation {{ loadingDone ? "fini" : "en cour" }}</h1>
-			<button :disabled="!loadingDone" @click="closeLoading">Done</button>
+			<button v-if="progresses.length" :disabled="!loadingDone" @click="closeLoading">Done</button>
 			
 			<template v-for="progress of progresses">
 				<h2>{{ progress[0] }}</h2>

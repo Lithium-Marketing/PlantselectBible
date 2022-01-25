@@ -88,7 +88,7 @@ export default {
 	ul.nav {
 		display: flex;
 		list-style: none;
-		margin-bottom: 0;
+		margin: 0;
 		padding-left: 0;
 		align-content: start;
 
