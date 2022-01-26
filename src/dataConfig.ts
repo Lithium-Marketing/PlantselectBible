@@ -49,6 +49,20 @@ export const modifications = {
             id: "priceCalc" + (vF ? "F" : "P"),
             mods
         }
+    },
+    manual<T extends keyof MyTablesDef, F extends keyof T>(payload: {
+        table: T,
+        field: F,
+        id?: number,
+        val: any,
+        createInfo?: Partial<MyTablesDef[T]>
+    }, services: MyServices): ReturnMods {
+        const id = payload.id ?? services.modification.createId();
+        const val = Object.assign({}, payload.id === undefined ? payload.createInfo : {}, {[payload.field]: payload.val})
+        return {
+            id: `manual:${payload.table}:${payload.field}:${id}`,
+            mods: {[payload.table]: {[id]: val}}
+        }
     }
 } as const;
 export type MyModifications = ToModifications<MyServices, MyTablesDef, typeof modifications>;

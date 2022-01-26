@@ -1,0 +1,72 @@
+<template>
+	<div v-if="show">
+		<input :value="value" @change="value = $event.target.value">
+		<span v-if="changed">X</span>
+	</div>
+	<span v-else>-</span>
+</template>
+
+<script>
+import {computed} from "vue";
+import {useMyServices} from "@/dataConfig";
+
+export default {
+	name: "TableInput2",
+	props: ["table", "entityId", "field", "createInfo"],
+	emits: ["change"],
+	setup(props, {emit}) {
+		const services = useMyServices();
+		
+		const value = computed({
+			get() {
+				return services.data.tables[props.table]?.value[props.entityId]?.[props.field]
+			},
+			set(val) {
+				services.modification.mod("manual", {
+					table: props.table,
+					field: props.field,
+					id: props.entityId,
+					val,
+					createInfo: props.createInfo
+				}, "Modification manuel")
+			}
+		});
+		
+		return {
+			changed: computed(() => value.value !== services.data.raw[props.table]?.value[props.entityId]?.[props.field]),
+			show: computed(() => (value.value !== undefined && value.value !== null) || !!props.createInfo),
+			value
+		}
+	}
+}
+</script>
+
+<style scoped lang="scss">
+input {
+	width: 4rem;
+	border: none;
+	border-radius: 0;
+	border-bottom: 1px solid #ccc;
+	background-color: transparent;
+	outline: none;
+	font-size: 1rem;
+	line-height: 1rem;
+	padding: 0.1rem;
+}
+
+div {
+	position: relative;
+	
+	> span {
+		position: absolute;
+		transform: translateX(-100%);
+		color: #ccc;
+		
+		cursor: pointer;
+		
+		&:hover {
+			text-shadow: 0px 0px 3px #aaa;
+		}
+	}
+}
+</style>
