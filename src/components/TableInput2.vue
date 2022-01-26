@@ -8,7 +8,7 @@
 
 <script>
 import {computed} from "vue";
-import {useMyServices} from "@/dataConfig";
+import {useMyServices} from "@/config/dataConfig";
 
 export default {
 	name: "TableInput2",

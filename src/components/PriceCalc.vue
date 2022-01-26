@@ -27,7 +27,7 @@
 <script lang="ts">
 
 import {computed, defineComponent, ref} from "vue";
-import {useMyServices} from "@/dataConfig";
+import {useMyServices} from "@/config/dataConfig";
 import {LogService} from "@/services/logService";
 
 const logger = LogService.logger({name: "PriceCalc"});

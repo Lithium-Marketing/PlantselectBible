@@ -2,7 +2,7 @@ import {Services} from "@/services/index";
 import {BaseService} from "@/helper/baseService";
 import {computed, ComputedRef} from "vue";
 import moment from "moment";
-import {MyTablesConfig, MyTablesDef} from "@/dataConfig";
+import {MyTablesConfig, MyTablesDef} from "@/config/dataConfig";
 
 export class CacheService extends BaseService<MyTablesDef, MyTablesConfig, any> {
     /**

@@ -54,7 +54,7 @@ import ChangesPanel from "@/components/ChangesPanel.vue";
 import {Modification} from "@/helper/Modifications";
 import {toText} from "@/helper/Const";
 import ModificationsPanel from "@/components/ModificationsPanel.vue";
-import {useMyServices} from "@/dataConfig";
+import {useMyServices} from "@/config/dataConfig";
 import { SaveService } from '@/services/saveService';
 
 export default defineComponent({

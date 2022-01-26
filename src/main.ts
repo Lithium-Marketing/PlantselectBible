@@ -8,7 +8,7 @@ import moment from "moment";
 import {ContextMenu} from "@/helper/ContextMenu";
 import {Services, ServicesPlugin} from "@/services";
 import {Const} from "@/helper/Const";
-import {modifications, tablesConfig} from "@/dataConfig";
+import {modifications, tablesConfig} from "@/config/dataConfig";
 import {LogService} from "@/services/logService";
 
 const logger = LogService.logger({name: "main"})

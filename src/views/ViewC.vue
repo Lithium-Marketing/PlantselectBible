@@ -129,7 +129,7 @@ import TableInput from "@/components/TableInput.vue";
 import {currentYear, PricesId} from "@/helper/Const";
 import moment from "moment";
 import {LogService} from "@/services/logService";
-import {MyTablesDef, useMyServices} from "@/dataConfig";
+import {MyTablesDef, useMyServices} from "@/config/dataConfig";
 import TableInput2 from "@/components/TableInput2.vue";
 
 const logger = LogService.logger({name: "ViewC"});

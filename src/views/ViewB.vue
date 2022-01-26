@@ -52,7 +52,7 @@ import Pagination from "@/components/Pagination.vue";
 import TableInput from "@/components/TableInput.vue";
 import {StoreState} from "@/store";
 import {useServices} from "@/services";
-import {MyTablesConfig, MyTablesDef, useMyServices} from "@/dataConfig";
+import {MyTablesConfig, MyTablesDef, useMyServices} from "@/config/dataConfig";
 import {LogService} from "@/services/logService";
 
 const logger = LogService.logger({name:"ViewB"})

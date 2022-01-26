@@ -41,7 +41,7 @@ import ButtonConfirm from "./ButtonConfirm.vue";
 import {useStore} from "vuex";
 import {StoreState} from "@/store";
 import Pagination from "@/components/Pagination.vue";
-import {useMyServices, MyServices} from "@/dataConfig";
+import {useMyServices, MyServices} from "@/config/dataConfig";
 
 export default defineComponent({
 	name: "ModificationsPanel",
