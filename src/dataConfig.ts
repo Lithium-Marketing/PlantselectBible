@@ -20,7 +20,6 @@ export const modifications = {
         };
         const prices = services.data.raw.prix.value;
         const {vals, vF} = payload;
-        let cnt = -1;
         
         Object.values(services.data.raw.produits.value).forEach(p => {
             const prod_prices = services.cache.byProd.value[p.ID].value.prices;
@@ -33,7 +32,7 @@ export const modifications = {
                     
                     const price = prod_prices?.[id];
                     if (price === undefined)
-                        mods["produits_prix"][--cnt] = {
+                        mods["produits_prix"][services.modification.createId()] = {
                             Prix: mainPrice * vals[id],
                             Prix_ID: id,
                             Produit_ID: p.ID,
@@ -47,7 +46,7 @@ export const modifications = {
         });
         
         return {
-            id: "priceCalc" + vF ? "F" : "P",
+            id: "priceCalc" + (vF ? "F" : "P"),
             mods
         }
     }

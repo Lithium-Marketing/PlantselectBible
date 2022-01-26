@@ -125,6 +125,7 @@ export default defineComponent({
 						coches.value[v.modId] = undefined;
 					}
 				});
+				services.modification.reapply();
 			},
 			
 			saveName,

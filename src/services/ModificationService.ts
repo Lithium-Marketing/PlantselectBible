@@ -31,9 +31,12 @@ const genCreatedId = (function* () {
     let cnt = 0;
     while (true) yield --cnt
 })();
-const createdId = () => genCreatedId.next().value;
+const createdId = (() => genCreatedId.next().value) as () => number;
 
 export class ModificationService<T extends TablesDef, C extends TableConfigs<T>, M> extends BaseService<T, C, M> {
+    public static readonly createId = createdId;
+    public readonly createId = createdId;
+    
     public readonly mods: ModDict<T>;
     
     public readonly raw: { [id: string]: RawMod<M, keyof M> }
@@ -63,15 +66,20 @@ export class ModificationService<T extends TablesDef, C extends TableConfigs<T>,
         
         const result = this._mod(modName, payload);
         
-        this.raw[result.id] = {
-            payload: payload,
-            name: modName,
-            desc,
-            result
-        };
+        if (result)
+            this.raw[result.id] = {
+                payload: payload,
+                name: modName,
+                desc,
+                result
+            };
+        else
+            logger.warn("Could not apply modification")
     }
     
     private _mod<K extends keyof M>(modName: K, payload: M[K]) {
+        if (!this.modifications[modName])
+            return;
         const result = this.modifications[modName](payload, this.services);
         
         if (this.raw[result.id]) {
@@ -91,11 +99,9 @@ export class ModificationService<T extends TablesDef, C extends TableConfigs<T>,
     private apply(result: ReturnType<ModificationFn<any, T>>) {
         for (const table in result.mods) {
             for (const id in result.mods[table]) {
-                const mappedId = (parseInt(id,10) < 0 ? createdId() : id) as Extract<keyof ModDict<T>[Extract<keyof T, string>], string>;
-                
                 for (const field in result.mods[table][id]) {
-                    this.mods[table][mappedId] = {
-                        ...this.mods[table][mappedId],
+                    this.mods[table][id] = {
+                        ...this.mods[table][id],
                         [field]: result.mods[table][id][field]
                     }
                 }
