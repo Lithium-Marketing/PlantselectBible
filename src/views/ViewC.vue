@@ -84,14 +84,14 @@
 						<!--						<TableInput :modelValue="line.years_pastC0" :original="line.years_pastC0O" @update:modelValue="upCost($event,line)"/>-->
 					</td>
 					<td>
-						<TableInput :always="true" :modelValue="line.bible.Vendant" :original="line.bible.$Vendant" @update:modelValue="upVendantF($event,line.product)"/>
+						<TableInput2 table="bible" field="Vendant" :entity-id="line.bible.ID" :create-info="line.bible.createInfo"/>
 					</td>
 					<td>
-						<TableInput :modelValue="line.years_pastC0" :original="line.$years_pastC0" @update:modelValue="upCost($event,line)"/>
+						<TableInput2 table="matieres_premieres" field="Prix" :entity-id="line.matiere_premiere?.ID"/>
 					</td>
 					<td>{{ $value(line.years_pastT0) }}</td>
 					<td :class="line.c?.v0">
-						<TableInput :always="true" :modelValue="line.years_pastV0" :original="line.$years_pastV0" @update:modelValue="upPrice($event,line)"/>
+						<TableInput2 table="produits_prix" field="Prix" :entity-id="line.mainPrice?.ID"/>
 					</td>
 					<td>{{ $value(line.years_pastC1) }}</td>
 					<td>{{ $value(line.years_pastT1) }}</td>
@@ -100,10 +100,10 @@
 					<td>{{ $value(line.years_pastT2) }}</td>
 					<td>{{ $value(line.years_pastV2) }}</td>
 					<td>{{ line.matiere_premiere?.Format }}</td>
-					<td>{{ line.fournisseur?.Code }}</td>
+					<td>{{ line.fournisseur }}</td>
 					<td>{{ line.Inventaire }}</td>
 					<td :class="line.c?.qtyF">
-						<TableInput :always="true" :modelValue="line.bible.Quantite" :original="line.bible.$Quantite" @update:modelValue="upAchat($event,line)"/>
+						<TableInput2 table="bible" field="Quantite" :entity-id="line.bible?.ID" :create-info="line.bible.createInfo"/>
 					</td>
 					<td :class="line.c?.a0">{{ $valueI(line.achat.years_pastA0) }}</td>
 					<td>{{ $valueI(line.achat.years_pastA1) }}</td>
@@ -122,7 +122,6 @@
 
 <script lang="ts">
 import {computed, ComputedRef, defineComponent, reactive, ref} from "vue";
-import {Services, useServices} from "@/services";
 import {Store, useStore} from "vuex";
 import {StoreState} from "@/store";
 import Pagination from "@/components/Pagination.vue";
@@ -130,13 +129,14 @@ import TableInput from "@/components/TableInput.vue";
 import {currentYear, PricesId} from "@/helper/Const";
 import moment from "moment";
 import {LogService} from "@/services/logService";
-import {MyTablesConfig, MyTablesDef, useMyServices} from "@/dataConfig";
+import {MyTablesDef, useMyServices} from "@/dataConfig";
+import TableInput2 from "@/components/TableInput2.vue";
 
 const logger = LogService.logger({name: "ViewC"});
 
 export default defineComponent({
 	name: "ViewC",
-	components: {TableInput, Pagination},
+	components: {TableInput2, TableInput, Pagination},
 	setup() {
 		const store = useStore<StoreState>();
 		const services = useMyServices();
@@ -168,9 +168,10 @@ export default defineComponent({
 					const bibleData = bibleId !== undefined ? services.data.get("bible", bibleId).value : undefined;
 					
 					const bible = {
-						ID: bibleData?.ID,
-						Vendant: bibleData?.Vendant,
-						$Vendant: services.data.raw.bible.value[bibleId]?.Vendant,
+						ID: bibleId,
+						createInfo: {
+							Produit: product.ID
+						},
 						Quantite: bibleData?.Quantite,
 						$Quantite: services.data.raw.bible.value[bibleId]?.Quantite
 					}
@@ -223,10 +224,8 @@ export default defineComponent({
 						}
 						
 						const prodCache = services.cache.byProd.value[line.product.ID].value;
-						const price = line.prices?.[PricesId.Main];
 						
-						line.years_pastV0 = price?.Prix;
-						line.$years_pastV0 = services.data.raw.produits_prix.value[price?.ID]?.Prix;
+						line.mainPrice = line.prices?.[PricesId.Main];
 						
 						line.years_pastV1 = services.cache.archives.value[0]?.[currentYear - 1]?.[line.product.ID]?.value;
 						line.years_pastV1 = (line.years_pastV1 ?? 0) / 100;
@@ -242,9 +241,6 @@ export default defineComponent({
 						
 						line.matiere_premiere = mp;
 						
-						line.years_pastC0 = mp?.Prix
-						line.$years_pastC0 = services.data.raw.matieres_premieres.value[line.oa?.Matiere_premiere]?.Prix
-						
 						line.years_pastC1 = services.cache.archives.value[1]?.[currentYear - 1]?.[line.oa?.Matiere_premiere]?.value;
 						line.years_pastC1 = (line.years_pastC1 ?? 0) / 100;
 						
@@ -253,7 +249,7 @@ export default defineComponent({
 						
 						const four = services.data.get("fournisseurs", mp?.Fournisseur ?? false).value;
 						
-						line.fournisseur = four;
+						line.fournisseur = four?.Abbreviation;
 						
 						line.years_pastT0 = four?.Transport * (services.data.raw.currency_rates.value[four?.Currency + ",CAD"]?.rate ?? -1);
 						
