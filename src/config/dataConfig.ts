@@ -1,6 +1,8 @@
 import {Services, TablesDef, useServices} from "@/services";
-import {ModificationFn, ToModifications} from "@/services/ModificationService";
+import {ToModifications} from "@/services/ModificationService";
 import {PricesId} from "@/helper/Const";
+import {PriceCalc} from "@/config/mods/priceCalc";
+import {Manual} from "@/config/mods/manual";
 
 export type MyServices = Services<MyTablesDef, MyTablesConfig, MyModifications>;
 
@@ -8,62 +10,9 @@ export function useMyServices(): MyServices {
     return useServices()
 }
 
-type ReturnMods = ReturnType<ModificationFn<any, MyTablesDef>>;
-
 export const modifications = {
-    priceCalc(payload: {
-        vals: Record<number, number>,
-        vF: boolean
-    }, services: MyServices): ReturnMods {
-        const mods: ReturnMods["mods"] = {
-            produits_prix: {}
-        };
-        const prices = services.data.raw.prix.value;
-        const {vals, vF} = payload;
-        
-        Object.values(services.data.raw.produits.value).forEach(p => {
-            const prod_prices = services.cache.byProd.value[p.ID].value.prices;
-            const bible = services.data.raw.bible.value[services.data.indexesByTable.bible.Produit.value[p.ID]?.[0]];
-            const mainPrice = vF ? bible?.Vendant : prod_prices?.[PricesId.Main]?.Prix;
-            if (mainPrice !== undefined)
-                for (const id in prices) {
-                    if (vals[id] === undefined)
-                        continue;
-                    
-                    const price = prod_prices?.[id];
-                    if (price === undefined)
-                        mods["produits_prix"][services.modification.createId()] = {
-                            Prix: mainPrice * vals[id],
-                            Prix_ID: id,
-                            Produit_ID: p.ID,
-                            Visible: 1
-                        }
-                    else
-                        mods["produits_prix"][price.ID] = {
-                            Prix: mainPrice * vals[id],
-                        }
-                }
-        });
-        
-        return {
-            id: "priceCalc" + (vF ? "F" : "P"),
-            mods
-        }
-    },
-    manual<T extends keyof MyTablesDef, F extends keyof T>(payload: {
-        table: T,
-        field: F,
-        id?: number,
-        val: any,
-        createInfo?: Partial<MyTablesDef[T]>
-    }, services: MyServices): ReturnMods {
-        const id = payload.id ?? services.modification.createId();
-        const val = Object.assign({}, payload.id === undefined ? payload.createInfo : {}, {[payload.field]: payload.val})
-        return {
-            id: `manual:${payload.table}:${payload.field}:${id}`,
-            mods: {[payload.table]: {[id]: val}}
-        }
-    }
+    priceCalc: new PriceCalc(),
+    manual: new Manual()
 } as const;
 export type MyModifications = ToModifications<MyServices, MyTablesDef, typeof modifications>;
 

@@ -8,23 +8,33 @@ import {LogService} from "@/services/logService";
 const logger = LogService.logger({name: "ModificationService"})
 
 type ModDict<T extends TablesDef> = {
-    [table in keyof T]: Record<number, Partial<Record<keyof T[table], any>>>
+    [table in keyof T]: {
+        [id: number]: {
+            [key in keyof T[table]]?: T[table][key]
+        }
+    }//Record<number, Partial<Record<keyof T[table], any>>>
 }
 
-export type ModificationFn<S, T extends TablesDef> = (payload: any, services: S) => {
-    id: string,
-    mods: Partial<ModDict<T>>
+export interface BaseMod<P, S extends Services<T, any, any>, T extends TablesDef> {
+    
+    getId(payload: P, services: S): string | false;
+    
+    apply(payload: P, services: S, op: Operations<T>): string;
+    
+}
+
+export type ToModifications<S extends Services<T, any, any>, T extends TablesDef, M extends Modifications<any, S, T>> = {
+    [name in keyof M]: Parameters<M[name]["apply"]>[0];
+}
+
+export type Modifications<M, S extends Services<T, any, any>, T extends TablesDef> = {
+    [name in keyof M]: BaseMod<M[name], S, T>
 };
-
-export type ToModifications<S extends Services<any, any, any>, T extends TablesDef, M extends Record<string, ModificationFn<S, T>>> = {
-    [name in keyof M]: Parameters<M[name]>[0];
-}
 
 type RawMod<M, N extends keyof M> = {
     name: N,
     desc: string,
-    payload: M[N],
-    result?: ReturnType<ModificationFn<any, any>>
+    payload: M[N]
 }
 
 const genCreatedId = (function* () {
@@ -32,6 +42,10 @@ const genCreatedId = (function* () {
     while (true) yield --cnt
 })();
 const createdId = (() => genCreatedId.next().value) as () => number;
+
+export interface Operations<D extends TablesDef> {
+    mod<T extends keyof D, F extends keyof D[T]>(table: T, field: F, id: any, val: D[T][F])
+}
 
 export class ModificationService<T extends TablesDef, C extends TableConfigs<T>, M> extends BaseService<T, C, M> {
     public static readonly createId = createdId;
@@ -41,9 +55,11 @@ export class ModificationService<T extends TablesDef, C extends TableConfigs<T>,
     
     public readonly raw: { [id: string]: RawMod<M, keyof M> }
     
-    private readonly modifications: Record<keyof M, ModificationFn<Services<T, C, M>, T>>;
+    public readonly results: Record<string, { nOp: number }> = {};
     
-    constructor(s: Services<T, C, M>, tables: C, modifications: Record<keyof M, ModificationFn<Services<T, C, M>, T>>) {
+    private readonly modifications: Modifications<M, Services<T, C, M>, T>;
+    
+    constructor(s: Services<T, C, M>, tables: C, modifications: Modifications<M, Services<T, C, M>, T>) {
         super(s);
         this.modifications = modifications;
         
@@ -64,14 +80,13 @@ export class ModificationService<T extends TablesDef, C extends TableConfigs<T>,
     mod<K extends keyof M>(modName: K, payload: M[K], desc: string) {
         logger.trace("mod", modName, payload, desc);
         
-        const result = this._mod(modName, payload);
+        const id = this._mod(modName, payload);
         
-        if (result)
-            this.raw[result.id] = {
+        if (id)
+            this.raw[id] = {
                 payload: payload,
                 name: modName,
-                desc,
-                result
+                desc
             };
         else
             logger.warn("Could not apply modification")
@@ -79,34 +94,41 @@ export class ModificationService<T extends TablesDef, C extends TableConfigs<T>,
     
     private _mod<K extends keyof M>(modName: K, payload: M[K]) {
         if (!this.modifications[modName])
-            return;
-        const result = this.modifications[modName](payload, this.services);
+            return false;
         
-        if (this.raw[result.id]) {
-            delete this.raw[result.id];
+        let id = this.modifications[modName].getId(payload, this.services);
+        
+        if (id!==false && this.raw[id]) {
+            delete this.raw[id];
             this.reapply();
-        } else
-            this.apply(result);
+        }
         
-        return result;
+        const result = {nOp:0};
+        const todos = {
+            mods: []
+        }
+        const op = {
+            mod(t, f, i, v) {
+                todos.mods.push({t,f,i,v})
+                result.nOp++;
+            }
+        };
+        todos.mods.forEach(({t,f,i,v})=>{
+            this.mods[t][i] = {
+                ...this.mods[t][i],
+                [f]: v
+            };
+        })
+        
+        id = this.modifications[modName].apply(payload, this.services, op);
+        this.results[id] = result;
+        
+        return id;
     }
     
     remove<K extends keyof T>(modId: string) {
         delete this.raw[modId];
         this.reapply();
-    }
-    
-    private apply(result: ReturnType<ModificationFn<any, T>>) {
-        for (const table in result.mods) {
-            for (const id in result.mods[table]) {
-                for (const field in result.mods[table][id]) {
-                    this.mods[table][id] = {
-                        ...this.mods[table][id],
-                        [field]: result.mods[table][id][field]
-                    }
-                }
-            }
-        }
     }
     
     public reapply() {
@@ -119,19 +141,16 @@ export class ModificationService<T extends TablesDef, C extends TableConfigs<T>,
     
     public toJSON(modsId?: string[]) {
         const raw = Object.entries(this.raw).filter(r => modsId === undefined || modsId.indexOf(r[0]) !== -1).reduce((a, v) => {
-            a[v[0]] = {
-                ...v[1]
-            }
-            delete a[v[0]].result;
+            a.push(v[1]);
             return a;
-        }, {});
+        }, []);
         return JSON.stringify(raw);
     }
     
     public fromJSON(raw: string) {
-        const rawP: Record<string, RawMod<any, any>> = JSON.parse(raw);
-        Object.entries(rawP).forEach(([id, mod]) => {
+        const rawP: RawMod<any, any>[] = JSON.parse(raw);
+        rawP.forEach((mod) => {
             this.mod(mod.name, mod.payload, mod.desc);
-        })
+        });
     }
 }

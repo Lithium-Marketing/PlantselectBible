@@ -1,10 +1,11 @@
-import {App, computed, customRef, inject, InjectionKey, ref, Ref, triggerRef} from 'vue';
-import {ModificationFn, ModificationService} from "@/services/ModificationService";
+import {App, computed, customRef, inject, InjectionKey, ref, Ref, triggerRef, watch} from 'vue';
+import {Modifications, ModificationService} from "@/services/ModificationService";
 import {CacheService} from "@/services/cacheService";
 import {DataService} from "@/services/dataService";
 import {JobService} from "@/services/jobService";
 import {SaveService} from "@/services/saveService";
 import {LogService} from "@/services/logService";
+import {persistentStorage} from "@/helper/PersistentStorage";
 
 export interface TableConfig {
     indexes?: readonly string[],
@@ -33,7 +34,7 @@ export class Services<T extends TablesDef, C extends TableConfigs<T>, M> {
     
     public readonly tables: C;
     
-    public constructor(tables: C, modifications: Record<keyof M, ModificationFn<Services<T, C, M>, T>>) {
+    public constructor(tables: C, modifications: Modifications<M, Services<T, C, M>, T>) {
         this.tables = Object.freeze(tables);
         
         this.job = new JobService(this);
@@ -60,7 +61,7 @@ export function useServices<T extends TablesDef, C extends TableConfigs<T>, M>()
     return inject(key)
 }
 
-export function ServicesPlugin<T extends TablesDef, C extends TableConfigs<T>, M>(tables: C, modifications: Record<keyof M, ModificationFn<Services<T, C, M>, T>>) {
+export function ServicesPlugin<T extends TablesDef, C extends TableConfigs<T>, M>(tables: C, modifications: Modifications<M, Services<T, C, M>, T>) {
     return function (app: App, ...options: any[]): any {
         const s = new Services<T, C, M>(tables, modifications);
         app.provide(key, s);

@@ -59,18 +59,14 @@ export default defineComponent({
 		const coches = ref({});
 		
 		const changes = computed(() => {
-			return Object.values(services.modification.raw).flatMap((v) => {
-				const nMod = Object.entries(v.result.mods).reduce((a, [table, mods]) => {
-					return Object.entries(mods).reduce((a, [id, fields]) => {
-						return Object.entries(fields).length + a;
-					}, 0) + a;
-				}, 0);
+			return Object.entries(services.modification.raw).flatMap(([id,v]) => {
+				const nMod = services.modification.results[id]?.nOp;
 				
 				return {
-					modId: v.result.id,
-					key: [v.result.id].join(":"),
+					modId: id,
+					key: [id].join(":"),
 					data: {
-						modId: v.result.id,
+						modId: id,
 						op: v.name,
 						desc: v.desc,
 						nMod
