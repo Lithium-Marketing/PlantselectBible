@@ -1,6 +1,6 @@
 <template>
 	<div v-if="show">
-		<input :value="value" @change="value = $event.target.value">
+		<input :value="value" @change="value = $event.target.value" :style="{width: width}">
 		<span v-if="changed" @click="value = original">X</span>
 	</div>
 	<span v-else>-</span>
@@ -11,9 +11,10 @@ import {computed} from "vue";
 
 export default {
 	name: "TableInput",
-	props: ["modelValue", "original", "always"],
+	props: ["modelValue", "original", "always" ,"len"],
 	setup(props, {emit}) {
 		return {
+			width: computed(() => props.len !== undefined ? props.len+"rem" : "4rem"),
 			changed: computed(() => props.modelValue !== props.original),
 			show: computed(() => (props.modelValue !== undefined && props.modelValue !== null) || !!props.always),
 			value: computed({
@@ -31,7 +32,6 @@ export default {
 
 <style scoped lang="scss">
 input {
-	width: 4rem;
 	border: none;
 	border-radius: 0;
 	border-bottom: 1px solid #ccc;
@@ -44,14 +44,14 @@ input {
 
 div {
 	position: relative;
-
+	
 	> span {
 		position: absolute;
 		transform: translateX(-100%);
 		color: #ccc;
-
+		
 		cursor: pointer;
-
+		
 		&:hover {
 			text-shadow: 0px 0px 3px #aaa;
 		}

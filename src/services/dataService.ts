@@ -34,7 +34,7 @@ export class DataService<T extends TablesDef, C extends TableConfigs<T>> extends
     private readonly tablesConfig: C;
     
     public readonly raw: { [table in keyof T]: WritableComputedRef<Record<number, T[table]>> };
-    public readonly tables: { [table in keyof T]: ComputedRef<Record<number, any>> };
+    public readonly tables: { [table in keyof T]: ComputedRef<Record<number, T[table]>> };
     
     
     //private readonly tablesRaw: Record<keyof T, WritableComputedRef<any[]>>;
