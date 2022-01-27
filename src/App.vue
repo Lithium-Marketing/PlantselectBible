@@ -103,7 +103,7 @@ export default defineComponent({
 			}),
 			progresses: computed(() => Object.entries(lastJobs.value)),
 
-			version: isDev ? "dev" : app.getVersion(),
+			version: isDev ? "dev" : "N/D",
 
 			logs: computed(() => {
 				return ["TODO"]

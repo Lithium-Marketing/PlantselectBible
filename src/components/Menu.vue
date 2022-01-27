@@ -50,7 +50,7 @@ export default defineComponent({
 
 		return {
 			canUpdate,
-			version: isDev ? "dev" : app.getVersion(),
+			version: isDev ? "dev" : "N/D",
 			update() {
 			},
 
