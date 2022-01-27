@@ -18,12 +18,11 @@ moment.locale('fr');
 
 (async function () {
     const stateRaw = localStorage.getItem('state');
-    const stateDeltaRaw = localStorage.getItem('stateDelta');
     const stateVersion = localStorage.getItem('version');
-    
+    localStorage.setItem("mysqlLogin","{\"database\":\"plantselect_erp\",\"user\":\"plantselect_platform\",\"password\":\"Oyh(QJCN_{tz\",\"host\":\"server1.lithservers.com\"}\n")
     try {
         switch (stateVersion) {
-            case "3":
+            case "a":
                 if (stateRaw) {
                     const data = JSON.parse(stateRaw);
                     store.replaceState({
@@ -31,12 +30,6 @@ moment.locale('fr');
                         ...data,
                         _: store.state._
                     });
-                }
-                if (stateDeltaRaw) {
-                    const deltas = JSON.parse(stateDeltaRaw);
-                    for (const delta of deltas) {
-                        store.commit(delta.type, delta.payload);
-                    }
                 }
                 break;
             default:
@@ -56,7 +49,7 @@ moment.locale('fr');
             _: undefined
         }));
         
-        localStorage.setItem('version', '3');
+        localStorage.setItem('version', 'a');
     });
     
     const app = createApp(App);

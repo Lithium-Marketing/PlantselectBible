@@ -3,7 +3,7 @@
 import {app, protocol, BrowserWindow} from 'electron'
 import {createProtocol} from 'vue-cli-plugin-electron-builder/lib'
 import installExtension, {VUEJS3_DEVTOOLS} from 'electron-devtools-installer'
-import {autoUpdater} from "electron-updater"
+//import {autoUpdater} from "electron-updater"
 
 //import {initialize} from "@electron/remote/main";
 
@@ -38,9 +38,9 @@ async function createWindow() {
         createProtocol('app')
         // Load the index.html when not in development
         await win.loadURL('app://./index.html#');
-        autoUpdater.autoDownload = true;
-        autoUpdater.autoInstallOnAppQuit = true;
-        await checkUpdate();
+        //autoUpdater.autoDownload = true;
+        //autoUpdater.autoInstallOnAppQuit = true;
+        //await checkUpdate();
     }
 }
 
@@ -89,8 +89,8 @@ if (isDevelopment) {
     }
 }
 
-async function checkUpdate() {
-    const result = await autoUpdater.checkForUpdatesAndNotify();
-    
-    setTimeout(checkUpdate, 1000 * 60 * 5);
-}
+// async function checkUpdate() {
+//     const result = await autoUpdater.checkForUpdatesAndNotify();
+//
+//     setTimeout(checkUpdate, 1000 * 60 * 5);
+// }

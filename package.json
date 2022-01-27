@@ -1,6 +1,5 @@
 {
-  "name": "plantselect_bible",
-  "version": "0.10.2",
+  "name": "plantselect_bible_alphha",
   "private": true,
   "scripts": {
     "serve": "vue-cli-service serve",
@@ -10,9 +9,6 @@
     "electron:serve": "vue-cli-service electron:serve",
     "postinstall": "electron-builder install-app-deps",
     "postuninstall": "electron-builder install-app-deps"
-  },
-  "repository": {
-    "url": "https://github.com/Lithium-Marketing/PlantselectBible"
   },
   "main": "background.js",
   "dependencies": {
