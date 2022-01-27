@@ -63,13 +63,7 @@ export class ModificationService<T extends TablesDef, C extends TableConfigs<T>,
         super(s);
         this.modifications = modifications;
         
-        const rawStorage = persistentStorage("modRaw", {});
-        this.raw = reactive(rawStorage.value);
-        watch(this.raw, () => {
-            rawStorage.value = this.raw;
-        }, {
-            deep: true
-        })
+        this.raw = reactive({});
         
         this.mods = reactive(Object.keys(tables).reduce((a, t) => {
             a[t] = {};

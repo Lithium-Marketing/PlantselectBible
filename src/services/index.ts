@@ -43,7 +43,14 @@ export class Services<T extends TablesDef, C extends TableConfigs<T>, M> {
         this.modification = new ModificationService(this, tables, modifications);
         this.save = new SaveService(this);
     
-        this.modification.reapply();
+        const rawStorage = persistentStorage("modRaw", "[]");
+        this.modification.fromJSON(rawStorage.value);
+        watch(this.modification.raw, () => {
+            rawStorage.value = this.modification.toJSON();
+        }, {
+            deep: true
+        });
+        //this.modification.reapply();
     }
     
     private static _fatals:Ref<any[]> = ref([]);
