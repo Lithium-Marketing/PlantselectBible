@@ -107,14 +107,16 @@ export class ModificationService<T extends TablesDef, C extends TableConfigs<T>,
                 result.nOp++;
             }
         };
+        
+        id = this.modifications[modName].apply(payload, this.services, op);
+        
         todos.mods.forEach(({t,f,i,v})=>{
             this.mods[t][i] = {
                 ...this.mods[t][i],
                 [f]: v
             };
-        })
+        });
         
-        id = this.modifications[modName].apply(payload, this.services, op);
         this.results[id] = result;
         
         return id;
