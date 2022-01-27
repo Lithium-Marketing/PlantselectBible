@@ -40,9 +40,13 @@ export const tablesConfig = {
     // groups: {},
     InventaireBase: {},
     InventaireBaseEntry: {},
-    matieres_premieres: {},
+    matieres_premieres: {
+        indexes: ["Produit"]
+    },
     // mort: {},
-    ordres_assemblages: {},
+    ordres_assemblages: {
+        indexes: ["Matiere_premiere"]
+    },
     prix: {},
     produits: {},
     produits_prix: {

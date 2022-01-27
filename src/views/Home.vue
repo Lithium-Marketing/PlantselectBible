@@ -37,6 +37,12 @@
 					</table>
 				</div>
 			</Tab>
+			<Tab header="DebugRaw">
+				<pre style="text-align: left">{{JSON.stringify($services.modification.raw, undefined, 2)}}</pre>
+			</Tab>
+			<Tab header="DebugResult">
+				<pre style="text-align: left">{{JSON.stringify($services.modification.results, undefined, 2)}}</pre>
+			</Tab>
 		</Tabs>
 	</div>
 </template>

@@ -19,7 +19,7 @@
 			<span>|</span>
 			<router-link to="/viewB">View B</router-link>
 			<span>|</span>
-			<router-link to="/viewC">View C</router-link>
+			<router-link to="/futur">Qty. Futur</router-link>
 		</div>
 	</div>
 </template>
