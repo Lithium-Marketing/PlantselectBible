@@ -29,7 +29,9 @@ export const tablesConfig = {
     clients_commandes_produits: {
         indexes: ["Produit"]
     },
-    // clients_previsions: {},
+    clients_previsions: {
+        indexes: ["Produit","Client"]
+    },
     // clients_prix_details: {},
     commandes: {},
     currency_rates: {
@@ -75,7 +77,16 @@ export interface MyTablesDef extends TablesDef {
     // clients
     clients_commandes
     clients_commandes_produits
-    // clients_previsions
+    clients_previsions: {
+        ID
+        Client
+        Quantite
+        Produit
+        Date
+        Date_Modification
+        Creator
+        Visible
+    }
     // clients_prix_details
     commandes:{
         Date

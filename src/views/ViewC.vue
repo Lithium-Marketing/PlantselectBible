@@ -24,6 +24,7 @@
 				<th>Format</th>
 				<th>Fourn.</th>
 				<th>Inv.</th>
+				<th>Prevision</th>
 				<th>{{ $pastTitle.years_pastA0 }}</th>
 				<th>{{ $pastTitle.years_pastA0 }} Confirmer</th>
 				<th>{{ $pastTitle.years_pastA1 }}</th>
@@ -37,6 +38,7 @@
 				<th></th>
 				<th></th>
 				<th><input v-model="search.variete"/></th>
+				<th></th>
 				<th></th>
 				<th></th>
 				<th></th>
@@ -102,8 +104,9 @@
 					<td>{{ line.matiere_premiere?.Format }}</td>
 					<td>{{ line.fournisseur }}</td>
 					<td>{{ line.Inventaire }}</td>
+					<td>{{ $valueI(line.prevision) }}</td>
 					<td :class="line.c?.qtyF">
-						<TableInput2 table="bible" field="Quantite" :entity-id="line.bible?.ID" :create-info="line.bible.createInfo"/>
+					
 					</td>
 					<td :class="line.c?.a0">{{ $valueI(line.achat.years_pastA0) }}</td>
 					<td>{{ $valueI(line.achat.years_pastA1) }}</td>
@@ -156,7 +159,7 @@ export default defineComponent({
 				
 				const bibleByProd = services.data.indexesByTable.bible.Produit.value;
 				
-				return Object.values(services.data.get("produits").value).filter(p=> {
+				return Object.values(services.data.get("produits").value).filter(p => {
 					return p.Variete?.toLowerCase()?.indexOf(search.variete.toLocaleLowerCase()) !== -1;
 				}).sort((a, b) => {
 					return a.Type - b.Type || a.Variete?.localeCompare?.call(b.Variete) || a.Format - b.Format;
@@ -236,6 +239,8 @@ export default defineComponent({
 						line.years_pastVe0 = prodCache.vente(currentYear);
 						line.years_pastVe1 = prodCache.vente(currentYear - 1);
 						line.years_pastVe2 = prodCache.vente(currentYear - 2);
+						
+						line.prevision = services.data.indexesByTable.clients_previsions.Produit.value[line.product.ID]?.map(id => services.data.tables.clients_previsions.value[id]).reduce((a, v) => a + v.Quantite, 0);
 						
 						const mp = services.data.get("matieres_premieres", line.oa?.Matiere_premiere ?? false).value;
 						
