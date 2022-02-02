@@ -8,7 +8,7 @@ import moment from "moment";
 import {ContextMenu} from "@/helper/ContextMenu";
 import {Services, ServicesPlugin} from "@/services";
 import {Const} from "@/helper/Const";
-import {modifications, tablesConfig} from "@/config/dataConfig";
+import {createMyServices} from "@/config/dataConfig";
 import {LogService} from "@/services/logService";
 
 const logger = LogService.logger({name: "main"})
@@ -62,7 +62,7 @@ moment.locale('fr');
     const app = createApp(App);
     
     app.use(Const);
-    app.use(ServicesPlugin(tablesConfig,modifications));
+    app.use(createMyServices());
     app.use(store);
     app.use(router);
     

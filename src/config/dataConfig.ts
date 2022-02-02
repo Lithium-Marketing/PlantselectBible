@@ -1,4 +1,4 @@
-import {Services, TablesDef, useServices} from "@/services";
+import {Services, ServicesPlugin, TablesDef, useServices} from "@/services";
 import {ToModifications} from "@/services/ModificationService";
 import {PricesId} from "@/helper/Const";
 import {PriceCalc} from "@/config/mods/priceCalc";
@@ -6,17 +6,21 @@ import {Manual} from "@/config/mods/manual";
 
 export type MyServices = Services<MyTablesDef, MyTablesConfig, MyModifications>;
 
+export function createMyServices(){
+    return ServicesPlugin(tablesConfig,modifications);
+}
+
 export function useMyServices(): MyServices {
     return useServices()
 }
 
-export const modifications = {
+const modifications = {
     priceCalc: new PriceCalc(),
     manual: new Manual()
 } as const;
 export type MyModifications = ToModifications<MyServices, MyTablesDef, typeof modifications>;
 
-export const tablesConfig = {
+const tablesConfig = {
     Archive: {
         key: "id"
     },
