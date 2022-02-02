@@ -1,6 +1,6 @@
 import {App, computed, customRef, inject, InjectionKey, ref, Ref, triggerRef, watch} from 'vue';
 import {Modifications, ModificationService} from "@/services/ModificationService";
-import {CacheService} from "@/services/cacheService";
+import {CacheDef, CacheService} from "@/services/cacheService";
 import {DataService} from "@/services/dataService";
 import {JobService} from "@/services/jobService";
 import {SaveService} from "@/services/saveService";
@@ -23,23 +23,23 @@ export type TablesDef = {
     }
 }
 
-export class Services<T extends TablesDef, C extends TableConfigs<T>, M> {
+export class Services<T extends TablesDef, C extends TableConfigs<T>, M, A extends CacheDef<Services<T, C, M, A>> = any> {
     public readonly logs = LogService
     
     public readonly job: JobService;
     public readonly data: DataService<T, C>;
-    public readonly cache: CacheService;
+    public readonly cache: CacheService<A, Services<T, C, M, A>>;
     public readonly modification: ModificationService<T, C, M>;
     public readonly save: SaveService<T, C>;
     
     public readonly tables: C;
     
-    public constructor(tables: C, modifications: Modifications<M, Services<T, C, M>, T>) {
+    public constructor(tables: C, modifications: Modifications<M, Services<T, C, M, A>, T>, caches: A) {
         this.tables = Object.freeze(tables);
         
         this.job = new JobService();
         this.data = new DataService(this, tables);
-        this.cache = new CacheService(this);
+        this.cache = new CacheService(this, caches);
         this.modification = new ModificationService(this, tables, modifications);
         this.save = new SaveService(this);
     
@@ -68,9 +68,9 @@ export function useServices<T extends TablesDef, C extends TableConfigs<T>, M>()
     return inject(key)
 }
 
-export function ServicesPlugin<T extends TablesDef, C extends TableConfigs<T>, M>(tables: C, modifications: Modifications<M, Services<T, C, M>, T>) {
+export function ServicesPlugin<T extends TablesDef, C extends TableConfigs<T>, M, A extends CacheDef<Services<T, C, M, A>>>(tables: C, modifications: Modifications<M, Services<T, C, M>, T>, caches: CacheDef<Services<T, C, M, A>>) {
     return function (app: App, ...options: any[]): any {
-        const s = new Services<T, C, M>(tables, modifications);
+        const s = new Services<T, C, M>(tables, modifications, caches);
         app.provide(key, s);
         app.config.globalProperties.$services = s;
         app.config.globalProperties.$v = function (table: keyof T, id: number, field: string) {

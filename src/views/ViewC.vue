@@ -164,7 +164,7 @@ export default defineComponent({
 				}).sort((a, b) => {
 					return a.Type - b.Type || a.Variete?.localeCompare?.call(b.Variete) || a.Format - b.Format;
 				}).flatMap(function allFlatMap(product) {
-					const prodCache = services.cache.byProd.value[product.ID].value;
+					const prodCache = services.cache.caches.byProd.value[product.ID].value;
 					const prices = prodCache.prices;
 					
 					const bibleId = bibleByProd[product.ID]?.[0];
@@ -226,14 +226,17 @@ export default defineComponent({
 						} catch (e) {
 						}
 						
-						const prodCache = services.cache.byProd.value[line.product.ID].value;
+						const byProd = services.cache.caches.byProd;
+						const archives = services.cache.caches.archives;
+						
+						const prodCache = byProd.value[line.product.ID].value;
 						
 						line.mainPrice = line.prices?.[PricesId.Main];
 						
-						line.years_pastV1 = services.cache.archives.value[0]?.[currentYear - 1]?.[line.product.ID]?.value;
+						line.years_pastV1 = archives.value[0]?.[currentYear - 1]?.[line.product.ID]?.value;
 						line.years_pastV1 = (line.years_pastV1 ?? 0) / 100;
 						
-						line.years_pastV2 = services.cache.archives.value[0]?.[currentYear - 2]?.[line.product.ID]?.value;
+						line.years_pastV2 = archives.value[0]?.[currentYear - 2]?.[line.product.ID]?.value;
 						line.years_pastV2 = (line.years_pastV2 ?? 0) / 100;
 						
 						line.years_pastVe0 = prodCache.vente(currentYear);
@@ -246,10 +249,10 @@ export default defineComponent({
 						
 						line.matiere_premiere = mp;
 						
-						line.years_pastC1 = services.cache.archives.value[1]?.[currentYear - 1]?.[line.oa?.Matiere_premiere]?.value;
+						line.years_pastC1 = archives.value[1]?.[currentYear - 1]?.[line.oa?.Matiere_premiere]?.value;
 						line.years_pastC1 = (line.years_pastC1 ?? 0) / 100;
 						
-						line.years_pastC2 = services.cache.archives.value[1]?.[currentYear - 2]?.[line.oa?.Matiere_premiere]?.value;
+						line.years_pastC2 = archives.value[1]?.[currentYear - 2]?.[line.oa?.Matiere_premiere]?.value;
 						line.years_pastC2 = (line.years_pastC2 ?? 0) / 100;
 						
 						const four = services.data.get("fournisseurs", mp?.Fournisseur ?? false).value;
@@ -258,10 +261,10 @@ export default defineComponent({
 						
 						line.years_pastT0 = four?.Transport * (services.data.raw.currency_rates.value[four?.Currency + ",CAD"]?.rate ?? -1);
 						
-						line.years_pastT1 = services.cache.archives.value[2]?.[currentYear - 1]?.[four?.ID]?.value;
+						line.years_pastT1 = archives.value[2]?.[currentYear - 1]?.[four?.ID]?.value;
 						line.years_pastT1 = (line.years_pastT1 ?? 0) / 100;
 						
-						line.years_pastT2 = services.cache.archives.value[2]?.[currentYear - 2]?.[four?.ID]?.value;
+						line.years_pastT2 = archives.value[2]?.[currentYear - 2]?.[four?.ID]?.value;
 						line.years_pastT2 = (line.years_pastT2 ?? 0) / 100;
 						
 						line.Inventaire = services.data.raw.vue_inventaire.value[line.product?.ID]?.Quantite

@@ -3,11 +3,14 @@ import {ToModifications} from "@/services/ModificationService";
 import {PricesId} from "@/helper/Const";
 import {PriceCalc} from "@/config/mods/priceCalc";
 import {Manual} from "@/config/mods/manual";
+import {CacheDef} from "@/services/cacheService";
+import {computed, ComputedRef} from "vue";
+import moment from "moment";
 
-export type MyServices = Services<MyTablesDef, MyTablesConfig, MyModifications>;
+export type MyServices = Services<MyTablesDef, MyTablesConfig, MyModifications, MyCacheDef>;
 
-export function createMyServices(){
-    return ServicesPlugin(tablesConfig,modifications);
+export function createMyServices() {
+    return ServicesPlugin(tablesConfig, modifications, caches);
 }
 
 export function useMyServices(): MyServices {
@@ -34,7 +37,7 @@ const tablesConfig = {
         indexes: ["Produit"]
     },
     clients_previsions: {
-        indexes: ["Produit","Client"]
+        indexes: ["Produit", "Client"]
     },
     // clients_prix_details: {},
     commandes: {},
@@ -92,7 +95,7 @@ export interface MyTablesDef extends TablesDef {
         Visible
     }
     // clients_prix_details
-    commandes:{
+    commandes: {
         Date
         Date_Modification
         Oas
@@ -264,4 +267,62 @@ export interface MyTablesDef extends TablesDef {
     }
 }
 
-//TODO bring cacheService config here
+const caches = {
+    archives(services: MyServices): {
+        [type: number]: {
+            [year: number]: {
+                [id: number]: {
+                    id: number,
+                    value: number
+                } & any
+            }
+        }
+    } {
+        return Object.values(services.data.get("Archive").value).reduce((a, entry) => {
+            a[entry.type] = a[entry.type] || {};
+            a[entry.type][entry.year] = a[entry.type][entry.year] || {};
+            a[entry.type][entry.year][entry.produit] = entry;
+            return a;
+        }, {})
+    },
+    
+    byProd(services: MyServices): {
+        [produit: number]: ComputedRef<{
+            prices: Record<number, MyTablesDef["produits_prix"]>,
+            vente(year: number): number;
+        }>
+    } {
+        const priceByProd = services.data.getByIndex("produits_prix", "Produit_ID").value;
+        const cmdProdByProd = services.data.getByIndex("clients_commandes_produits", "Produit").value
+        
+        
+        return Object.entries(services.data.get("produits").value).reduce((a, [prod_id, prod]) => {
+            a[prod_id] = computed(() => {
+                const prices: Record<number, MyTablesDef["produits_prix"]> = priceByProd[prod_id]?.reduce((a, id) => {
+                    const price = services.data.get("produits_prix", id).value;
+                    a[price.Prix_ID] = price;
+                    return a;
+                }, {});
+                
+                return {
+                    prices,
+                    vente(year: number) {
+                        let result = 0;
+                        if (cmdProdByProd[prod_id])
+                            for (const id of cmdProdByProd[prod_id]) {
+                                const prod = services.data.get("clients_commandes_produits", id).value;
+                                const cmd = services.data.get("clients_commandes", prod.Commande).value;
+                                if (!cmd || moment.unix(cmd.Date).year() !== year)
+                                    continue;
+                                result += prod.Quantite;
+                            }
+                        return result;
+                    }
+                }
+            });
+            
+            return a;
+        }, {});
+    }
+};
+export type MyCacheDef = typeof caches;

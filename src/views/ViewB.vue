@@ -92,7 +92,7 @@ export default defineComponent({
 				page.value = 0;
 			len.value = newLen;
 
-			const byProd = services.cache.byProd.value;
+			const byProd = services.cache.caches.byProd.value;
 			filtered.slice(ipp.value * page.value, ipp.value * (page.value + 1)).forEach((p: any, i) => {
 				products.value[i] = {
 					...p,
