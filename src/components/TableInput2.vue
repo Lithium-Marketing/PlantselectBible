@@ -59,6 +59,7 @@ div {
 	
 	> span {
 		position: absolute;
+		top: 0;
 		transform: translateX(-100%);
 		color: #ccc;
 		
