@@ -47,7 +47,7 @@ export const tablesConfig = {
     },
     // mort: {},
     ordres_assemblages: {
-        indexes: ["Matiere_premiere"]
+        indexes: ["Matiere_premiere", "Produit"]
     },
     prix: {},
     produits: {},
