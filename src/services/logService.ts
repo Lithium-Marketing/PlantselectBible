@@ -1,5 +1,3 @@
-import {BaseService} from "@/helper/baseService";
-
 type LogGroup = {
     group: string | false
     logs: (LogEntry | LogGroup)[]
@@ -20,7 +18,7 @@ type LogEntry = {
     logger?: string
 }
 
-export class LogService extends BaseService<any, any, any> {
+export class LogService {
     
     public static readonly outputLogLevel: Record<LogLevel, boolean> = {
         [LogLevel.ERROR]: true,

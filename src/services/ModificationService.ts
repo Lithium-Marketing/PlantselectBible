@@ -1,4 +1,3 @@
-import {BaseService} from "@/helper/baseService";
 import {Services, TableConfig, TableConfigs, TablesDef} from "@/services/index";
 import {computed, ComputedRef, reactive, Ref, ref, triggerRef, unref, watch, watchEffect} from "vue";
 import {now} from "moment";
@@ -47,8 +46,11 @@ export interface Operations<D extends TablesDef> {
     mod<T extends keyof D, F extends keyof D[T]>(table: T, field: F, id: any, val: D[T][F])
 }
 
-export class ModificationService<T extends TablesDef, C extends TableConfigs<T>, M> extends BaseService<T, C, M> {
+export class ModificationService<T extends TablesDef, C extends TableConfigs<T>, M>{
     public static readonly createId = createdId;
+    
+    private readonly services: Services<T, C, M>;
+    
     public readonly createId = createdId;
     
     public readonly mods: ModDict<T>;
@@ -59,8 +61,8 @@ export class ModificationService<T extends TablesDef, C extends TableConfigs<T>,
     
     private readonly modifications: Modifications<M, Services<T, C, M>, T>;
     
-    constructor(s: Services<T, C, M>, tables: C, modifications: Modifications<M, Services<T, C, M>, T>) {
-        super(s);
+    constructor(services: Services<T, C, M>, tables: C, modifications: Modifications<M, Services<T, C, M>, T>) {
+        this.services = services;
         this.modifications = modifications;
         
         this.raw = reactive({});
@@ -128,7 +130,7 @@ export class ModificationService<T extends TablesDef, C extends TableConfigs<T>,
     }
     
     public reapply() {
-        Object.keys(this._tables).forEach(table => {
+        Object.keys(this.services.tables).forEach(table => {
             this.mods[table as keyof T] = {};
         });
         

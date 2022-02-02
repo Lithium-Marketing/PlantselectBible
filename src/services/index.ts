@@ -37,7 +37,7 @@ export class Services<T extends TablesDef, C extends TableConfigs<T>, M> {
     public constructor(tables: C, modifications: Modifications<M, Services<T, C, M>, T>) {
         this.tables = Object.freeze(tables);
         
-        this.job = new JobService(this);
+        this.job = new JobService();
         this.data = new DataService(this, tables);
         this.cache = new CacheService(this);
         this.modification = new ModificationService(this, tables, modifications);
