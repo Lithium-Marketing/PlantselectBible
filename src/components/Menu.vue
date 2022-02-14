@@ -17,6 +17,8 @@
 		<div class="nav">
 			<router-link to="/viewA">View A</router-link>
 			<span>|</span>
+			<router-link to="/viewA2">View A2</router-link>
+			<span>|</span>
 			<router-link to="/viewB">View B</router-link>
 			<span>|</span>
 			<router-link to="/futur">Qty. Futur</router-link>
