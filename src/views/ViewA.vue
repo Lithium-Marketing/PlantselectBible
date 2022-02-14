@@ -66,7 +66,7 @@ type TableF2 = {
 	val(line: SubLine): any
 };
 
-type TableF3 = { filter?(val: string, prodId: number, oaId?: number): boolean }
+type TableF3 = { filter?(val: string, prodId: number, oaId?: number): boolean, filterProductOnly?: boolean }
 
 type TableF = {
 	name: string,
@@ -118,8 +118,9 @@ export default defineComponent({
 				name: "Produit",
 				sub: 0,
 				val: (line) => line.product.Variete,
-				filter(val: string, prodId: number, oaId?: number): boolean {
-					return oaId !== undefined || services.data.tables.produits.value[prodId]?.Variete?.toLowerCase().startsWith(val.toLowerCase())
+				filterProductOnly: true,
+				filter(val: string, prodId: number): boolean {
+					return services.data.tables.produits.value[prodId]?.Variete?.toLowerCase().indexOf(val.toLowerCase()) !== -1
 				}
 			},
 			{
@@ -135,7 +136,10 @@ export default defineComponent({
 			{
 				name: "OA",
 				sub: 1,
-				val: (line) => line.oa.ID
+				val: (line) => line.oa.ID,
+				filter(val: string, prodId: number, oaId?: number): boolean {
+					return String(oaId).startsWith(val)
+				}
 			},
 			{
 				name: "Coutant Futur",
@@ -270,13 +274,27 @@ export default defineComponent({
 			}
 		];
 		
-		const productsGroups = computed(() => {
+		const productsGroups = computed(timed("products",() => {
 			return Object.values(
 				Object.values(services.data.tables.produits.value).filter(p => {
-					for (const f of table) {
-						if (f.filter && !f.filter(search[f.name] || "", p.ID))
-							return false
-					}
+					const oasByProd = services.data.indexesByTable.ordres_assemblages.Produit.value[p.ID];
+					fields:
+						for (const f of table) {
+							if (!search[f.name] || !search[f.name].length)
+								continue;
+							
+							if (f.filter && f.filterProductOnly && !f.filter(search[f.name], p.ID))
+								return false;
+							
+							if (!f.filterProductOnly)
+								if (oasByProd && oasByProd.length) {
+									for (const oa of oasByProd)
+										if (f.filter && f.filter(search[f.name], p.ID, oa))
+											continue fields;
+									return false;
+								} else if (f.filter && !f.filter(search[f.name], p.ID))
+									return false;
+						}
 					return true;
 				}).sort((a, b) => {
 					return a.Type - b.Type || a.Variete?.localeCompare?.call(b.Variete) || a.Format - b.Format;
@@ -287,7 +305,7 @@ export default defineComponent({
 					return a;
 				}, {} as Record<any, MyTablesDef["produits"][]>)
 			);
-		});
+		}));
 		
 		const len = computed(() => {
 			return productsGroups.value.length;
@@ -308,12 +326,21 @@ export default defineComponent({
 			
 			lines.value.length = 0;
 			
-			products.value.forEach(function oneProduct(product) {
+			products.value?.forEach(function oneProduct(product) {
 				const archives = services.cache.caches.archives;
 				const prodCache = services.cache.caches.byProd.value[product.ID].value;
 				
 				const oasByProd = services.data.indexesByTable.ordres_assemblages.Produit.value[product.ID]
-				const oas = (oasByProd && oasByProd.length ? oasByProd : []).map(oaId => {
+				const oas = (oasByProd && oasByProd.length ? oasByProd : []).filter(oa => {
+					for (const f of table) {
+						if (!search[f.name] || !search[f.name].length || f.filterProductOnly)
+							continue;
+						
+						if (f.filter && !f.filter(search[f.name], product.ID, oa))
+							return false;
+					}
+					return true;
+				}).map(oaId => {
 					return services.data.tables.ordres_assemblages.value[oaId];
 				});
 				
@@ -394,6 +421,15 @@ export default defineComponent({
 		};
 	}
 });
+
+function timed<T>(name:string,fn:()=>T):()=>T{
+	return ()=>{
+		logger.time(name);
+		const result = fn();
+		logger.timeEnd(name);
+		return result;
+	}
+}
 </script>
 
 <style scoped lang="scss">
