@@ -311,7 +311,7 @@ export default defineComponent({
 			return productsGroups.value.length;
 		});
 		const page = ref(0);
-		watch(productsGroups, () => {
+		watch(search, () => {
 			page.value = 0;
 		})
 		
