@@ -2,7 +2,7 @@
 	<div v-if="show">
 		<input v-if="type==='date'" type="date" :value="toDate(value)" @change="value = fromDate($event.target.value)" :style="{width: width}">
 		<input v-else :type="type" :value="value" @change="value = $event.target.value" :style="{width: width}">
-		<span v-if="changed">X</span>
+		<span v-if="changed">&#9998;</span>
 	</div>
 	<span v-else>-</span>
 </template>
@@ -77,12 +77,6 @@ div {
 		top: 0;
 		transform: translateX(-100%);
 		color: #ccc;
-		
-		cursor: pointer;
-		
-		&:hover {
-			text-shadow: 0px 0px 3px #aaa;
-		}
 	}
 }
 </style>

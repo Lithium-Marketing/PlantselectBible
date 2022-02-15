@@ -141,6 +141,11 @@ export class ModificationService<T extends TablesDef, C extends TableConfigs<T>,
         this.reapply();
     }
     
+    removeAll() {
+        Object.keys(this.raw).forEach(r => delete this.raw[r]);
+        this.reapply();
+    }
+    
     public reapply() {
         Object.keys(this.services.tables).forEach(table => {
             this.mods[table as keyof T] = {};
@@ -159,8 +164,8 @@ export class ModificationService<T extends TablesDef, C extends TableConfigs<T>,
         });
     }
     
-    public toJSON(modsId?: string[]) {
-        const raw = Object.entries(this.raw).filter(r => modsId === undefined || modsId.indexOf(r[0]) !== -1).reduce((a, v) => {
+    public toJSON() {
+        const raw = Object.entries(this.raw).reduce((a, v) => {
             a.push(v[1]);
             return a;
         }, []);

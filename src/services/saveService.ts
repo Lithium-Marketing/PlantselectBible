@@ -72,12 +72,12 @@ export class SaveService<T extends TablesDef, C extends TableConfigs<T>>{
         return sqls;
     }
     
-    public async createSave(name: string, modsId: string[]) {
+    public async createSave(name: string) {
         const conn = await this.services.data.conn.getConnection();
         await conn.execute("INSERT INTO bible_saves (Name,Data,Version) VALUE (:name,:data,:version)", {
             name,
             version: 1,
-            data: this.services.modification.toJSON(modsId)
+            data: this.services.modification.toJSON()
         });
     }
     
