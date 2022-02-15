@@ -133,8 +133,17 @@ export class ModificationService<T extends TablesDef, C extends TableConfigs<T>,
         Object.keys(this.services.tables).forEach(table => {
             this.mods[table as keyof T] = {};
         });
+    
+        const raw = Object.entries(this.raw).reduce((a, v) => {
+            a.push(v[1]);
+            return a;
+        }, []);
         
-        Object.values(this.raw).forEach(r => this._mod(r.name, r.payload));
+        Object.keys(this.raw).forEach(r => delete this.raw[r]);
+    
+        raw.forEach((mod) => {
+            this.mod(mod.name, mod.payload, mod.desc);
+        });
     }
     
     public toJSON(modsId?: string[]) {
