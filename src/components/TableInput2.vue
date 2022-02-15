@@ -1,6 +1,7 @@
 <template>
 	<div v-if="show">
-		<input :value="value" @change="value = $event.target.value">
+		<input v-if="type==='date'" type="date" :value="toDate(value)" @change="value = fromDate($event.target.value)" :style="{width: width}">
+		<input v-else :type="type" :value="value" @change="value = $event.target.value" :style="{width: width}">
 		<span v-if="changed">X</span>
 	</div>
 	<span v-else>-</span>
@@ -9,10 +10,11 @@
 <script>
 import {computed} from "vue";
 import {useMyServices} from "@/config/dataConfig";
+import moment from "moment";
 
 export default {
 	name: "TableInput2",
-	props: ["table", "entityId", "field", "createInfo"],
+	props: ["table", "entityId", "field", "createInfo", "type","len"],
 	emits: ["change"],
 	setup(props, {emit}) {
 		const services = useMyServices();
@@ -35,7 +37,17 @@ export default {
 		return {
 			changed: computed(() => value.value !== services.data.raw[props.table]?.value[props.entityId]?.[props.field]),
 			show: computed(() => (value.value !== undefined && value.value !== null) || !!props.createInfo),
-			value
+			value,
+			
+			width: computed(() => props.len !== undefined ? props.len+"rem" : "4rem"),
+			
+			toDate(val){
+				console.log(val);
+				return moment.unix(val).format('YYYY-MM-DD');
+			},
+			fromDate(val){
+				return moment(val).unix()
+			}
 		}
 	}
 }
@@ -43,7 +55,6 @@ export default {
 
 <style scoped lang="scss">
 input {
-	width: 4rem;
 	border: none;
 	border-radius: 0;
 	border-bottom: 1px solid #ccc;
@@ -52,6 +63,10 @@ input {
 	font-size: 1rem;
 	line-height: 1rem;
 	padding: 0.1rem;
+	
+	&[type=date]{
+		padding-right: 1rem;
+	}
 }
 
 div {
