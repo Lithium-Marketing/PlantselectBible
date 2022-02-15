@@ -6,6 +6,8 @@ import {Manual} from "@/config/mods/manual";
 import {CacheDef} from "@/services/cacheService";
 import {computed, ComputedRef} from "vue";
 import moment from "moment";
+import {Create} from "@/config/mods/create";
+import {Delete} from "@/config/mods/delete";
 
 export type MyServices = Services<MyTablesDef, MyTablesConfig, MyModifications, MyCacheDef>;
 
@@ -19,11 +21,16 @@ export function useMyServices(): MyServices {
 
 const modifications = {
     priceCalc: new PriceCalc(),
-    manual: new Manual()
+    manual: new Manual(),
+    create: new Create(),
+    delete: new Delete(),
 } as const;
 export type MyModifications = ToModifications<MyServices, MyTablesDef, typeof modifications>;
 
 const tablesConfig = {
+    achats_futur: {
+        indexes: ["matiere"]
+    },
     Archive: {
         key: "id"
     },
@@ -69,6 +76,12 @@ const tablesConfig = {
 export type MyTablesConfig = typeof tablesConfig;
 
 export interface MyTablesDef extends TablesDef {
+    achats_futur: {
+        ID
+        qty
+        matiere
+        reception
+    }
     Archive
     bible: {
         ID
@@ -284,6 +297,15 @@ const caches = {
             a[entry.type][entry.year][entry.produit] = entry;
             return a;
         }, {})
+    },
+    
+    achatFuturByProd(services:MyServices): Record<number, MyTablesDef["achats_futur"][]>{
+        return Object.entries(services.data.tables.achats_futur.value).reduce((a,[id,v])=>{
+            const pId = services.data.tables.matieres_premieres.value[v.matiere]?.Produit;
+            a[pId] = a[pId] || [];
+            a[pId].push({...v,ID: id});
+            return a;
+        },{})
     },
     
     byProd(services: MyServices): {

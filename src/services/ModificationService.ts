@@ -46,6 +46,7 @@ const createdId = (() => genCreatedId.next().value) as () => number;
 
 export interface Operations<D extends TablesDef> {
     mod<T extends keyof D, F extends keyof D[T]>(table: T, field: F, id: any, val: D[T][F])
+    del<T extends keyof D>(table: T, id: any)
 }
 
 export class ModificationService<T extends TablesDef, C extends TableConfigs<T>, M>{
@@ -103,22 +104,31 @@ export class ModificationService<T extends TablesDef, C extends TableConfigs<T>,
         
         const result = {nOp:0};
         const todos = {
-            mods: []
+            mods: [],
+            dels: []
         }
         const op = {
             mod(t, f, i, v) {
                 todos.mods.push({t,f,i,v})
                 result.nOp++;
+            },
+            del(t,i){
+                todos.dels.push({t,i})
+                result.nOp++;
             }
         };
         
         id = this.modifications[modName].apply(payload, this.services, op);
-        
+    
         todos.mods.forEach(({t,f,i,v})=>{
             this.mods[t][i] = {
                 ...this.mods[t][i],
                 [f]: v
             };
+        });
+        
+        todos.dels.forEach(({t,i})=>{
+            delete this.mods[t][i];
         });
         
         this.results[id] = result;
