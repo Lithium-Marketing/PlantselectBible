@@ -37,8 +37,10 @@ type RawMod<M, N extends keyof M> = {
 }
 
 const genCreatedId = (function* () {
-    let cnt = 0;
-    while (true) yield --cnt
+    while (true){
+        let cnt = 0;
+        while (!(yield cnt--)) ;
+    }
 })();
 const createdId = (() => genCreatedId.next().value) as () => number;
 
@@ -133,6 +135,7 @@ export class ModificationService<T extends TablesDef, C extends TableConfigs<T>,
         Object.keys(this.services.tables).forEach(table => {
             this.mods[table as keyof T] = {};
         });
+        console.log(genCreatedId.next(true))
     
         const raw = Object.entries(this.raw).reduce((a, v) => {
             a.push(v[1]);
@@ -155,6 +158,9 @@ export class ModificationService<T extends TablesDef, C extends TableConfigs<T>,
     }
     
     public fromJSON(raw: string) {
+        Object.keys(this.raw).forEach(r => delete this.raw[r]);
+        this.reapply();
+        
         const rawP: RawMod<any, any>[] = JSON.parse(raw);
         rawP.forEach((mod) => {
             this.mod(mod.name, mod.payload, mod.desc);
