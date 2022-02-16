@@ -384,7 +384,7 @@ export default createStore<StoreState>({
             const connection = await mysql.createConnection(context.state.mysqlLogin);
             try {
                 const result = (await connection.query(`SELECT *
-				                                        FROM bible_saves`))[0];
+				                                        FROM bible_saves WHERE Version=0`))[0];
                 context.commit("setSaves", result);
             } finally {
                 connection.end()
