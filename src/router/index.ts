@@ -2,7 +2,7 @@ import {createRouter, createWebHistory, RouteRecordRaw} from 'vue-router'
 import Home from '../views/Home.vue'
 import Products from "@/views/Products.vue";
 import OAs from "@/views/OAs.vue";
-import ViewA from "@/views/ViewA.vue";
+import ViewA2 from "@/views/ViewA.vue";
 import Edit from "@/views/Edit.vue";
 import Tools from "@/views/Tools.vue";
 import ViewB from "@/views/ViewB.vue";
@@ -23,6 +23,10 @@ const routes: Array<RouteRecordRaw> = [
         path: '/viewA',
         name: 'ViewA',
         component: ViewC
+    }, {
+        path: '/ViewA2',
+        name: 'ViewA2',
+        component: ViewA2
     }, {
         path: '/viewB',
         name: 'ViewB',

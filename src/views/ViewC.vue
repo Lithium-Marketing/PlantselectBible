@@ -24,6 +24,7 @@
 				<th>Format</th>
 				<th>Fourn.</th>
 				<th>Inv.</th>
+				<th>Prevision</th>
 				<th>{{ $pastTitle.years_pastA0 }}</th>
 				<th>{{ $pastTitle.years_pastA0 }} Confirmer</th>
 				<th>{{ $pastTitle.years_pastA1 }}</th>
@@ -37,6 +38,7 @@
 				<th></th>
 				<th></th>
 				<th><input v-model="search.variete"/></th>
+				<th></th>
 				<th></th>
 				<th></th>
 				<th></th>
@@ -102,8 +104,9 @@
 					<td>{{ line.matiere_premiere?.Format }}</td>
 					<td>{{ line.fournisseur }}</td>
 					<td>{{ line.Inventaire }}</td>
+					<td>{{ $valueI(line.prevision) }}</td>
 					<td :class="line.c?.qtyF">
-						<TableInput2 table="bible" field="Quantite" :entity-id="line.bible?.ID" :create-info="line.bible.createInfo"/>
+					
 					</td>
 					<td :class="line.c?.a0">{{ $valueI(line.achat.years_pastA0) }}</td>
 					<td>{{ $valueI(line.achat.years_pastA1) }}</td>
@@ -156,12 +159,12 @@ export default defineComponent({
 				
 				const bibleByProd = services.data.indexesByTable.bible.Produit.value;
 				
-				return Object.values(services.data.get("produits").value).filter(p=> {
+				return Object.values(services.data.get("produits").value).filter(p => {
 					return p.Variete?.toLowerCase()?.indexOf(search.variete.toLocaleLowerCase()) !== -1;
 				}).sort((a, b) => {
 					return a.Type - b.Type || a.Variete?.localeCompare?.call(b.Variete) || a.Format - b.Format;
 				}).flatMap(function allFlatMap(product) {
-					const prodCache = services.cache.byProd.value[product.ID].value;
+					const prodCache = services.cache.caches.byProd.value[product.ID].value;
 					const prices = prodCache.prices;
 					
 					const bibleId = bibleByProd[product.ID]?.[0];
@@ -223,28 +226,33 @@ export default defineComponent({
 						} catch (e) {
 						}
 						
-						const prodCache = services.cache.byProd.value[line.product.ID].value;
+						const byProd = services.cache.caches.byProd;
+						const archives = services.cache.caches.archives;
+						
+						const prodCache = byProd.value[line.product.ID].value;
 						
 						line.mainPrice = line.prices?.[PricesId.Main];
 						
-						line.years_pastV1 = services.cache.archives.value[0]?.[currentYear - 1]?.[line.product.ID]?.value;
+						line.years_pastV1 = archives.value[0]?.[currentYear - 1]?.[line.product.ID]?.value;
 						line.years_pastV1 = (line.years_pastV1 ?? 0) / 100;
 						
-						line.years_pastV2 = services.cache.archives.value[0]?.[currentYear - 2]?.[line.product.ID]?.value;
+						line.years_pastV2 = archives.value[0]?.[currentYear - 2]?.[line.product.ID]?.value;
 						line.years_pastV2 = (line.years_pastV2 ?? 0) / 100;
 						
 						line.years_pastVe0 = prodCache.vente(currentYear);
 						line.years_pastVe1 = prodCache.vente(currentYear - 1);
 						line.years_pastVe2 = prodCache.vente(currentYear - 2);
 						
+						line.prevision = services.data.indexesByTable.clients_previsions.Produit.value[line.product.ID]?.map(id => services.data.tables.clients_previsions.value[id]).reduce((a, v) => a + v.Quantite, 0);
+						
 						const mp = services.data.get("matieres_premieres", line.oa?.Matiere_premiere ?? false).value;
 						
 						line.matiere_premiere = mp;
 						
-						line.years_pastC1 = services.cache.archives.value[1]?.[currentYear - 1]?.[line.oa?.Matiere_premiere]?.value;
+						line.years_pastC1 = archives.value[1]?.[currentYear - 1]?.[line.oa?.Matiere_premiere]?.value;
 						line.years_pastC1 = (line.years_pastC1 ?? 0) / 100;
 						
-						line.years_pastC2 = services.cache.archives.value[1]?.[currentYear - 2]?.[line.oa?.Matiere_premiere]?.value;
+						line.years_pastC2 = archives.value[1]?.[currentYear - 2]?.[line.oa?.Matiere_premiere]?.value;
 						line.years_pastC2 = (line.years_pastC2 ?? 0) / 100;
 						
 						const four = services.data.get("fournisseurs", mp?.Fournisseur ?? false).value;
@@ -253,10 +261,10 @@ export default defineComponent({
 						
 						line.years_pastT0 = four?.Transport * (services.data.raw.currency_rates.value[four?.Currency + ",CAD"]?.rate ?? -1);
 						
-						line.years_pastT1 = services.cache.archives.value[2]?.[currentYear - 1]?.[four?.ID]?.value;
+						line.years_pastT1 = archives.value[2]?.[currentYear - 1]?.[four?.ID]?.value;
 						line.years_pastT1 = (line.years_pastT1 ?? 0) / 100;
 						
-						line.years_pastT2 = services.cache.archives.value[2]?.[currentYear - 2]?.[four?.ID]?.value;
+						line.years_pastT2 = archives.value[2]?.[currentYear - 2]?.[four?.ID]?.value;
 						line.years_pastT2 = (line.years_pastT2 ?? 0) / 100;
 						
 						line.Inventaire = services.data.raw.vue_inventaire.value[line.product?.ID]?.Quantite

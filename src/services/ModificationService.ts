@@ -1,4 +1,3 @@
-import {BaseService} from "@/helper/baseService";
 import {Services, TableConfig, TableConfigs, TablesDef} from "@/services/index";
 import {computed, ComputedRef, reactive, Ref, ref, triggerRef, unref, watch, watchEffect} from "vue";
 import {now} from "moment";
@@ -38,17 +37,23 @@ type RawMod<M, N extends keyof M> = {
 }
 
 const genCreatedId = (function* () {
-    let cnt = 0;
-    while (true) yield --cnt
+    while (true){
+        let cnt = 0;
+        while (!(yield cnt--)) ;
+    }
 })();
 const createdId = (() => genCreatedId.next().value) as () => number;
 
 export interface Operations<D extends TablesDef> {
     mod<T extends keyof D, F extends keyof D[T]>(table: T, field: F, id: any, val: D[T][F])
+    del<T extends keyof D>(table: T, id: any)
 }
 
-export class ModificationService<T extends TablesDef, C extends TableConfigs<T>, M> extends BaseService<T, C, M> {
+export class ModificationService<T extends TablesDef, C extends TableConfigs<T>, M>{
     public static readonly createId = createdId;
+    
+    private readonly services: Services<T, C, M>;
+    
     public readonly createId = createdId;
     
     public readonly mods: ModDict<T>;
@@ -59,8 +64,8 @@ export class ModificationService<T extends TablesDef, C extends TableConfigs<T>,
     
     private readonly modifications: Modifications<M, Services<T, C, M>, T>;
     
-    constructor(s: Services<T, C, M>, tables: C, modifications: Modifications<M, Services<T, C, M>, T>) {
-        super(s);
+    constructor(services: Services<T, C, M>, tables: C, modifications: Modifications<M, Services<T, C, M>, T>) {
+        this.services = services;
         this.modifications = modifications;
         
         this.raw = reactive({});
@@ -99,22 +104,31 @@ export class ModificationService<T extends TablesDef, C extends TableConfigs<T>,
         
         const result = {nOp:0};
         const todos = {
-            mods: []
+            mods: [],
+            dels: []
         }
         const op = {
             mod(t, f, i, v) {
                 todos.mods.push({t,f,i,v})
                 result.nOp++;
+            },
+            del(t,i){
+                todos.dels.push({t,i})
+                result.nOp++;
             }
         };
         
         id = this.modifications[modName].apply(payload, this.services, op);
-        
+    
         todos.mods.forEach(({t,f,i,v})=>{
             this.mods[t][i] = {
                 ...this.mods[t][i],
                 [f]: v
             };
+        });
+        
+        todos.dels.forEach(({t,i})=>{
+            delete this.mods[t][i];
         });
         
         this.results[id] = result;
@@ -127,16 +141,31 @@ export class ModificationService<T extends TablesDef, C extends TableConfigs<T>,
         this.reapply();
     }
     
-    public reapply() {
-        Object.keys(this._tables).forEach(table => {
-            this.mods[table as keyof T] = {};
-        });
-        
-        Object.values(this.raw).forEach(r => this._mod(r.name, r.payload));
+    removeAll() {
+        Object.keys(this.raw).forEach(r => delete this.raw[r]);
+        this.reapply();
     }
     
-    public toJSON(modsId?: string[]) {
-        const raw = Object.entries(this.raw).filter(r => modsId === undefined || modsId.indexOf(r[0]) !== -1).reduce((a, v) => {
+    public reapply() {
+        Object.keys(this.services.tables).forEach(table => {
+            this.mods[table as keyof T] = {};
+        });
+        console.log(genCreatedId.next(true))
+    
+        const raw = Object.entries(this.raw).reduce((a, v) => {
+            a.push(v[1]);
+            return a;
+        }, []);
+        
+        Object.keys(this.raw).forEach(r => delete this.raw[r]);
+    
+        raw.forEach((mod) => {
+            this.mod(mod.name, mod.payload, mod.desc);
+        });
+    }
+    
+    public toJSON() {
+        const raw = Object.entries(this.raw).reduce((a, v) => {
             a.push(v[1]);
             return a;
         }, []);
@@ -144,6 +173,9 @@ export class ModificationService<T extends TablesDef, C extends TableConfigs<T>,
     }
     
     public fromJSON(raw: string) {
+        Object.keys(this.raw).forEach(r => delete this.raw[r]);
+        this.reapply();
+        
         const rawP: RawMod<any, any>[] = JSON.parse(raw);
         rawP.forEach((mod) => {
             this.mod(mod.name, mod.payload, mod.desc);

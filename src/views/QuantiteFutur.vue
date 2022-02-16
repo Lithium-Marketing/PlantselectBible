@@ -1,8 +1,8 @@
 <template>
 	<div class="home">
 		<Pagination v-model:page="page" v-model:len="len"/>
-		<h1>{{product.Variete}}</h1>
-		<h2>{{product.Code}}</h2>
+		<h1>{{ product.Variete }}</h1>
+		<h2>{{ product.Code }}</h2>
 		<table class="product" style="width: 100%">
 			<thead>
 			<tr>
@@ -20,7 +20,9 @@
 			<tbody>
 			<template v-for="line of lines">
 				<tr v-if="line.type === 0" class="top">
-					<td :rowspan="line.rowSpan">{{ line.four?.Abbreviation ?? 'N/D' }}<button style="padding-block: 0; padding-inline: .3rem">+</button></td>
+					<td :rowspan="line.rowSpan">{{ line.four?.Abbreviation ?? 'N/D' }}
+						<button style="padding-block: 0; padding-inline: .3rem" @click="add(line)">+</button>
+					</td>
 					<td :rowspan="line.rowSpan">{{ line.mp?.Code ?? 'N/D' }}</td>
 					<td :rowspan="line.rowSpan">{{ line.mp?.pw ?? 'N/D' }}</td>
 					<td :rowspan="line.rowSpan">{{ line.mp?.Prix ?? 'N/D' }}</td>
@@ -33,7 +35,9 @@
 				<tr v-if="line.type === 1">
 					<td>{{ line.oa?.ID ?? 'N/D' }}</td>
 					<td>{{ $date(line.oa?.Date) }}</td>
-					<td>{{ $date(line.oa?.Date_reception) }} <button style="padding-block: 0; padding-inline: .3rem">+</button></td>
+					<td>{{ $date(line.oa?.Date_reception) }}
+						<button style="padding-block: 0; padding-inline: .3rem" @click="add(line)">+</button>
+					</td>
 					<td>{{ line.oa?.Quantite_produire ?? 'N/D' }}</td>
 				</tr>
 			</template>
@@ -42,31 +46,26 @@
 		<hr style="margin: 2rem">
 		<h3>Achat Futur</h3>
 		<div style="display: flex; justify-content: center">
-			<table class="product">
+			<table class="achatfutur">
 				<thead>
 				<tr>
 					<th>Qty</th>
-					<th>Fournisseur</th>
+					<th>Matière</th>
 					<th>Date</th>
+					<th></th>
 				</tr>
 				</thead>
 				<tbody>
-				<tr>
+				<tr v-for="achat in achats">
 					<td>
-						<TableInput :model-value="Math.round(Math.random()*4000)" />
+						<TableInput2 table="achats_futur" field="qty" :entity-id="achat.ID"/>
 					</td>
-					<td>GS</td>
+					<td>{{ achat.info }}</td>
 					<td>
-						<TableInput model-value="23 mars 2021" len="8" />
+						<TableInput2 type="date" len="20" table="achats_futur" field="reception" :entity-id="achat.ID"/>
 					</td>
-				</tr>
-				<tr>
 					<td>
-						<TableInput :model-value="Math.round(Math.random()*4000)" />
-					</td>
-					<td>GL</td>
-					<td>
-						<TableInput model-value="20 févr. 2022" len="8" />
+						<a style="color: red" @click="del(achat)">X</a>
 					</td>
 				</tr>
 				</tbody>
@@ -76,25 +75,26 @@
 </template>
 
 <script lang="ts">
-import {defineComponent, ref, watchEffect} from "vue";
+import {computed, defineComponent, ref, watchEffect} from "vue";
 import TableInput from "@/components/TableInput.vue";
-import {useMyServices} from "@/config/dataConfig";
+import {MyTablesDef, useMyServices} from "@/config/dataConfig";
 import Pagination from "@/components/Pagination.vue";
 import {LogService} from "@/services/logService";
 import moment from "moment";
+import TableInput2 from "@/components/TableInput2.vue";
 
 const logger = LogService.logger({name: "QuantiteFutur"})
 
 export default defineComponent({
 	name: "QuantiteFutur",
-	components: {Pagination, TableInput},
+	components: {TableInput2, Pagination, TableInput},
 	setup() {
 		const services = useMyServices();
 		
-		const product = ref(null);
+		const product = ref<MyTablesDef["produits"]>(null);
 		const lines = ref([]);
 		const len = ref(0);
-		const page = ref(11);
+		const page = ref(0);
 		
 		watchEffect(() => {
 			logger.time("page");
@@ -133,7 +133,7 @@ export default defineComponent({
 					lines.value.push({
 						type: 1,
 						oa,
-						date: moment.unix(oa?.Date).format('ll')
+						mp
 					});
 					mainLine.rowSpan++;
 				});
@@ -143,8 +143,35 @@ export default defineComponent({
 			logger.log(lines.value)
 		})
 		
+		const achats = computed(() => {
+			return services.cache.caches.achatFuturByProd.value[product.value.ID]?.map(a => {
+				const mp = services.data.tables.matieres_premieres.value[a.matiere];
+				const four = services.data.tables.fournisseurs.value[mp.Fournisseur];
+				return {
+					...a,
+					info: mp.Code + " / " + four.Abbreviation
+				}
+			}) ?? []
+		});
+		
 		return {
-			product,lines, len, page,
+			product, lines, len, page, achats,
+			add(line) {
+				services.modification.mod("create", {
+					createInfo: {
+						qty: 0,
+						matiere: line.mp.ID,
+						reception: line.oa?.Date_reception || moment().unix()
+					},
+					table: "achats_futur",
+				}, "Creation Achat Futur");
+			},
+			del(achat){
+				services.modification.mod('delete',{
+					table: "achats_futur",
+					id: achat.ID
+				},"Delete Achat Futur")
+			}
 		}
 	}
 })
@@ -152,7 +179,11 @@ export default defineComponent({
 
 <style scoped>
 
-.top td{
+.achatfutur td{
+	padding: .5rem;
+}
+
+.top td {
 	border-top: solid 1px black;
 }
 

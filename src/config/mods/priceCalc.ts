@@ -16,7 +16,7 @@ export class PriceCalc implements BaseMod<{
         const {vals, vF} = payload;
         
         Object.values(services.data.raw.produits.value).forEach(p => {
-            const prod_prices = services.cache.byProd.value[p.ID].value.prices;
+            const prod_prices = services.cache.caches.byProd.value[p.ID].value.prices;
             const bible = services.data.raw.bible.value[services.data.indexesByTable.bible.Produit.value[p.ID]?.[0]];
             const mainPrice = vF ? bible?.Vendant : prod_prices?.[PricesId.Main]?.Prix;
             if (mainPrice !== undefined)

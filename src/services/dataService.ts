@@ -2,7 +2,6 @@ import {Services, TableConfig, TableConfigs, TablesDef} from "@/services/index";
 import {persistentStorage} from "@/helper/PersistentStorage";
 import {computed, ComputedRef, watch, watchEffect, WritableComputedRef} from "vue";
 import {createPool, Pool, PoolOptions, RowDataPacket} from "mysql2/promise";
-import {BaseService} from "@/helper/baseService";
 import {LogService} from "@/services/logService";
 
 const logger = LogService.logger({name: "DataService"})
@@ -26,7 +25,9 @@ export type Schema = {
     [key: string]: SchemaField<typeof key>
 }
 
-export class DataService<T extends TablesDef, C extends TableConfigs<T>> extends BaseService<T, C, any> {
+export class DataService<T extends TablesDef, C extends TableConfigs<T>> {
+    private readonly services: Services<T, C, any>;
+    
     public readonly mysqlLogin: WritableComputedRef<PoolOptions>;
     public conn: Pool;
     
@@ -44,7 +45,7 @@ export class DataService<T extends TablesDef, C extends TableConfigs<T>> extends
     private readonly tableDefault: ComputedRef<Record<keyof T, any>>;
     
     constructor(services: Services<T, C, any>, tables: C) {
-        super(services);
+        this.services = services;
         
         this.mysqlLogin = persistentStorage<PoolOptions>("mysqlLogin", {});
         watchEffect(() => {

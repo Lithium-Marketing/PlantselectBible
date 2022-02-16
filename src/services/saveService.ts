@@ -1,20 +1,24 @@
-import {BaseService} from "@/helper/baseService";
 import {Schema, SchemaField} from "@/services/dataService";
 import {format} from 'sql-formatter';
 import {LogService} from "@/services/logService";
-import {TableConfig, TableConfigs, TablesDef} from "@/services/index";
+import {Services, TableConfig, TableConfigs, TablesDef} from "@/services/index";
 import {now} from "moment";
 import {RowDataPacket} from "mysql2/promise";
 
 const logger = LogService.logger({name: "SaveService"});
 
-export class SaveService<T extends TablesDef, C extends TableConfigs<T>> extends BaseService<T, C, any> {
+export class SaveService<T extends TablesDef, C extends TableConfigs<T>>{
+    private readonly services: Services<T, C, any>;
+    
+    constructor(services: Services<T, C, any>) {
+        this.services = services;
+    }
     
     public async apply(dry: boolean = true) {
         const sqls = [];
         const mods = this.services.modification.mods;
         
-        for (const table in this._tables) {
+        for (const table in this.services.tables) {
             const schema = this.services.data.getSchema(table as any).value;
             const keys = Object.keys(schema).filter(k => schema[k].Key !== "PRI");
             
@@ -68,12 +72,12 @@ export class SaveService<T extends TablesDef, C extends TableConfigs<T>> extends
         return sqls;
     }
     
-    public async createSave(name: string, modsId: string[]) {
+    public async createSave(name: string) {
         const conn = await this.services.data.conn.getConnection();
         await conn.execute("INSERT INTO bible_saves (Name,Data,Version) VALUE (:name,:data,:version)", {
             name,
             version: 1,
-            data: this.services.modification.toJSON(modsId)
+            data: this.services.modification.toJSON()
         });
     }
     

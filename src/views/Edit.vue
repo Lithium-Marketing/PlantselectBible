@@ -3,37 +3,45 @@
 		<div>
 			<button @click="$router.back()">back</button>
 		</div>
-
+		
 		<div>
 			<div>
 				<button :disabled="tab==='product'" @click="tab='product'">Produit: {{ prodVar }}</button>
 				<button :disabled="tab==='oa'" @click="tab='oa'">OA: {{ oaID }}</button>
 				<button :disabled="tab==='oas'" @click="tab='oas'">OAs</button>
+				<button :disabled="tab==='note'" @click="tab='note'">Notes</button>
 			</div>
-
+			
 			<div>
 				<div v-if="tab==='product' && prodID!==-1" class="prodTab">
 					<div v-for="price of prices">
 						<span>{{ price.Titre }}.</span>
-						<input :value="price.PrixO" disabled>
-						<input :value="price.Prix" @change="updatePrice($event.target.value,price.Prix_ID,price.Produit_ID)" :disabled="!price.Prix_ID">
+						<input :value="price.o?.Prix" disabled>
+						<TableInput2 table="produits_prix" field="Prix" :entity-id="price.id" :createInfo="price.c" style="display: inline;margin: 1rem"/>
 					</div>
 				</div>
-
-				<div v-if="tab==='note' && prodID!==-1" class="prodTab">
+				
+				<div v-if="tab==='note' && prodID!==-1">
 					<div>
-						<textarea :value="oa.Note" style="width: 30rem;height: 10rem" @change="upNote($event.target.value,oa)"></textarea>
+						<div v-if="prodID!==undefined" class="noteCtn">
+							<span>Note au produit</span>
+							<textarea :value="oa.NoteP" style="width: 30rem;height: 10rem" @change="upNote($event.target.value,oa,true)"></textarea>
+						</div>
+						<div v-if="prodID!==undefined" class="noteCtn">
+							<span>Note a l'ordre d'assemblage</span>
+							<textarea :value="oa.NoteOA" style="width: 30rem;height: 10rem" @change="upNote($event.target.value,oa,false)"></textarea>
+						</div>
 					</div>
 				</div>
-
+				
 				<div v-if="tab==='oa' && oaID!==-1" class="prodTab">
 					<div>
 						<span>Cost.</span>
-						<input :value="oa.years_pastC0O" disabled>
-						<input :value="oa.years_pastC0" @change="updateCost($event.target.value,oa)">
+						<input :value="oa.cost" disabled>
+						<TableInput2 table="matieres_premieres" field="Prix" :entity-id="oa.mpId" style="display: inline;margin: 1rem"/>
 					</div>
 				</div>
-
+				
 				<div v-if="tab==='oas'" class="prodTab">
 					<table class="product">
 						<tr>
@@ -81,14 +89,17 @@ import {computed, defineComponent} from "vue";
 import {useStore} from "vuex";
 import {Modifications} from "@/helper/Modifications";
 import {StoreState} from "@/store";
+import {MyTablesDef, useMyServices} from "@/config/dataConfig";
+import TableInput2 from "@/components/TableInput2.vue";
 
 export default defineComponent({
 	name: 'Edit',
-	components: {},
+	components: {TableInput2},
 	setup() {
 		//const route = useRoute();
 		const store = useStore<StoreState>();
-
+		const services = useMyServices();
+		
 		const tab = computed({
 			get() {
 				return store.state.editState.tab;
@@ -97,59 +108,80 @@ export default defineComponent({
 				store.state.editState.tab = val;
 			}
 		});
-
+		
 		const modifications = new Modifications(store);
-
+		
 		return {
 			tab,
-
+			
 			prodID: computed(() => store.state.editState.prodID),
-			prodVar: computed(() => store.state._.products[store.state.editState.prodID]?.Variete),
+			prodVar: computed(() => services.data.tables.produits.value[store.state.editState.prodID]?.Variete),
 			oaID: computed(() => store.state.editState.oaID),
-
+			
 			prices: computed(() => {
 				const prodID = store.state.editState.prodID;
-				const pricesByTitle = Object.values(store.state._.prices).filter(v => v.Produit_ID === prodID).reduce((a, v) => {
-					a[v.Prix_ID] = v;
+				const pricesByTitle = services.data.indexesByTable.produits_prix.Produit_ID.value[prodID]?.map(id => {
+					return {
+						id,
+						o: services.data.raw.produits_prix.value[id],
+						m: services.data.tables.produits_prix.value[id]
+					};
+				}).reduce((a, v) => {
+					if (v.m.Prix_ID)
+						a[v.m.Prix_ID] = v;
 					return a;
-				}, {});
-				return Object.values(store.state._.priceTitles).map(t => ({...pricesByTitle[t.ID], Titre: t.Titre, Prix_ID: t.ID, Produit_ID: prodID}));
+				}, {}) ?? {};
+				
+				Object.values(services.data.raw.prix.value).forEach(prix => {
+					if (!pricesByTitle[prix.ID])
+						pricesByTitle[prix.ID] = {
+							c: {
+								Produit_ID: prodID,
+								Prix_ID: prix.ID,
+								Visible: 1
+							} as MyTablesDef['produits_prix']
+						}
+				})
+				
+				return Object.values(services.data.tables.prix.value).map(t => ({...pricesByTitle[t.ID], Titre: t.Titre, Prix_ID: t.ID, Produit_ID: prodID}));
 			}),
-
+			
 			oas: computed(() => {
 				const prodID = store.state.editState.prodID;
-				return Object.values(store.state._.oas).filter(oa => oa.Produit === prodID);
+				return services.data.indexesByTable.ordres_assemblages.Produit.value[prodID]?.map(id => services.data.tables.ordres_assemblages.value[id]);
 			}),
-
+			
 			oa: computed(() => {
 				const oaID = store.state.editState.oaID;
-				return store.state._.oas[oaID];
+				const prodID = store.state.editState.prodID;
+				
+				const bibleP = services.data.indexesByTable.bible.Produit.value[prodID]?.[0];
+				const bibleOA = services.data.indexesByTable.bible.OA.value[oaID]?.[0];
+				
+				const oa = services.data.tables.ordres_assemblages.value[oaID];
+				const mp = services.data.raw.matieres_premieres.value[oa?.Matiere_premiere];
+				
+				return {
+					mpId: mp?.ID, bibleP, bibleOA, prodID, oaID,
+					cost: mp?.Prix,
+					NoteP: services.data.tables.bible.value[bibleP]?.Note,
+					NoteOA: services.data.tables.bible.value[bibleOA]?.Note
+				};
 			}),
-
-			updatePrice(val, Prix_ID, Produit_ID) {
-				modifications.add({
-					type: "setPrice",
+			
+			upNote(val, oa, isProd) {
+				const createInfo = isProd ? {
+					Produit: oa.prodID
+				} : {
+					OA: oa.oaID
+				};
+				services.modification.mod("manual", {
 					val,
-					Prix_ID: Prix_ID,
-					Produit_ID: Produit_ID
-				});
-				modifications.commit();
-			},
-			updateCost(val, oa) {
-				modifications.add({
-					type: "setCost",
-					OA_ID: oa.ID,
-					val
-				});
-				modifications.commit();
-			},
-			upNote(val, oa) {
-				modifications.add({
-					type: "setNote",
-					OA_ID: oa.ID,
-					val: val
-				});
-				modifications.commit();
+					id: isProd ? oa.bibleP : oa.bibleOA,
+					table: "bible",
+					field: "Note",
+					createInfo
+				}, "Note a" + (isProd ? "u produit" : " l'ordre d'assemblage"))
 			}
 		};
 	}
@@ -163,17 +195,28 @@ export default defineComponent({
 	margin: auto;
 }
 
+.noteCtn {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	padding-top: 2rem;
+	
+	> span {
+		white-space: nowrap;
+	}
+}
+
 .prodTab {
 	> div {
 		margin-bottom: .1rem;
 	}
-
+	
 	span {
 		font-size: 1.2rem;
 		display: inline-block;
 		width: 3rem;
 	}
-
+	
 	input {
 		font-size: 1.2rem;
 		width: 5rem;
