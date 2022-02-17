@@ -21,7 +21,7 @@
 						</tr>
 						<tr>
 							<td>
-								<button @click="refresh()" style="background-color: rgb(160 160 160)">Rafraichir</button>
+								<button :class="{'btn-loading': refreshing}" @click="refresh()" :disabled="refreshing" style="background-color: rgb(160 160 160)">Rafraichir</button>
 							</td>
 							<td></td>
 							<td></td>
@@ -72,18 +72,25 @@ export default defineComponent({
 
 		const saves = ref<any>([]);
 		
+		const refreshing = ref(false);
+		
 		async function refresh(){
-			saves.value = (await services.save.getSaves()).map(s=>{
-				return {
-					...s,
-					Date: moment(s.Date).format('lll')
-				};
-			});
+			refreshing.value = true;
+			try{
+				saves.value = (await services.save.getSaves()).map(s=>{
+					return {
+						...s,
+						Date: moment(s.Date).format('lll')
+					};
+				});
+			}finally {
+				refreshing.value = false;
+			}
 		}
 		
 		return {
 			saves,
-			refresh,
+			refresh, refreshing,
 			load(save){
 				services.modification.fromJSON(save.Data)
 			},
@@ -151,9 +158,9 @@ function setupScroll(loadMorePosts) {
 			width: 100%;
 		}
 
-		td {
-			width: 100%;
-		}
+		//td {
+		//	width: 100%;
+		//}
 
 		td:nth-child(1) {
 			display: flex;
