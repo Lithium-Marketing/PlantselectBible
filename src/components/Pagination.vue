@@ -3,41 +3,60 @@
 		<li>
 			<button @click="page = 0" :disabled="page===0">&lt;&lt;</button>
 		</li>
-
+		
 		<li>
 			<button @click="page = page-1" :disabled="page===0">&lt;</button>
 		</li>
-
+		
 		<li>
-			<button>
-				{{ page + 1 }}/{{ len }}
+			<button @click="edit=true">
+				<span v-if="!edit">{{ page + 1 }}/{{ len }}</span>
+				<input v-else :value="pageO" @change="pageO=$event.target.value" type="number" min="1" max="len" ref="input" @focusout="edit=false">
 			</button>
 		</li>
-
+		
 		<li>
 			<button @click="page = page+1" :disabled="page>=len-1">&gt;</button>
 		</li>
-
+		
 		<li>
 			<button @click="page = len-1" :disabled="page>=len-1">&gt;&gt;</button>
 		</li>
 	</ul>
 </template>
 
-<script>
-import {computed, defineComponent, watchEffect} from "vue";
+<script lang="ts">
+import {computed, defineComponent, nextTick, ref, watch, watchEffect} from "vue";
 
 export default defineComponent({
 	name: "Pagination",
 	props: ["page", "len"],
 	setup(props, {emit}) {
-
+		
 		watchEffect(() => {
 			if (props.page > props.len)
 				emit("update:page", 0);
+		});
+		
+		const edit = ref(false);
+		const input = ref<HTMLInputElement>(null);
+		watch(edit, () => {
+			if (edit.value)
+				nextTick(() => input.value.focus())
 		})
-
+		
 		return {
+			edit,
+			input,
+			pageO: computed({
+				get() {
+					return props.page + 1
+				},
+				set(val: number) {
+					emit("update:page", val - 1);
+				}
+			}),
+			
 			page: computed({
 				get() {
 					return props.page
@@ -65,7 +84,7 @@ export default defineComponent({
 	list-style: none;
 	display: flex;
 	justify-content: center;
-
+	
 	button {
 		font-size: 1.2rem;
 	}
