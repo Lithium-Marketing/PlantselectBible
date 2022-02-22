@@ -8,28 +8,21 @@
 			<input v-model="saveName"/>
 			<button @click="save" :disabled="saveName.length<3">Sauvegarder tout</button>
 		</div>
-		<Pagination :len="len" v-model:page="page"/>
-		<table style="width: 100%">
+		<table style="margin-top: 1rem; margin-inline: auto">
 			<tr>
-				<th><span class="case" @click="coche(true)">☑</span><span class="case" @click="coche(false)">☒</span></th>
-				<th>Id.</th>
 				<th>Op.</th>
 				<th>Desc.</th>
-				<th># Mod.</th>
+				<th>#</th>
 			</tr>
 			<tr>
-				<th>{{ cocheTotal }}</th>
-				<th><input v-model="filters.modId"/></th>
 				<th><input v-model="filters.op"/></th>
 				<th><input v-model="filters.desc"/></th>
 				<th></th>
 			</tr>
 			<tr v-for="(change,key) in changes" :key="key">
-				<td><input type="checkbox" :checked="coches[change.modId]===undefined?true:coches[change.modId]" @input="coches[change.modId] = $event.target.checked"/></td>
-				<th>{{ change.data.modId }}</th>
-				<th>{{ change.data.op }}</th>
-				<th>{{ change.data.desc }}</th>
-				<th>{{ change.data.nMod }}</th>
+				<td>{{ change.data.op }}</td>
+				<td>{{ change.data.desc }}</td>
+				<td>{{ change.data.len }}</td>
 			</tr>
 		</table>
 	</div>
@@ -56,30 +49,29 @@ export default defineComponent({
 			desc: "",
 		});
 		
-		const coches = ref({});
-		
 		const changes = computed(() => {
-			return Object.entries(services.modification.raw).flatMap(([id,v]) => {
-				const nMod = services.modification.results[id]?.nOp;
-				
-				return {
-					modId: id,
-					key: [id].join(":"),
-					data: {
-						modId: id,
-						op: v.name,
-						desc: v.desc,
-						nMod
-					}
-				};
-				
+			
+			const result = Object.values(services.modification.raw).reduce((a,v)=>{
+				a[v.name] = a[v.name] || {};
+				a[v.name][v.desc] = (a[v.name][v.desc] ?? 0)+1;
+				return a;
+			},{});
+			
+			return Object.entries(result).flatMap(([op,descs]) => {
+				return Object.entries(descs).map(([desc,len])=>{
+					return {
+						data: {
+							op,
+							desc,
+							len
+						}
+					};
+				})
 			}).filter(s => s);
 		});
 		
 		const page = ref(0);
 		const saveName = ref("");
-		
-		const selection = computed(() => changes.value.filter((v) => coches.value[v.modId] === undefined ? true : coches.value[v.modId]).map(v => v.modId))
 		
 		return {
 			filters,
@@ -92,21 +84,7 @@ export default defineComponent({
 							(typeof v.data[name] === "string" && v.data[name].toUpperCase().indexOf(val) !== -1) ||
 							(typeof v.data[name] === "number" && Math.abs(v.data[name] - parseFloat(val)) < 1.1)
 					}).length == filterA.length;
-				}).slice(page.value * store.state.settings.ipp, (page.value + 1) * store.state.settings.ipp).reduce((a, v) => {
-					a[v.key] = v
-					return a;
-				}, {})
-			}),
-			
-			coches,
-			async coche(b: boolean) {
-				changes.value.forEach(v => {
-					coches.value[v.key] = b;
-				});
-			},
-			cocheTotal: computed(() => {
-				const sel = changes.value.filter((v) => coches.value[v.modId] === undefined ? true : coches.value[v.modId]).length
-				return sel + "/" + changes.value.length
+				})
 			}),
 			
 			len: computed(() => {
