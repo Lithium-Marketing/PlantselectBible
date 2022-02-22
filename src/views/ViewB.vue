@@ -82,7 +82,7 @@ export default defineComponent({
 			products.value.length = 0;
 
 			const filtered = Object.values(services.data.get("produits").value).sort((a, b) => {
-				return a.Type - b.Type || a.Variete?.localeCompare(b.Variete) || a.Format - b.Format;
+				return a.Type - b.Type || String(a.Variete).localeCompare(b.Variete) || a.Format - b.Format;
 			}).filter((p: any) => {
 				return !p.Variete || p.Variete.toLowerCase().indexOf(search.variete.toLowerCase()) !== -1
 			});

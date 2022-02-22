@@ -3,6 +3,7 @@
 		<Pagination v-model:page="page" v-model:len="len"/>
 		<h1>{{ product.Variete }}</h1>
 		<h2>{{ product.Code }}</h2>
+		<input v-model="filter">
 		<table class="product" style="width: 100%">
 			<thead>
 			<tr>
@@ -92,6 +93,7 @@ export default defineComponent({
 		const services = useMyServices();
 		
 		const product = ref<MyTablesDef["produits"]>(null);
+		const filter = ref("");
 		const lines = ref([]);
 		const len = ref(0);
 		const page = ref(0);
@@ -99,9 +101,12 @@ export default defineComponent({
 		watchEffect(() => {
 			logger.time("page");
 			
-			const products = Object.values(services.data.tables.produits.value).sort((a, b) => {
-				return a.Type - b.Type || a.Variete?.localeCompare?.call(b.Variete) || a.Format - b.Format;
-			}).filter(p => true);//filter here
+			const products = Object.values(services.data.tables.produits.value).filter(p=>{
+				const lower = filter.value.toLowerCase();
+				return p.Code?.toLowerCase().indexOf(lower) !== -1 || p.Variete?.toLowerCase().indexOf(lower) !== -1
+			}).sort((a, b) => {
+				return a.Type - b.Type || String(a.Variete).localeCompare(b.Variete) || a.Format - b.Format;
+			});
 			
 			product.value = products[page.value];
 			len.value = products.length;
@@ -155,7 +160,7 @@ export default defineComponent({
 		});
 		
 		return {
-			product, lines, len, page, achats,
+			product, lines, len, page, achats, filter,
 			add(line) {
 				services.modification.mod("create", {
 					createInfo: {
@@ -185,6 +190,10 @@ export default defineComponent({
 
 .top td {
 	border-top: solid 1px black;
+}
+
+.product{
+	margin-top: 2rem;
 }
 
 </style>

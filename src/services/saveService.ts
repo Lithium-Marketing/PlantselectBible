@@ -93,7 +93,7 @@ export class SaveService<T extends TablesDef, C extends TableConfigs<T>>{
     
     public async getSaves(): Promise<{ ID: number, Name: string, Data: string, Version: number, Date: Date }[]> {
         const conn = await this.services.data.conn.getConnection();
-        const [rows, metas] = await conn.query("SELECT * FROM bible_saves WHERE Version=1");
+        const [rows, metas] = await conn.query("SELECT * FROM bible_saves WHERE Version=1 ORDER BY Date DESC");
         if (Array.isArray(rows)) {
             return rows as any;
         }
