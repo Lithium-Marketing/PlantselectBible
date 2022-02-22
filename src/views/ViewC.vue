@@ -162,7 +162,7 @@ export default defineComponent({
 				return Object.values(services.data.get("produits").value).filter(p => {
 					return p.Variete?.toLowerCase()?.indexOf(search.variete.toLocaleLowerCase()) !== -1;
 				}).sort((a, b) => {
-					return a.Type - b.Type || a.Variete?.localeCompare?.call(b.Variete) || a.Format - b.Format;
+					return a.Type - b.Type || String(a.Variete).localeCompare(b.Variete) || a.Format - b.Format;
 				}).flatMap(function allFlatMap(product) {
 					const prodCache = services.cache.caches.byProd.value[product.ID].value;
 					const prices = prodCache.prices;

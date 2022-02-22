@@ -297,7 +297,7 @@ export default defineComponent({
 						}
 					return true;
 				}).sort((a, b) => {
-					return a.Type - b.Type || a.Variete?.localeCompare?.call(b.Variete) || a.Format - b.Format;
+					return a.Type - b.Type || String(a.Variete).localeCompare(b.Variete) || a.Format - b.Format;
 				}).reduce((a, v) => {
 					const code = v.Code?.slice(0, 4) as string | undefined;
 					a[code] = a[code] || [];

@@ -105,7 +105,7 @@ export default defineComponent({
 				const lower = filter.value.toLowerCase();
 				return p.Code?.toLowerCase().indexOf(lower) !== -1 || p.Variete?.toLowerCase().indexOf(lower) !== -1
 			}).sort((a, b) => {
-				return a.Type - b.Type || a.Variete?.localeCompare?.call(b.Variete) || a.Format - b.Format;
+				return a.Type - b.Type || String(a.Variete).localeCompare(b.Variete) || a.Format - b.Format;
 			});
 			
 			product.value = products[page.value];
