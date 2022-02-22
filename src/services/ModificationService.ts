@@ -78,30 +78,17 @@ export class ModificationService<T extends TablesDef, C extends TableConfigs<T>,
     
     mod<K extends keyof M>(modName: K, payload: M[K], desc: string) {
         logger.trace("mod", modName, payload, desc);
-        
-        const id = this._mod(modName, payload);
-        
-        if (id)
-            this.raw[id] = {
-                payload: payload,
-                name: modName,
-                desc
-            };
-        else
-            logger.warn("Could not apply modification")
-    }
     
-    private _mod<K extends keyof M>(modName: K, payload: M[K]) {
         if (!this.modifications[modName])
             return false;
-        
+    
         let id = this.modifications[modName].getId(payload, this.services);
-        
+    
         if (id!==false && this.raw[id]) {
             delete this.raw[id];
             this.reapply();
         }
-        
+    
         const result = {nOp:0};
         const todos = {
             mods: [],
@@ -117,7 +104,7 @@ export class ModificationService<T extends TablesDef, C extends TableConfigs<T>,
                 result.nOp++;
             }
         };
-        
+    
         id = this.modifications[modName].apply(payload, this.services, op);
     
         todos.mods.forEach(({t,f,i,v})=>{
@@ -126,14 +113,21 @@ export class ModificationService<T extends TablesDef, C extends TableConfigs<T>,
                 [f]: v
             };
         });
-        
+    
         todos.dels.forEach(({t,i})=>{
             delete this.mods[t][i];
         });
-        
+    
         this.results[id] = result;
         
-        return id;
+        if (id)
+            this.raw[id] = {
+                payload: payload,
+                name: modName,
+                desc
+            };
+        else
+            logger.warn("Could not apply modification")
     }
     
     remove<K extends keyof T>(modId: string) {
