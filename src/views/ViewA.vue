@@ -1,6 +1,9 @@
 <template>
 	<div class="home">
 		<Pagination v-model:page="page" v-model:len="len"/>
+		<div>
+			<h2>{{family}}</h2>
+		</div>
 		<table class="product" ref="tableRef">
 			<thead>
 			<tr>
@@ -274,41 +277,39 @@ export default defineComponent({
 			}
 		];
 		
-		const productsGroups = computed(timed("products",() => {
-			return Object.values(
-				Object.values(services.data.tables.produits.value).filter(p => {
-					const oasByProd = services.data.indexesByTable.ordres_assemblages.Produit.value[p.ID];
-					fields:
-						for (const f of table) {
-							if (!search[f.name] || !search[f.name].length)
-								continue;
-							
-							if (f.filter && f.filterProductOnly && !f.filter(search[f.name], p.ID))
+		const productsGroups = computed(timed("products", () => {
+			return Object.values(services.data.tables.produits.value).filter(p => {
+				const oasByProd = services.data.indexesByTable.ordres_assemblages.Produit.value[p.ID];
+				fields:
+					for (const f of table) {
+						if (!search[f.name] || !search[f.name].length)
+							continue;
+						
+						if (f.filter && f.filterProductOnly && !f.filter(search[f.name], p.ID))
+							return false;
+						
+						if (!f.filterProductOnly)
+							if (oasByProd && oasByProd.length) {
+								for (const oa of oasByProd)
+									if (f.filter && f.filter(search[f.name], p.ID, oa))
+										continue fields;
 								return false;
-							
-							if (!f.filterProductOnly)
-								if (oasByProd && oasByProd.length) {
-									for (const oa of oasByProd)
-										if (f.filter && f.filter(search[f.name], p.ID, oa))
-											continue fields;
-									return false;
-								} else if (f.filter && !f.filter(search[f.name], p.ID))
-									return false;
-						}
-					return true;
-				}).sort((a, b) => {
-					return a.Type - b.Type || String(a.Variete).localeCompare(b.Variete) || a.Format - b.Format;
-				}).reduce((a, v) => {
-					const code = v.Code?.slice(0, 4) as string | undefined;
-					a[code] = a[code] || [];
-					a[code].push(v);
-					return a;
-				}, {} as Record<any, MyTablesDef["produits"][]>)
-			);
+							} else if (f.filter && !f.filter(search[f.name], p.ID))
+								return false;
+					}
+				return true;
+			}).sort((a, b) => {
+				return a.Type - b.Type || String(a.Variete).localeCompare(b.Variete) || a.Format - b.Format;
+			}).reduce((a, v) => {
+				const code = v.Code?.slice(0, 4) as string | undefined;
+				a[code] = a[code] || [];
+				a[code].push(v);
+				return a;
+			}, {} as Record<any, MyTablesDef["produits"][]>);
 		}));
 		
 		const len = computed(() => {
-			return productsGroups.value.length;
+			return Object.values(productsGroups.value).length;
 		});
 		const page = ref(0);
 		watch(search, () => {
@@ -316,7 +317,7 @@ export default defineComponent({
 		})
 		
 		const products = computed<MyTablesDef["produits"][]>(() => {
-			return productsGroups.value[page.value];
+			return Object.values(productsGroups.value)[page.value];
 		});
 		
 		const lines = ref([]);
@@ -418,6 +419,8 @@ export default defineComponent({
 			search,
 			table,
 			lines, len, page,
+			
+			family: computed(()=>Object.keys(productsGroups.value)[page.value])
 		};
 	}
 });
