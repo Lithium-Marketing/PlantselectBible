@@ -1,9 +1,14 @@
 <template>
 	<div>
 		<div class="header">
-			<ButtonConfirm @action="annule" style="background-color: rgb(165 0 0)">Annuler tout</ButtonConfirm>
-			<ButtonConfirm @action="refresh" style="background-color: rgb(0 0 145)">Rafraîchir</ButtonConfirm>
-			<ButtonConfirm @action="apply">Appliquer tout</ButtonConfirm>
+			<div>
+				<ButtonConfirm @action="apply">Appliquer</ButtonConfirm>
+				<ButtonConfirm @action="recalc" style="background-color: rgb(0 0 145)">Recalculer</ButtonConfirm>
+				<ButtonConfirm @action="annule" style="background-color: rgb(165 0 0)">Annuler</ButtonConfirm>
+			</div>
+			<div>
+				<ButtonConfirm @action="refresh" style="background-color: rgb(0 0 145)">Rafraîchir</ButtonConfirm>
+			</div>
 			<hr style="opacity: 0;">
 			<input v-model="saveName"/>
 			<button @click="save" :disabled="saveName.length<3">Sauvegarder tout</button>
@@ -34,7 +39,7 @@ import ButtonConfirm from "./ButtonConfirm.vue";
 import {useStore} from "vuex";
 import {StoreState} from "@/store";
 import Pagination from "@/components/Pagination.vue";
-import {useMyServices, MyServices} from "@/config/dataConfig";
+import {MyServices, useMyServices} from "@/config/dataConfig";
 
 export default defineComponent({
 	name: "ModificationsPanel",
@@ -104,6 +109,9 @@ export default defineComponent({
 				await services.save.apply(false);
 				services.modification.removeAll();
 			},
+			async recalc(){
+				services.modification.reapply();
+			},
 			async refresh() {
 				await services.data.refresh();
 				services.modification.reapply();
@@ -129,6 +137,11 @@ function translateMod(services: MyServices, table: string, id: any) {
 <style lang="scss" scoped>
 .header {
 	display: flex;
+	
+	> div {
+		margin: 2px;
+		border: 1px solid black;
+	}
 	
 	input {
 		padding: 0.5rem 1rem;
