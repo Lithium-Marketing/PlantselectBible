@@ -58,6 +58,7 @@ import {useStore} from "vuex";
 import {StoreState} from "@/store";
 import {Modification} from "@/helper/Modifications";
 import {toText} from "@/helper/Const";
+import {useMyServices} from "@/config/dataConfig";
 
 export default defineComponent({
 	name: 'About',
@@ -65,6 +66,7 @@ export default defineComponent({
 	setup() {
 		const versions = ref(process.versions);
 		const store = useStore<StoreState>();
+		const service = useMyServices();
 
 		return {
 			versions,
@@ -79,10 +81,10 @@ export default defineComponent({
 			}),
 			mysqlLogin: computed({
 				get() {
-					return JSON.stringify(store.state.mysqlLogin);
+					return JSON.stringify(service.data.mysqlLogin.value);
 				},
 				set(val: string) {
-					store.commit('mysqlLogin', JSON.parse(val));
+					service.data.mysqlLogin.value = JSON.parse(val);
 				}
 			}),
 
