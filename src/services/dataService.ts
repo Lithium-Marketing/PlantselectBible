@@ -213,14 +213,7 @@ export class DataService<T extends TablesDef, C extends TableConfigs<T>> {
     
     get<K extends keyof T>(table: K, id?: number, field?: string) {
         if (field !== undefined)
-            return computed({
-                get() {
-                    return this.services.modification.mods[table]?.[id]?.[field] ?? this.raw[table][id][field];
-                },
-                set(val) {
-                    this.services.modification.set(table, id, field, val, "auto");
-                }
-            });
+            throw new Error("Not Implemented")
         if (id !== undefined)
             return this.getCache[table + ":::" + id]?.deref() ?? (this.getCache[table + ":::" + id] = new WeakRef(computed(() => {//add modification to the row of the table
                 return this.tables[table].value[id];

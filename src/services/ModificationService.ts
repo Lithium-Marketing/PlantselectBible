@@ -1,6 +1,5 @@
-import {Services, TableConfig, TableConfigs, TablesDef} from "@/services/index";
-import {computed, ComputedRef, reactive, Ref, ref, triggerRef, unref, watch, watchEffect} from "vue";
-import {now} from "moment";
+import {Services, TableConfigs, TablesDef} from "@/services/index";
+import {reactive, WritableComputedRef} from "vue";
 import {persistentStorage} from "@/helper/PersistentStorage";
 import {LogService} from "@/services/logService";
 
@@ -31,112 +30,102 @@ export type Modifications<M, S extends Services<T, any, any>, T extends TablesDe
 };
 
 type RawMod<M, N extends keyof M> = {
+    id: string,
     name: N,
     desc: string,
     payload: M[N]
 }
 
-const genCreatedId = (function* () {
-    while (true){
-        let cnt = 0;
-        while (!(yield cnt--)) ;
-    }
-})();
-const createdId = (() => genCreatedId.next().value) as () => number;
-
 export interface Operations<D extends TablesDef> {
     mod<T extends keyof D, F extends keyof D[T]>(table: T, field: F, id: any, val: D[T][F])
+    
     del<T extends keyof D>(table: T, id: any)
 }
 
-export class ModificationService<T extends TablesDef, C extends TableConfigs<T>, M>{
-    public static readonly createId = createdId;
+const genCreatedId = function* () {
+    while (true) {
+        let cnt = -1;
+        while (!(yield cnt--)) ;
+        yield;
+    }
+}
+
+export class ModificationService<T extends TablesDef, C extends TableConfigs<T>, M> {
     
     private readonly services: Services<T, C, M>;
+    private readonly modifications: Modifications<M, Services<T, C, M>, T>;
     
-    public readonly createId = createdId;
+    private readonly _createdId = genCreatedId();
+    public readonly createId = (() => this._createdId.next().value) as () => number;
     
     public readonly mods: ModDict<T>;
     
-    public readonly raw: { [id: string]: RawMod<M, keyof M> }
-    
-    public readonly results: Record<string, { nOp: number }> = {};
-    
-    private readonly modifications: Modifications<M, Services<T, C, M>, T>;
+    public readonly raw: RawMod<M, keyof M>[]
+    private rawStorage: WritableComputedRef<RawMod<M, keyof M>[]>;
     
     constructor(services: Services<T, C, M>, tables: C, modifications: Modifications<M, Services<T, C, M>, T>) {
         this.services = services;
         this.modifications = modifications;
         
-        this.raw = reactive({});
-        
         this.mods = reactive(Object.keys(tables).reduce((a, t) => {
             a[t] = {};
             return a;
         }, {})) as ModDict<T>;
+        
+        this.raw = reactive([]);
+        this.rawStorage = persistentStorage("modRaw", []);
     }
     
-    mod<K extends keyof M>(modName: K, payload: M[K], desc: string) {
-        logger.trace("mod", modName, payload, desc);
+    mod<K extends keyof M>(modName: K, payload: M[K], desc: string){
+        this._mod(modName,payload,desc);
+        this.save();
+    }
     
+    private _mod<K extends keyof M>(modName: K, payload: M[K], desc: string) {
+        logger.trace("mod", modName, payload, desc);
+        
         if (!this.modifications[modName])
             return false;
-    
-        let id = this.modifications[modName].getId(payload, this.services);
-    
-        if (id!==false && this.raw[id]) {
-            delete this.raw[id];
-            this.reapply();
-        }
-    
-        const result = {nOp:0};
+        
         const todos = {
             mods: [],
             dels: []
         }
         const op = {
             mod(t, f, i, v) {
-                todos.mods.push({t,f,i,v})
-                result.nOp++;
+                todos.mods.push({t, f, i, v})
             },
-            del(t,i){
-                todos.dels.push({t,i})
-                result.nOp++;
+            del(t, i) {
+                todos.dels.push({t, i})
             }
         };
-    
-        id = this.modifications[modName].apply(payload, this.services, op);
-    
-        todos.mods.forEach(({t,f,i,v})=>{
+        
+        let id = this.modifications[modName].apply(payload, this.services, op);
+        
+        todos.mods.forEach(({t, f, i, v}) => {
             this.mods[t][i] = {
                 ...this.mods[t][i],
                 [f]: v
             };
         });
-    
-        todos.dels.forEach(({t,i})=>{
+        
+        todos.dels.forEach(({t, i}) => {
             delete this.mods[t][i];
         });
-    
-        this.results[id] = result;
         
         if (id)
-            this.raw[id] = {
+            this.raw.push({
+                id: id,
                 payload: payload,
                 name: modName,
                 desc
-            };
+            });
         else
             logger.warn("Could not apply modification")
     }
     
-    remove<K extends keyof T>(modId: string) {
-        delete this.raw[modId];
-        this.reapply();
-    }
-    
     removeAll() {
-        Object.keys(this.raw).forEach(r => delete this.raw[r]);
+        this.raw.length = 0;
         this.reapply();
     }
     
@@ -144,35 +133,48 @@ export class ModificationService<T extends TablesDef, C extends TableConfigs<T>,
         Object.keys(this.services.tables).forEach(table => {
             this.mods[table as keyof T] = {};
         });
-        console.log(genCreatedId.next(true))
-    
-        const raw = Object.entries(this.raw).reduce((a, v) => {
-            a.push(v[1]);
-            return a;
-        }, []);
+        console.log(this._createdId.next(true))
         
-        Object.keys(this.raw).forEach(r => delete this.raw[r]);
-    
+        const raw = this.fragmentedRaw();
+        
+        this.raw.length = 0;
+        
         raw.forEach((mod) => {
-            this.mod(mod.name, mod.payload, mod.desc);
+            this._mod(mod.name, mod.payload, mod.desc);
         });
+        
+        this.save();
+    }
+    
+    private fragmentedRaw(){
+        return this.raw.filter((v1, i1) => !this.raw.find((v2, i2) => i1 < i2 && v1.id === v2.id));
+    }
+    
+    public save() {
+        console.log("--- raw saved ---");
+        this.rawStorage.value = this.fragmentedRaw();
+    }
+    
+    public load() {
+        this.raw.length = 0;
+        this.rawStorage.value.forEach((mod) => {
+            this._mod(mod.name, mod.payload, mod.desc);
+        });
+        this.save();
     }
     
     public toJSON() {
-        const raw = Object.entries(this.raw).reduce((a, v) => {
-            a.push(v[1]);
-            return a;
-        }, []);
-        return JSON.stringify(raw);
+        this.reapply();
+        return JSON.stringify(this.raw);
     }
     
     public fromJSON(raw: string) {
-        Object.keys(this.raw).forEach(r => delete this.raw[r]);
-        this.reapply();
+        this.removeAll();
         
         const rawP: RawMod<any, any>[] = JSON.parse(raw);
         rawP.forEach((mod) => {
-            this.mod(mod.name, mod.payload, mod.desc);
+            this._mod(mod.name, mod.payload, mod.desc);
         });
+        this.save();
     }
 }

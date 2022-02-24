@@ -51,7 +51,7 @@ export default defineComponent({
 		
 		const changes = computed(() => {
 			
-			const result = Object.values(services.modification.raw).reduce((a,v)=>{
+			const result = services.modification.raw.reduce((a,v)=>{
 				a[v.name] = a[v.name] || {};
 				a[v.name][v.desc] = (a[v.name][v.desc] ?? 0)+1;
 				return a;
@@ -102,7 +102,7 @@ export default defineComponent({
 			},
 			async apply() {
 				await services.save.apply(false);
-				Object.keys(services.modification.raw).forEach(k => delete services.modification.raw[k])
+				services.modification.removeAll();
 			},
 			async refresh() {
 				await services.data.refresh();
