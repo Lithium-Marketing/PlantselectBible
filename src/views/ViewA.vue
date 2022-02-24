@@ -11,7 +11,9 @@
 			</tr>
 			<tr>
 				<th v-for="col in table">
-					<input v-if="col.filter" v-model="search[col.name]">
+					<div style="display: flex">
+						<input v-if="col.filter" v-model="search[col.name]" style="width: 150%;">
+					</div>
 				</th>
 			</tr>
 			</thead>
@@ -20,6 +22,9 @@
 				<tr :class="line.classes">
 					<template v-for="row in line.rows">
 						<td :rowspan="row.rowSpan">
+							<div v-if="row.action && row.val !== undefined" class="action-spacer">
+								<button class="action" @click="row.action">&#9998;</button>
+							</div>
 							<span v-if="!row.edit">{{ row.val }}</span>
 							<TableInput2 v-else v-bind="row.val"/>
 						</td>
@@ -40,7 +45,7 @@ import {ContextMenu} from "@/helper/ContextMenu";
 import {MyCacheDef, MyTablesDef, useMyServices} from "@/config/dataConfig";
 import moment from "moment";
 import {LogService} from "@/services/logService";
-import {$date, $pastTitle, $value, $valueI, currentYear, PricesId} from "@/helper/Const";
+import {$date, $load, $pastTitle, $value, $valueI, currentYear, PricesId} from "@/helper/Const";
 import TableInput2 from "@/components/TableInput2.vue";
 
 const logger = LogService.logger({name: "ViewA2"})
@@ -74,7 +79,8 @@ type TableF3 = { filter?(val: string, prodId: number, oaId?: number): boolean, f
 type TableF = {
 	name: string,
 	sub: number,
-	edit?: boolean
+	edit?: boolean,
+	action?: (ctx?: Line | SubLine) => void
 } & TableF2 & TableF3;
 
 type Table = TableF[];
@@ -118,6 +124,18 @@ export default defineComponent({
 		
 		const table: Table = [
 			{
+				name: "Code",
+				sub: 0,
+				val: (line) => line.product.Code,
+				filterProductOnly: true,
+				filter(val: string, prodId: number): boolean {
+					return services.data.tables.produits.value[prodId]?.Code?.toLowerCase().indexOf(val.toLowerCase()) !== -1
+				},
+				action(ctx){
+					$load(undefined, ctx.product.ID)
+				}
+			},
+			{
 				name: "Produit",
 				sub: 0,
 				val: (line) => line.product.Variete,
@@ -142,6 +160,10 @@ export default defineComponent({
 				val: (line) => line.oa.ID,
 				filter(val: string, prodId: number, oaId?: number): boolean {
 					return String(oaId).startsWith(val)
+				},
+				action(ctx){
+					if ('oa' in ctx)
+						$load(ctx.oa.ID, ctx.product.ID)
 				}
 			},
 			{
@@ -363,7 +385,7 @@ export default defineComponent({
 					product,
 					achat
 				};
-				const cols = table.map(c => []);
+				const cols: { val: any, ctx: SubLine | Line }[][] = table.map(c => []);
 				
 				oas.map(function oasByProdMap(oa) {
 					const mp = services.data.get("matieres_premieres", oa.Matiere_premiere ?? false).value;
@@ -379,7 +401,10 @@ export default defineComponent({
 					cols.forEach((v, i) => {
 						const f = table[i];
 						if (f.sub)
-							v.push(f.val(subLine))
+							v.push({
+								val: f.val(subLine),
+								ctx: subLine
+							})
 						else
 							v.push(undefined);
 					});
@@ -387,9 +412,11 @@ export default defineComponent({
 				
 				table.forEach((v, i) => {
 					const f = table[i];
-					if (!f.sub)
-						//@ts-ignore
-						cols[i][0] = f.val(line);
+					if (f.sub===0)
+						cols[i][0] = {
+							val: f.val(line),
+							ctx: line
+						};
 				});
 				
 				const h = cols[0].length;
@@ -402,8 +429,9 @@ export default defineComponent({
 								return false;
 							return {
 								edit: table[i].edit,
-								val: c[y],
+								val: c[y]?.val,
 								rowSpan: (!table[i].sub && y === 0) ? h : 1,
+								action: table[i].action && (() => table[i].action?.(c[y]?.ctx))
 							}
 						}).filter(r => !!r)
 					});
@@ -445,6 +473,26 @@ function timed<T>(name:string,fn:()=>T):()=>T{
 	white-space: nowrap;
 }
 
+.action-spacer{
+	display: inline-block;
+	width: 2rem;
+	height: 1rem;
+	margin-top: .5rem;
+	
+	.action{
+		position: absolute;
+		
+		left: 2px;
+		top: 50%;
+		transform: translateY(-50%);
+		
+		border-radius: 1rem;
+		padding: .3rem .4rem;
+		font-size: .8rem;
+		
+		margin: 0;
+	}
+}
 
 table {
 	tr {
@@ -461,10 +509,10 @@ table {
 		border-top: solid 1px black;
 	}
 	
-	td {
-		button {
-			padding: .3rem .5rem;
-			font-size: .8rem;
+	td{
+		position: relative;
+		>span{
+			line-height: 2rem
 		}
 	}
 }

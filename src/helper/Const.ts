@@ -156,6 +156,14 @@ export const $date = (val) => {
         return "-";
     return moment.unix(val).format('ll')
 }
+export const $load = (oaID, prodID, tab = 'product') => {
+    store.commit('load', {
+        oaID: parseInt(oaID, 10),
+        prodID: parseInt(prodID, 10),
+        tab
+    });
+    return router.push({name: "Edit"})
+};
 
 export function Const(app: App, ...options: any[]): any {
     const year = moment().add(7, 'M').year();
@@ -164,12 +172,5 @@ export function Const(app: App, ...options: any[]): any {
     app.config.globalProperties.$value = $value;
     app.config.globalProperties.$valueI = $valueI;
     app.config.globalProperties.$date = $date;
-    app.config.globalProperties.$load = (oaID, prodID, tab = 'product') => {
-        store.commit('load', {
-            oaID: parseInt(oaID, 10),
-            prodID: parseInt(prodID, 10),
-            tab
-        });
-        return router.push({name: "Edit"})
-    }
+    app.config.globalProperties.$load = $load;
 }
