@@ -26,7 +26,7 @@
 					</td>
 					<td>{{ product.Variete }}</td>
 					<td>{{ product.Format }}</td>
-					<td>{{ product['bible.Vendant'] }}</td>
+					<td><table-input2 v-bind="product.Vendant"/></td>
 					<td v-for="titles in prices" style="padding-inline: 1rem" :class="{diff:product.pricesDiff[titles.ID]}">
 						{{ product.prices?.[titles.ID]?.Prix }}
 					</td>
@@ -54,12 +54,14 @@ import {StoreState} from "@/store";
 import {useServices} from "@/services";
 import {MyTablesConfig, MyTablesDef, useMyServices} from "@/config/dataConfig";
 import {LogService} from "@/services/logService";
+import TableInput2 from "@/components/TableInput2.vue";
 
 const logger = LogService.logger({name:"ViewB"})
 
 export default defineComponent({
 	name: 'ViewB',
 	components: {
+		TableInput2,
 		TableInput,
 		Pagination,
 		HelloWorld,
@@ -96,6 +98,14 @@ export default defineComponent({
 			filtered.slice(ipp.value * page.value, ipp.value * (page.value + 1)).forEach((p: any, i) => {
 				products.value[i] = {
 					...p,
+					Vendant: {
+						table: "bible",
+						field: "Vendant",
+						'entity-id': services.data.indexesByTable.bible.Produit.value[p.ID]?.[0],
+						'create-info': {
+							Produit: p.ID
+						}
+					},
 					prices: byProd[p.ID].value.prices,
 					pricesDiff: Object.entries(byProd[p.ID].value.prices ?? {}).reduce((a, v) => {
 						a[v[0]] = services.data.raw.produits_prix.value[v[1].ID]?.Prix !== v[1].Prix;
