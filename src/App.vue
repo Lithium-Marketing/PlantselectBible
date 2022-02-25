@@ -44,7 +44,6 @@
 import {computed, defineComponent, ref, watchEffect} from "vue";
 import HelloWorld from "@/components/HelloWorld";
 import {useStore} from "vuex";
-import {app} from '@electron/remote';
 import Menu from "@/components/Menu";
 import LoadingBar from "@/components/LoadingBar";
 import moment from "moment";

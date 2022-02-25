@@ -1,11 +1,9 @@
 module.exports = {
 	pluginOptions:{
 		electronBuilder:{
-			//preload: 'src/preload.js',
-			nodeIntegration:true,
-			enableRemoteModule: true,
+			preload: 'src/preload.ts',
+			nodeIntegration: true,
 			publish: ['github']
-			
 		}
 	}
 };

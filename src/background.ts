@@ -1,9 +1,10 @@
 'use strict'
 
-import {app, protocol, BrowserWindow} from 'electron'
+import {app, BrowserWindow, ipcMain, protocol} from 'electron'
 import {createProtocol} from 'vue-cli-plugin-electron-builder/lib'
 import installExtension, {VUEJS3_DEVTOOLS} from 'electron-devtools-installer'
 import {autoUpdater} from "electron-updater"
+import * as path from "path";
 
 //import {initialize} from "@electron/remote/main";
 
@@ -22,7 +23,7 @@ async function createWindow() {
         width: 800,
         height: 600,
         webPreferences: {
-            //preload: path.join(__dirname, 'preload.js'),
+            preload: path.join(__dirname, 'preload.js'),
             // Use pluginOptions.nodeIntegration, leave this alone
             // See nklayman.github.io/vue-cli-plugin-electron-builder/guide/security.html#node-integration for more info
             nodeIntegration: true,
@@ -42,6 +43,8 @@ async function createWindow() {
         autoUpdater.autoInstallOnAppQuit = true;
         await checkUpdate();
     }
+    
+    return win;
 }
 
 // Quit when all windows are closed.
@@ -71,7 +74,20 @@ app.on('ready', async () => {
             console.error('Vue Devtools failed to install:', e.toString())
         }
     }
-    createWindow()
+    
+    /////// API
+    
+    ipcMain.on('set-title', handleSetTitle);
+    ipcMain.on('get-version', (event) => event.returnValue = app.getVersion());
+    ipcMain.on('quit-and-install', () => autoUpdater.quitAndInstall(false, true));
+    
+    ///////
+    
+    const mainWindow = await createWindow();
+    
+    /////// Event
+    
+    autoUpdater.on("update-available", () => mainWindow.webContents.send("update-available"));
 })
 
 // Exit cleanly on request from parent process in development mode.
@@ -93,4 +109,10 @@ async function checkUpdate() {
     const result = await autoUpdater.checkForUpdatesAndNotify();
     
     setTimeout(checkUpdate, 1000 * 60 * 5);
+}
+
+function handleSetTitle(event, title) {
+    const webContents = event.sender
+    const win = BrowserWindow.fromWebContents(webContents)
+    win.setTitle(title)
 }

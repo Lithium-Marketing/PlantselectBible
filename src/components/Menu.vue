@@ -43,17 +43,16 @@ export default defineComponent({
 	setup(props, {emit}) {
 		const store = useStore();
 
-		const isDev = process.env.NODE_ENV === "development";
+		const isDev = process.env.NODE_ENV === "development";console.log(isDev);
 		const canUpdate = ref(false);
 
-		// autoUpdater.on("update-downloaded", () => {
-		// 	canUpdate.value = true;
-		// });
+		window.electronAPI.onUpdateAvailable(() => canUpdate.value = true)
 
 		return {
 			canUpdate,
-			version: isDev ? "dev" : "N/D",
+			version: isDev ? "dev" : window.electronAPI.getVersion(),
 			update() {
+				window.electronAPI.quitAndInstall();
 			},
 
 			loading: computed({
