@@ -1,6 +1,6 @@
 'use strict'
 
-import {app, BrowserWindow, ipcMain, protocol} from 'electron'
+import {app, BrowserWindow, ipcMain, Menu, MenuItemConstructorOptions, protocol} from 'electron'
 import {createProtocol} from 'vue-cli-plugin-electron-builder/lib'
 import installExtension, {VUEJS3_DEVTOOLS} from 'electron-devtools-installer'
 import {autoUpdater} from "electron-updater"
@@ -80,6 +80,7 @@ app.on('ready', async () => {
 	ipcMain.on('set-title', handleSetTitle);
 	ipcMain.on('get-version', (event) => event.returnValue = app.getVersion());
 	ipcMain.on('quit-and-install', () => autoUpdater.quitAndInstall(false, true));
+	ipcMain.handle('color-menu', (event, color, x, y) => new Promise(resolve => Menu.buildFromTemplate(ColorMenu(color, (v) => resolve(v))).popup({x, y, callback: () => resolve(false)})));
 	
 	///////
 	
@@ -115,4 +116,21 @@ function handleSetTitle(event, title) {
 	const webContents = event.sender
 	const win = BrowserWindow.fromWebContents(webContents)
 	win.setTitle(title)
+}
+
+const ColorMenu = (color: string, fn: (color: string) => void): MenuItemConstructorOptions[] => {
+	
+	function colorsFor(): MenuItemConstructorOptions[] {
+		return [
+			{label: "Rouge", click: () => fn("red"), type: "checkbox", checked: color === "red"},
+			{label: "Jaune", click: () => fn("yellow"), type: "checkbox", checked: color === "yellow"},
+			{label: "Vert", click: () => fn("green"), type: "checkbox", checked: color === "green"},
+			{label: "Bleu", click: () => fn("blue"), type: "checkbox", checked: color === "blue"},
+			{label: "Violet", click: () => fn("violet"), type: "checkbox", checked: color === "violet"},
+			{label: "Gris", click: () => fn("grey"), type: "checkbox", checked: color === "grey"},
+			{label: "Clear", click: () => fn(undefined), type: "checkbox", checked: color === "" || color === undefined}
+		]
+	}
+	
+	return colorsFor();
 }

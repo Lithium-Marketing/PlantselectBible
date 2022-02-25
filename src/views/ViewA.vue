@@ -60,6 +60,21 @@ interface SubLine extends Line {
 	fournisseur?: MyTablesDef["fournisseurs"]
 }
 
+type Color<T extends keyof MyTablesDef, F extends keyof MyTablesDef[T]> = {
+	table: T,
+	field: keyof MyTablesDef[T],
+	id(ctx?: Line | SubLine): any
+}
+
+function color<T extends keyof MyTablesDef, F extends keyof MyTablesDef[T]>(table: T, field: F, id: (ctx?: Line | SubLine) => number) {
+	return {
+		table, field,
+		id(ctx?: Line | SubLine) {
+			return id(ctx);
+		}
+	};
+}
+
 type TableF2 = {
 	sub: 0,
 	val(line: Line): any
@@ -74,7 +89,8 @@ type TableF = {
 	name: string,
 	sub: number,
 	edit?: boolean,
-	action?: (ctx?: Line | SubLine) => void
+	action?: (ctx?: Line | SubLine) => void,
+	color?: Color<any, any>
 } & TableF2 & TableF3;
 
 type Table = TableF[];
@@ -137,7 +153,8 @@ export default defineComponent({
 				filterProductOnly: true,
 				filter(val: string, prodId: number): boolean {
 					return services.data.tables.produits.value[prodId]?.Variete?.toLowerCase().indexOf(val.toLowerCase()) !== -1
-				}
+				},
+				color: color("produits", "Color", (ctx) => ctx.product.ID)
 			},
 			{
 				name: "Format",
@@ -426,7 +443,12 @@ export default defineComponent({
 								edit: table[i].edit,
 								val: c[y]?.val,
 								rowSpan: (!table[i].sub && y === 0) ? h : 1,
-								action: table[i].action && (() => table[i].action?.(c[y]?.ctx))
+								action: table[i].action && (() => table[i].action?.(c[y]?.ctx)),
+								color: table[i].color && {
+									table: table[i].color.table,
+									field: table[i].color.field,
+									entityId: table[i].color.id(c[y]?.ctx)
+								},
 							}
 						}).filter(r => !!r)
 					});
