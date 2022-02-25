@@ -26,7 +26,9 @@
 					</td>
 					<td>{{ product.Variete }}</td>
 					<td>{{ product.Format }}</td>
-					<td><table-input2 v-bind="product.Vendant"/></td>
+					<td>
+						<table-input2 v-bind="product.Vendant"/>
+					</td>
 					<td v-for="titles in prices" style="padding-inline: 1rem" :class="{diff:product.pricesDiff[titles.ID]}">
 						{{ product.prices?.[titles.ID]?.Prix }}
 					</td>
@@ -51,12 +53,11 @@ import {useStore} from "vuex";
 import Pagination from "@/components/Pagination.vue";
 import TableInput from "@/components/TableInput.vue";
 import {StoreState} from "@/store";
-import {useServices} from "@/services";
-import {MyTablesConfig, MyTablesDef, useMyServices} from "@/config/dataConfig";
+import {useMyServices} from "@/config/dataConfig";
 import {LogService} from "@/services/logService";
 import TableInput2 from "@/components/TableInput2.vue";
 
-const logger = LogService.logger({name:"ViewB"})
+const logger = LogService.logger({name: "ViewB"})
 
 export default defineComponent({
 	name: 'ViewB',
@@ -69,7 +70,7 @@ export default defineComponent({
 	setup() {
 		const store = useStore<StoreState>();
 		const services = useMyServices();
-
+		
 		const page = ref(0);
 		const ipp = computed(() => store.state.settings.ipp);
 		const len = ref({});
@@ -77,23 +78,23 @@ export default defineComponent({
 		const search = reactive({
 			variete: ""
 		});
-
+		
 		watchEffect(() => {
 			logger.time("all");
 			
 			products.value.length = 0;
-
+			
 			const filtered = Object.values(services.data.get("produits").value).sort((a, b) => {
 				return a.Type - b.Type || String(a.Variete).localeCompare(b.Variete) || a.Format - b.Format;
 			}).filter((p: any) => {
 				return !p.Variete || p.Variete.toLowerCase().indexOf(search.variete.toLowerCase()) !== -1
 			});
-
+			
 			const newLen = Math.ceil(filtered.length / ipp.value);
 			if (newLen !== len.value)
 				page.value = 0;
 			len.value = newLen;
-
+			
 			const byProd = services.cache.caches.byProd.value;
 			filtered.slice(ipp.value * page.value, ipp.value * (page.value + 1)).forEach((p: any, i) => {
 				products.value[i] = {
@@ -116,7 +117,7 @@ export default defineComponent({
 			
 			logger.timeEnd("all");
 		})
-
+		
 		const prices = computed(() => {
 			return services.data.raw.prix.value;
 		})
@@ -124,7 +125,7 @@ export default defineComponent({
 			search,
 			products,
 			prices,
-
+			
 			page,
 			len
 		};
@@ -151,12 +152,12 @@ table {
 		&:nth-child(odd) {
 			background-color: #f8f8f8;
 		}
-
+		
 		&:hover {
 			background-color: #f0f0f0;
 		}
 	}
-
+	
 	td {
 		button {
 			padding: .3rem .5rem;

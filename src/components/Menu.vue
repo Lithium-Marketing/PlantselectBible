@@ -13,7 +13,7 @@
 			<span>|</span>
 			<strong :class="{pill:true,canUp: canUpdate}" @click.ctrl="update" :title="canUpdate?'Maintenir \'Ctrl\' et cliquez' : ''">{{ version }}</strong>
 		</div>
-
+		
 		<div class="nav">
 			<router-link to="/viewA">View A</router-link>
 			<span>|</span>
@@ -42,19 +42,20 @@ export default defineComponent({
 	emits: ['update:loading'],
 	setup(props, {emit}) {
 		const store = useStore();
-
-		const isDev = process.env.NODE_ENV === "development";console.log(isDev);
+		
+		const isDev = process.env.NODE_ENV === "development";
+		console.log(isDev);
 		const canUpdate = ref(false);
-
+		
 		window.electronAPI.onUpdateAvailable(() => canUpdate.value = true)
-
+		
 		return {
 			canUpdate,
 			version: isDev ? "dev" : window.electronAPI.getVersion(),
 			update() {
 				window.electronAPI.quitAndInstall();
 			},
-
+			
 			loading: computed({
 				get() {
 					return props.loading
@@ -76,7 +77,7 @@ export default defineComponent({
 	border-radius: 25%;
 	padding: .4em;
 	font-size: .7rem;
-
+	
 	&.canUp {
 		animation: flash .5s ease-in-out infinite alternate;
 	}
@@ -104,14 +105,14 @@ export default defineComponent({
 	display: flex;
 	justify-content: center;
 	align-items: center;
-
+	
 	> span {
 		padding-right: .1rem;
 		padding-left: .1rem;
 		font-weight: bolder;
 		font-size: 1.2rem;
 	}
-
+	
 	a {
 		font-weight: bold;
 		color: #fff;
@@ -119,7 +120,7 @@ export default defineComponent({
 		padding: .2rem;
 		border-radius: 10px;
 		text-decoration: none;
-
+		
 		&.router-link-exact-active {
 			color: #ffa;
 		}

@@ -1,6 +1,6 @@
 module.exports = {
-	pluginOptions:{
-		electronBuilder:{
+	pluginOptions: {
+		electronBuilder: {
 			preload: 'src/preload.ts',
 			nodeIntegration: true,
 			publish: ['github']

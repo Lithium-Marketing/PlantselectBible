@@ -56,14 +56,14 @@ export default defineComponent({
 		
 		const changes = computed(() => {
 			
-			const result = services.modification.raw.reduce((a,v)=>{
+			const result = services.modification.raw.reduce((a, v) => {
 				a[v.name] = a[v.name] || {};
-				a[v.name][v.desc] = (a[v.name][v.desc] ?? 0)+1;
+				a[v.name][v.desc] = (a[v.name][v.desc] ?? 0) + 1;
 				return a;
-			},{});
+			}, {});
 			
-			return Object.entries(result).flatMap(([op,descs]) => {
-				return Object.entries(descs).map(([desc,len])=>{
+			return Object.entries(result).flatMap(([op, descs]) => {
+				return Object.entries(descs).map(([desc, len]) => {
 					return {
 						data: {
 							op,
@@ -109,7 +109,7 @@ export default defineComponent({
 				await services.save.apply(false);
 				services.modification.removeAll();
 			},
-			async recalc(){
+			async recalc() {
 				services.modification.reapply();
 			},
 			async refresh() {

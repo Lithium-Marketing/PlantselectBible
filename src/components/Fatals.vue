@@ -11,7 +11,7 @@ export default defineComponent({
 				const s = slots.default({fatal: f});
 				return h(require("./Tab.vue").default, {header: f?.message}, () => s)
 			});
-			return h(require("./Tabs.vue").default, {}, ()=>tabs);
+			return h(require("./Tabs.vue").default, {}, () => tabs);
 		}
 	}
 });

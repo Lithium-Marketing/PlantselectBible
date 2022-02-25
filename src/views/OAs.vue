@@ -46,10 +46,9 @@
 </template>
 
 <script lang="ts">
-import {defineComponent, ref, unref, computed, onMounted, onUnmounted, watch} from 'vue';
+import {computed, defineComponent, ref} from 'vue';
 import HelloWorld from '@/components/HelloWorld.vue';
 import {useStore} from "vuex";
-import moment from "moment";
 import Pagination from "@/components/Pagination.vue";
 
 export default defineComponent({
@@ -60,35 +59,35 @@ export default defineComponent({
 	},
 	setup() {
 		const store = useStore();
-
+		
 		const products = computed(() => store.state._.products);
-
+		
 		const allOAs = computed(() => {
 			const oas = Object.values(store.state._.oas);
 			const result = [];
-
+			
 			for (let i = 0; i < oas.length; i++) {
 				const oa: any = oas[i];
-
+				
 				result.push({
 					...oa,
 					Variete: products.value[oa.Produit]?.Variete || '-',
 					Inv: products.value[oa.Produit]?.Quantite ?? '-'
 				});
 			}
-
+			
 			return result;
 		});
 		const page = ref(0);
 		const len = computed(() => store.state.settings.ipp);
-
+		
 		//watch([variSearch], () => productPage.value = 0)
-
+		
 		return {
 			oas: computed(() => allOAs.value.slice(len.value * page.value, len.value * (page.value + 1))),
 			products,
 			loading: computed(() => store.state.loading),
-
+			
 			page,
 			len: computed(() => Math.ceil(allOAs.value.length / len.value)),
 		};
@@ -109,12 +108,12 @@ export default defineComponent({
 	list-style: none;
 	display: flex;
 	justify-content: center;
-
+	
 	button {
 		padding: .5rem;
 		margin: .2rem;
 		font-size: 1.3rem;
-
+		
 		&:not(:disabled) {
 			cursor: pointer;
 		}

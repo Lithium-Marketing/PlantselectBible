@@ -44,20 +44,20 @@ export default defineComponent({
 	components: {Pagination, ButtonConfirm},
 	setup() {
 		const store = useStore<StoreState>();
-
+		
 		const filters = reactive({
 			type: "", resource: "", old: "", val: ""
 		});
-
+		
 		const coches = ref({});
 		watch(store.state._.changes, () => coches.value = {})
-
+		
 		const changes = computed(() => {
 			return Object.entries(store.state._.changes).filter((m) => {
 				for (const filtersKey in filters) {
 					if (!filters[filtersKey].length)
 						continue;
-
+					
 					const val = m[1].description?.[filtersKey];
 					if (typeof val !== "string")
 						return false;
@@ -70,27 +70,27 @@ export default defineComponent({
 				return a;
 			}, {})
 		});
-
+		
 		const page = ref(0);
-
+		
 		return {
-
+			
 			filters,
-
+			
 			changes: computed(() => {
 				return Object.entries(changes.value).slice(page.value * store.state.settings.ipp, (page.value + 1) * store.state.settings.ipp).reduce((a, v) => {
 					a[v[0]] = v[1]
 					return a;
 				}, {})
 			}),
-
+			
 			coches,
 			async coche(b: boolean) {
 				Object.keys(changes.value).forEach(key => {
 					coches.value[key] = b;
 				});
 			},
-
+			
 			len: computed(() => {
 				return Math.ceil(Object.keys(changes.value).length / store.state.settings.ipp);
 			}),
@@ -99,7 +99,7 @@ export default defineComponent({
 				const sel = Object.entries(store.state._.changes).filter(([v]) => coches.value[v] === undefined ? true : coches.value[v]).length
 				return sel + "/" + Object.entries(store.state._.changes).length
 			}),
-
+			
 			async apply() {
 				await store.dispatch("applyMod", Object.entries(store.state._.changes).filter(([v, _]) => {
 					return coches.value[v] === undefined ? true : coches.value[v];
@@ -124,7 +124,7 @@ export default defineComponent({
 <style lang="scss" scoped>
 .header {
 	display: flex;
-
+	
 	input {
 		padding: 0.5rem 1rem;
 		font-size: 1rem;

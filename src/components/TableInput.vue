@@ -11,10 +11,10 @@ import {computed} from "vue";
 
 export default {
 	name: "TableInput",
-	props: ["modelValue", "original", "always" ,"len"],
+	props: ["modelValue", "original", "always", "len"],
 	setup(props, {emit}) {
 		return {
-			width: computed(() => props.len !== undefined ? props.len+"rem" : "4rem"),
+			width: computed(() => props.len !== undefined ? props.len + "rem" : "4rem"),
 			changed: computed(() => props.modelValue !== props.original),
 			show: computed(() => (props.modelValue !== undefined && props.modelValue !== null) || !!props.always),
 			value: computed({

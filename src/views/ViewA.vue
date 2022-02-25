@@ -2,7 +2,7 @@
 	<div class="home">
 		<Pagination v-model:page="page" v-model:len="len"/>
 		<div>
-			<h2>{{family}}</h2>
+			<h2>{{ family }}</h2>
 		</div>
 		<table class="product" ref="tableRef">
 			<thead>
@@ -131,7 +131,7 @@ export default defineComponent({
 				filter(val: string, prodId: number): boolean {
 					return services.data.tables.produits.value[prodId]?.Code?.toLowerCase().indexOf(val.toLowerCase()) !== -1
 				},
-				action(ctx){
+				action(ctx) {
 					$load(undefined, ctx.product.ID)
 				}
 			},
@@ -161,7 +161,7 @@ export default defineComponent({
 				filter(val: string, prodId: number, oaId?: number): boolean {
 					return String(oaId).startsWith(val)
 				},
-				action(ctx){
+				action(ctx) {
 					if ('oa' in ctx)
 						$load(ctx.oa.ID, ctx.product.ID)
 				}
@@ -412,7 +412,7 @@ export default defineComponent({
 				
 				table.forEach((v, i) => {
 					const f = table[i];
-					if (f.sub===0)
+					if (f.sub === 0)
 						cols[i][0] = {
 							val: f.val(line),
 							ctx: line
@@ -448,13 +448,13 @@ export default defineComponent({
 			table,
 			lines, len, page,
 			
-			family: computed(()=>Object.keys(productsGroups.value)[page.value])
+			family: computed(() => Object.keys(productsGroups.value)[page.value])
 		};
 	}
 });
 
-function timed<T>(name:string,fn:()=>T):()=>T{
-	return ()=>{
+function timed<T>(name: string, fn: () => T): () => T {
+	return () => {
 		logger.time(name);
 		const result = fn();
 		logger.timeEnd(name);
@@ -473,13 +473,13 @@ function timed<T>(name:string,fn:()=>T):()=>T{
 	white-space: nowrap;
 }
 
-.action-spacer{
+.action-spacer {
 	display: inline-block;
 	width: 2rem;
 	height: 1rem;
 	margin-top: .5rem;
 	
-	.action{
+	.action {
 		position: absolute;
 		
 		left: 2px;
@@ -509,9 +509,10 @@ table {
 		border-top: solid 1px black;
 	}
 	
-	td{
+	td {
 		position: relative;
-		>span{
+		
+		> span {
 			line-height: 2rem
 		}
 	}

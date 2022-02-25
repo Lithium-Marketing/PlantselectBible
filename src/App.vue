@@ -46,7 +46,6 @@ import HelloWorld from "@/components/HelloWorld";
 import {useStore} from "vuex";
 import Menu from "@/components/Menu";
 import LoadingBar from "@/components/LoadingBar";
-import moment from "moment";
 import {useServices} from "@/services";
 import Fatals from "@/components/Fatals";
 import ButtonConfirm from "@/components/ButtonConfirm";
@@ -63,15 +62,15 @@ export default defineComponent({
 	setup() {
 		const store = useStore();
 		const services = useServices();
-
+		
 		const isDev = process.env.NODE_ENV === "development";
-
+		
 		const loading = ref(false);
 		const lastJobs = ref({});
 		watchEffect(() => {
 			if (!Object.entries(services.job.running.value).length && !loading.value)
 				lastJobs.value = {};
-
+			
 			Object.entries(services.job.running.value).forEach(([name, percent]) => {
 				if (lastJobs.value[name] === undefined)
 					loading.value = true;
@@ -82,13 +81,13 @@ export default defineComponent({
 					lastJobs.value[k] = 1;
 			})
 		});
-
+		
 		return {
 			fatalError: services.fatals,
-			clearAll(){
+			clearAll() {
 				localStorage.clear();
 			},
-			copy(){
+			copy() {
 				navigator.clipboard.writeText(services.logs.json())
 			},
 			
@@ -96,14 +95,14 @@ export default defineComponent({
 			closeLoading() {
 				loading.value = false;
 			},
-
+			
 			loadingDone: computed(() => {
 				return true
 			}),
 			progresses: computed(() => Object.entries(lastJobs.value)),
-
+			
 			version: isDev ? "dev" : "N/D",
-
+			
 			logs: computed(() => {
 				return ["TODO"]
 			}),
@@ -122,21 +121,21 @@ export default defineComponent({
 	border-radius: 5px;
 	box-sizing: border-box;
 	margin-inline: 1rem;
-
+	
 	li {
 		text-align: left;
 	}
 }
 
-.fatals{
+.fatals {
 	padding: 1rem;
 	margin: 0;
 	
-	.fatal{
+	.fatal {
 		padding: 1rem;
 		color: darkred;
 		
-		pre{
+		pre {
 			text-align: left;
 		}
 	}

@@ -1,6 +1,6 @@
 <template>
 	<div class="about">
-
+		
 		<div class="row">
 			<div>
 				<h2>Configuration</h2>
@@ -17,7 +17,7 @@
 					</tr>
 				</table>
 			</div>
-
+			
 			<div>
 				<h2>Statistique</h2>
 				<table class="stat">
@@ -40,7 +40,7 @@
 				</table>
 			</div>
 		</div>
-
+		
 		<h2>Versions</h2>
 		<table>
 			<tr v-for="(version,name) in versions">
@@ -56,8 +56,6 @@
 import {computed, defineComponent, ref} from "vue";
 import {useStore} from "vuex";
 import {StoreState} from "@/store";
-import {Modification} from "@/helper/Modifications";
-import {toText} from "@/helper/Const";
 import {useMyServices} from "@/config/dataConfig";
 
 export default defineComponent({
@@ -67,10 +65,10 @@ export default defineComponent({
 		const versions = ref(process.versions);
 		const store = useStore<StoreState>();
 		const service = useMyServices();
-
+		
 		return {
 			versions,
-
+			
 			ipp: computed({
 				get() {
 					return store.state.settings.ipp;
@@ -87,7 +85,7 @@ export default defineComponent({
 					service.data.mysqlLogin.value = JSON.parse(val);
 				}
 			}),
-
+			
 			productsLen: computed(() => Object.entries(store.state._.products).length),
 			oasLen: computed(() => Object.entries(store.state._.oas).length),
 			pricesLen: computed(() => Object.entries(store.state._.prices).length),

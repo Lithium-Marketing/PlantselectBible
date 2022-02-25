@@ -14,7 +14,7 @@ import moment from "moment";
 
 export default {
 	name: "TableInput2",
-	props: ["table", "entityId", "field", "createInfo", "type","len"],
+	props: ["table", "entityId", "field", "createInfo", "type", "len"],
 	emits: ["change"],
 	setup(props, {emit}) {
 		const services = useMyServices();
@@ -39,13 +39,13 @@ export default {
 			show: computed(() => (value.value !== undefined && value.value !== null) || !!props.createInfo),
 			value,
 			
-			width: computed(() => props.len !== undefined ? props.len+"rem" : "4rem"),
+			width: computed(() => props.len !== undefined ? props.len + "rem" : "4rem"),
 			
-			toDate(val){
+			toDate(val) {
 				console.log(val);
 				return moment.unix(val).format('YYYY-MM-DD');
 			},
-			fromDate(val){
+			fromDate(val) {
 				return moment(val).unix()
 			}
 		}
@@ -64,7 +64,7 @@ input {
 	line-height: 1rem;
 	padding: 0.1rem;
 	
-	&[type=date]{
+	&[type=date] {
 		padding-right: 1rem;
 	}
 }

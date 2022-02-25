@@ -39,7 +39,7 @@ export default {
 		function isTabPanel(child: any): child is VNode {
 			return child?.type?.name === 'Tab'
 		}
-
+		
 		const tabs = ref<VNode[]>([]);
 		const def = slots.default();
 		def.forEach(child => {
@@ -48,27 +48,27 @@ export default {
 				}
 			}
 		);
-
+		
 		const d_activeIndex = ref(0);
 		watchEffect(() => {
 			d_activeIndex.value = props.activeIndex;
 		})
-
+		
 		return {
 			tabs,
-
+			
 			d_activeIndex,
 			onTabClick(event, i) {
 				if (i !== this.d_activeIndex) {
 					d_activeIndex.value = i;
 					emit('update:activeIndex', i)
-
+					
 					emit('tab-change', {
 						originalEvent: event,
 						index: i
 					});
 				}
-
+				
 				emit('tab-click', {
 					originalEvent: event,
 					index: i
@@ -91,20 +91,20 @@ export default {
 		margin: 0;
 		padding-left: 0;
 		align-content: start;
-
+		
 		li {
 			border: 1px solid black;
 			padding: .3rem;
 			border-top-right-radius: 1rem;
 			border-top-left-radius: 5px;
-
+			
 			&.active {
 				background-color: #cccccc;
 			}
 		}
-
+		
 	}
-
+	
 	.panels {
 		border: 1px solid black;
 	}

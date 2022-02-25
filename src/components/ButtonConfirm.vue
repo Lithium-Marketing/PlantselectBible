@@ -20,7 +20,7 @@ export default {
 			return "";
 		});
 		const confirm = ref(false);
-
+		
 		const tick = delay(() => {
 			confirm.value = true;
 		}, () => {
@@ -28,7 +28,7 @@ export default {
 		}, () => {
 			confirm.value = false;
 		})
-
+		
 		return {
 			btnClasses,
 			confirm,
@@ -51,13 +51,13 @@ function delay(start, done, reset) {
 	return function () {
 		if (timer)
 			clearTimeout(timer);
-
+		
 		if (_reset)
 			_reset();
 		_reset = reset;
-
+		
 		start();
-
+		
 		timer = setTimeout(() => {
 			_reset = false;
 			timer = false;

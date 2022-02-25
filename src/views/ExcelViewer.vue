@@ -2,7 +2,7 @@
 	<div style="flex-grow: 1">
 		<LoadingBar v-if="loading" :progress="-1"/>
 		<iframe v-else :src='src' width='100%' style="height: 80vh" frameborder='0'>
-
+		
 		</iframe>
 	</div>
 </template>
@@ -17,13 +17,13 @@ export default {
 	components: {LoadingBar},
 	setup(props, {}) {
 		const route = useRoute();
-
+		
 		const loading = ref(false);
 		// "https://file-examples-com.github.io/uploads/2017/02/file_example_XLS_10.xls"
 		const src = computed(() => {
 			return route.params.file
 		});
-
+		
 		return {
 			loading,
 			src: computed(() => {

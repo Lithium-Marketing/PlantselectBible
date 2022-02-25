@@ -1,6 +1,6 @@
 <template>
 	<div class="home">
-
+		
 		<Tabs :activeIndex="1" style="width: 90vw">
 			<Tab header="Stats">
 				<table class="stat">
@@ -38,10 +38,10 @@
 				</div>
 			</Tab>
 			<Tab header="DebugRaw">
-				<pre style="text-align: left">{{JSON.stringify($services.modification.raw, undefined, 2)}}</pre>
+				<pre style="text-align: left">{{ JSON.stringify($services.modification.raw, undefined, 2) }}</pre>
 			</Tab>
 			<Tab header="DebugResult">
-				<pre style="text-align: left">{{JSON.stringify($services.modification.results, undefined, 2)}}</pre>
+				<pre style="text-align: left">{{ JSON.stringify($services.modification.results, undefined, 2) }}</pre>
 			</Tab>
 		</Tabs>
 	</div>
@@ -61,7 +61,6 @@ import {Modification} from "@/helper/Modifications";
 import {toText} from "@/helper/Const";
 import ModificationsPanel from "@/components/ModificationsPanel.vue";
 import {useMyServices} from "@/config/dataConfig";
-import { SaveService } from '@/services/saveService';
 
 export default defineComponent({
 	name: 'Home',
@@ -69,21 +68,21 @@ export default defineComponent({
 	setup() {
 		const store = useStore<StoreState>();
 		const services = useMyServices();
-
+		
 		const saves = ref<any>([]);
 		
 		const refreshing = ref(false);
 		
-		async function refresh(){
+		async function refresh() {
 			refreshing.value = true;
-			try{
-				saves.value = (await services.save.getSaves()).map(s=>{
+			try {
+				saves.value = (await services.save.getSaves()).map(s => {
 					return {
 						...s,
 						Date: moment(s.Date).format('lll')
 					};
 				});
-			}finally {
+			} finally {
 				refreshing.value = false;
 			}
 		}
@@ -91,10 +90,10 @@ export default defineComponent({
 		return {
 			saves,
 			refresh, refreshing,
-			load(save){
+			load(save) {
 				services.modification.fromJSON(save.Data)
 			},
-			async del(save){
+			async del(save) {
 				await services.save.delSave(save.ID);
 				await refresh();
 			},
@@ -115,25 +114,25 @@ function setupScroll(loadMorePosts) {
 	onMounted(() => {
 		window.addEventListener("scroll", handleScroll)
 	})
-
+	
 	onUnmounted(() => {
 		window.removeEventListener("scroll", handleScroll)
 	})
-
+	
 	let isCalled = false;
 	const handleScroll = async () => {
 		if (isCalled)
 			return;
 		isCalled = true;
-
+		
 		let element = scrollComponent.value;
 		let limit = 20;
 		while (element && element.getBoundingClientRect().bottom < window.innerHeight && limit-- > 0)
 			await loadMorePosts()
-
+		
 		isCalled = false;
 	}
-
+	
 	const scrollComponent = ref(null);
 	watch(scrollComponent, () => {
 		handleScroll();
@@ -150,47 +149,47 @@ function setupScroll(loadMorePosts) {
 	flex-direction: column;
 	justify-content: center;
 	align-items: center;
-
+	
 	.saves {
 		width: 100%;
-
+		
 		table {
 			width: 100%;
 		}
-
+		
 		//td {
 		//	width: 100%;
 		//}
-
+		
 		td:nth-child(1) {
 			display: flex;
 			width: unset;
-
+			
 			button:nth-child(1) {
 				flex-grow: 1;
 			}
 		}
-
+		
 		tr:nth-child(1) {
 			background-color: #ccc;
 		}
 	}
-
+	
 	.stat {
 		border-collapse: collapse;
 		border: 1px solid #f2f2f2;
-
+		
 		tr {
 			border-bottom: 1px solid #f2f2f2;
 		}
-
+		
 		td {
 			padding: .5rem;
 			border-left: 1px solid #f2f2f2;
 		}
 	}
-
-
+	
+	
 }
 
 </style>

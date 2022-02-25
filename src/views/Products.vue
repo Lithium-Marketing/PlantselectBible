@@ -85,15 +85,15 @@ export default defineComponent({
 	},
 	setup() {
 		const store = useStore();
-
+		
 		const variSearch = ref("");
-
+		
 		const allProducts = computed(() => {
 			const prod = Object.values(store.state._.products);
-
+			
 			if (variSearch.value === "")
 				return prod;
-
+			
 			const match = new RegExp(variSearch.value.toLowerCase())
 			return prod.filter((prod: any) => {
 				return match.test(prod.Variete?.toLowerCase())
@@ -101,19 +101,19 @@ export default defineComponent({
 		});
 		const productPage = ref(0);
 		const len = computed(() => store.state.settings.ipp);
-
+		
 		watch([variSearch], () => productPage.value = 0)
-
+		
 		return {
 			products: computed(() => allProducts.value.slice(len.value * productPage.value, len.value * (productPage.value + 1))),
 			oas: computed(() => store.state._.oas),
 			loading: computed(() => store.state.loading),
-
+			
 			productPage,
 			productPageLen: computed(() => Math.ceil(allProducts.value.length / len.value)),
-
+			
 			variSearch,
-
+			
 		};
 	}
 });
@@ -132,12 +132,12 @@ export default defineComponent({
 	list-style: none;
 	display: flex;
 	justify-content: center;
-
+	
 	button {
 		padding: .5rem;
 		margin: .2rem;
 		font-size: 1.3rem;
-
+		
 		&:not(:disabled) {
 			cursor: pointer;
 		}

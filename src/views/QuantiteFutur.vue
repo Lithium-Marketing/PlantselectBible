@@ -101,7 +101,7 @@ export default defineComponent({
 		watchEffect(() => {
 			logger.time("page");
 			
-			const products = Object.values(services.data.tables.produits.value).filter(p=>{
+			const products = Object.values(services.data.tables.produits.value).filter(p => {
 				const lower = filter.value.toLowerCase();
 				return p.Code?.toLowerCase().indexOf(lower) !== -1 || p.Variete?.toLowerCase().indexOf(lower) !== -1
 			}).sort((a, b) => {
@@ -171,11 +171,11 @@ export default defineComponent({
 					table: "achats_futur",
 				}, "Creation Achat Futur");
 			},
-			del(achat){
-				services.modification.mod('delete',{
+			del(achat) {
+				services.modification.mod('delete', {
 					table: "achats_futur",
 					id: achat.ID
-				},"Delete Achat Futur")
+				}, "Delete Achat Futur")
 			}
 		}
 	}
@@ -184,7 +184,7 @@ export default defineComponent({
 
 <style scoped>
 
-.achatfutur td{
+.achatfutur td {
 	padding: .5rem;
 }
 
@@ -192,7 +192,7 @@ export default defineComponent({
 	border-top: solid 1px black;
 }
 
-.product{
+.product {
 	margin-top: 2rem;
 }
 

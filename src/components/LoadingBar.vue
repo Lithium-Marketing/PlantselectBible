@@ -26,7 +26,7 @@ export default {
 	overflow: hidden;
 	text-align: center;
 	background-color: #f2f2f2;
-
+	
 	strong {
 		position: relative;
 		line-height: 1.5rem;
@@ -34,7 +34,7 @@ export default {
 		color: #000;
 		text-shadow: 0 0 2px #fff;
 	}
-
+	
 	span {
 		position: absolute;
 		height: 100%;
@@ -42,7 +42,7 @@ export default {
 		background-color: #8daa26;
 		top: 0;
 		z-index: 0;
-
+		
 		&.inf {
 			width: 100%;
 			height: 50%;

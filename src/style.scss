@@ -95,11 +95,11 @@ body {
 		}
 	}
 	
-	.btn-loading{
+	.btn-loading {
 		position: relative;
 		color: #0000;
 		
-		&:after{
+		&:after {
 			content: "";
 			position: absolute;
 			width: 16px;
