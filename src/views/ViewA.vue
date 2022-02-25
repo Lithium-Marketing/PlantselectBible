@@ -20,15 +20,8 @@
 			<tbody>
 			<template v-for="line in lines">
 				<tr :class="line.classes">
-					<template v-for="row in line.rows">
-						<td :rowspan="row.rowSpan">
-							<div v-if="row.action && row.val !== undefined" class="action-spacer">
-								<button class="action" @click="row.action">&#9998;</button>
-							</div>
-							<span v-if="!row.edit">{{ row.val }}</span>
-							<TableInput2 v-else v-bind="row.val"/>
-						</td>
-					</template>
+					<Cell v-for="cell in line.cells" v-bind="cell">
+					</Cell>
 				</tr>
 			</template>
 			</tbody>
@@ -47,6 +40,7 @@ import moment from "moment";
 import {LogService} from "@/services/logService";
 import {$date, $load, $pastTitle, $value, $valueI, currentYear, PricesId} from "@/helper/Const";
 import TableInput2 from "@/components/TableInput2.vue";
+import Cell from "@/components/Cell.vue";
 
 const logger = LogService.logger({name: "ViewA2"})
 
@@ -88,6 +82,7 @@ type Table = TableF[];
 export default defineComponent({
 	name: 'ViewA2',
 	components: {
+		Cell,
 		TableInput2,
 		TableInput,
 		Pagination
@@ -424,7 +419,7 @@ export default defineComponent({
 					lines.value.push({
 						classes: y === 0 ? "top" : "",
 						
-						rows: cols.map((c, i) => {
+						cells: cols.map((c, i) => {
 							if (!table[i].sub && y !== 0)
 								return false;
 							return {
