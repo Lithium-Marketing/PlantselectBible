@@ -2,7 +2,7 @@
 	<div class="home">
 		<Pagination v-model:page="page" v-model:len="len"/>
 		<h1>{{ product.Variete }}</h1>
-		<h2>{{ product.Code }}</h2>
+		<h2 :class="product.Color">{{ product.Code }}</h2>
 		<input v-model="filter">
 		<table class="product" style="width: 100%">
 			<thead>
