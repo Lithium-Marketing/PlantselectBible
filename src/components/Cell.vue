@@ -53,19 +53,27 @@ ContextMenu.addInSetup((x, y) => {
 	width: 2rem;
 	height: 1rem;
 	margin-top: .5rem;
-
-.action {
-	position: absolute;
 	
-	left: 2px;
-	top: 50%;
-	transform: translateY(-50%);
-	
-	border-radius: 1rem;
-	padding: .3rem .4rem;
-	font-size: .8rem;
-	
-	margin: 0;
+	.action {
+		position: absolute;
+		
+		left: 2px;
+		top: 50%;
+		transform: translateY(-50%);
+		
+		border-radius: 1rem;
+		padding: .3rem .4rem;
+		font-size: .8rem;
+		
+		margin: 0;
+	}
 }
+
+td {
+	position: relative;
+	
+	> span {
+		line-height: 2rem
+	}
 }
 </style>

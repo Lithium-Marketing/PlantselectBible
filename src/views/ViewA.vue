@@ -506,14 +506,6 @@ table {
 	.top td {
 		border-top: solid 1px black;
 	}
-	
-	td {
-		position: relative;
-		
-		> span {
-			line-height: 2rem
-		}
-	}
 }
 
 .tooltip {
