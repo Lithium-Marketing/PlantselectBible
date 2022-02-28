@@ -276,12 +276,12 @@ export default defineComponent({
 			},
 			{
 				name: $pastTitle.years_pastA0,
-				sub: 1,
+				sub: 0,
 				val: (line) => line.achat.years_pastA0
 			},
 			{
 				name: $pastTitle.years_pastA1,
-				sub: 1,
+				sub: 0,
 				val: (line) => line.achat.years_pastA1
 			},
 			{
