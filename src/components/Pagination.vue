@@ -11,7 +11,7 @@
 		<li>
 			<button @click="edit=true">
 				<span v-if="!edit">{{ page + 1 }}/{{ len }}</span>
-				<input v-else :value="pageO" @change="pageO=$event.target.value" type="number" min="1" max="len" ref="input" @focusout="edit=false">
+				<input v-else :value="pageO" @change="pageO=$event.target.value" type="number" min="1" max="len" ref="input" @focusout="edit=false" style="width: 5rem">
 			</button>
 		</li>
 		
@@ -42,7 +42,10 @@ export default defineComponent({
 		const input = ref<HTMLInputElement>(null);
 		watch(edit, () => {
 			if (edit.value)
-				nextTick(() => input.value.focus())
+				nextTick(() => {
+					input.value.focus()
+					input.value.select()
+				})
 		})
 		
 		return {
