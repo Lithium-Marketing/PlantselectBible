@@ -31,11 +31,6 @@ const modText = {
 	
 }
 
-const changeType = {
-	mod: "Modification",
-	create: "Création"
-}
-
 const text = {
 	...colorText,
 	...modText
@@ -55,27 +50,25 @@ export const currentYear = moment().add(7, "month").year();
 
 ////
 
-const year = moment().add(7, 'M').year();
-
 export const $pastTitle = {
-	years_pastM0: "Mort " + year,
-	years_pastM1: "Mort " + (year - 1),
-	years_pastM2: "Mort " + (year - 2),
-	years_pastVe0: "Vente " + year,
-	years_pastVe1: "Vente " + (year - 1),
-	years_pastVe2: "Vente " + (year - 2),
-	years_pastA0: "Achat " + year,
-	years_pastA1: "Achat " + (year - 1),
-	years_pastA2: "Achat " + (year - 2),
-	years_pastV0: "Vendant " + year,
-	years_pastV1: "Vendant " + (year - 1),
-	years_pastV2: "Vendant " + (year - 2),
-	years_pastT0: "Transport " + year,
-	years_pastT1: "Transport " + (year - 1),
-	years_pastT2: "Transport " + (year - 2),
-	years_pastC0: "Coutant " + year,
-	years_pastC1: "Coutant " + (year - 1),
-	years_pastC2: "Coutant " + (year - 2),
+	years_pastM0: "Mort " + currentYear,
+	years_pastM1: "Mort " + (currentYear - 1),
+	years_pastM2: "Mort " + (currentYear - 2),
+	years_pastVe0: "Vente " + currentYear,
+	years_pastVe1: "Vente " + (currentYear - 1),
+	years_pastVe2: "Vente " + (currentYear - 2),
+	years_pastA0: "Achat " + currentYear,
+	years_pastA1: "Achat " + (currentYear - 1),
+	years_pastA2: "Achat " + (currentYear - 2),
+	years_pastV0: "Vendant " + currentYear,
+	years_pastV1: "Vendant " + (currentYear - 1),
+	years_pastV2: "Vendant " + (currentYear - 2),
+	years_pastT0: "Transport " + currentYear,
+	years_pastT1: "Transport " + (currentYear - 1),
+	years_pastT2: "Transport " + (currentYear - 2),
+	years_pastC0: "Coutant " + currentYear,
+	years_pastC1: "Coutant " + (currentYear - 1),
+	years_pastC2: "Coutant " + (currentYear - 2),
 }
 export const $money = (val) => {
 	return val ? (parseFloat(val).toFixed(2) + "$") : "-";
@@ -101,7 +94,6 @@ export const $load = (oaID, prodID, tab = 'product') => {
 };
 
 export function Const(app: App, ...options: any[]): any {
-	const year = moment().add(7, 'M').year();
 	app.config.globalProperties.$pastTitle = $pastTitle;
 	app.config.globalProperties.$money = $money;
 	app.config.globalProperties.$value = $value;
