@@ -107,30 +107,6 @@ export default defineComponent({
 		const services = useMyServices();
 		const tableRef = ref<HTMLTableElement | undefined>();
 		
-		ContextMenu.addInSetup((x, y) => {
-			
-			const table = tableRef.value;
-			if (!table)
-				return false;
-			
-			for (const row of table.tBodies[0].rows) {
-				
-				const rect = row.getBoundingClientRect();
-				if (rect.left < x && rect.right > x)
-					if (rect.top < y && rect.bottom > y) {
-						
-						//const menu = Menu.buildFromTemplate(ColorMenu(store, modifications, row))
-						// menu.popup({
-						// 	x, y
-						// });
-						
-						return true;
-					}
-			}
-			
-			return false;
-		})
-		
 		const search = reactive({});
 		
 		const table: Table = [
