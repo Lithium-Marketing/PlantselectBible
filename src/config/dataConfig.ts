@@ -195,6 +195,7 @@ export interface MyTablesDef extends TablesDef {
 		Code
 		EtiquetteText
 		Commande
+		Color
 	}
 	prix: {
 		Date

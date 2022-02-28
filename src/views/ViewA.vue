@@ -176,7 +176,8 @@ export default defineComponent({
 				action(ctx) {
 					if ('oa' in ctx)
 						$load(ctx.oa.ID, ctx.product.ID)
-				}
+				},
+				color: color("ordres_assemblages", "Color", (ctx) => ctx && 'oa' in ctx && ctx.oa.ID)
 			},
 			{
 				name: "Coutant Futur",
