@@ -87,6 +87,7 @@ export default defineComponent({
 	list-style: none;
 	display: flex;
 	justify-content: center;
+	padding-inline-start: 0;
 	
 	button {
 		font-size: 1.2rem;
