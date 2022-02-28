@@ -203,7 +203,8 @@ export default defineComponent({
 					'create-info': {
 						Produit: line.product.ID
 					}
-				})
+				}),
+				color: color("produits", "Color_V0", (ctx) => ctx.product.ID)
 			},
 			{
 				name: $pastTitle.years_pastC0,
@@ -268,7 +269,8 @@ export default defineComponent({
 			{
 				name: "Inv.",
 				sub: 0,
-				val: (line) => services.data.raw.vue_inventaire.value[line.product.ID]?.Quantite
+				val: (line) => services.data.raw.vue_inventaire.value[line.product.ID]?.Quantite,
+				color: color("produits", "Color_Inv", (ctx) => ctx.product.ID)
 			},
 			{
 				name: "Prevision",
@@ -278,7 +280,8 @@ export default defineComponent({
 			{
 				name: $pastTitle.years_pastA0,
 				sub: 0,
-				val: (line) => line.achat.years_pastA0
+				val: (line) => line.achat.years_pastA0,
+				color: color("produits", "Color_A0", (ctx) => ctx.product.ID)
 			},
 			{
 				name: $pastTitle.years_pastA1,

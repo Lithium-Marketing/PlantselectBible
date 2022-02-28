@@ -256,6 +256,9 @@ export interface MyTablesDef extends TablesDef {
 		Nouveau
 		Modifier
 		Valeur
+		Color_Inv
+		Color_A0
+		Color_V0
 	}
 	produits_prix: {
 		Date
