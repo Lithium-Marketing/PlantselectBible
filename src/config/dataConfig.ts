@@ -79,6 +79,7 @@ export interface MyTablesDef extends TablesDef {
 		qty
 		matiere
 		reception
+		color
 	}
 	Archive
 	bible: {

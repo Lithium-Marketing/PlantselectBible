@@ -58,9 +58,7 @@
 				</thead>
 				<tbody>
 				<tr v-for="achat in achats">
-					<td>
-						<TableInput2 table="achats_futur" field="qty" :entity-id="achat.ID"/>
-					</td>
+					<Cell :edit="true" :val="{table:'achats_futur',field:'qty',entityId:achat.ID}" :color="{table:'achats_futur',field:'color',entityId:achat.ID}"/>
 					<td>{{ achat.info }}</td>
 					<td>
 						<TableInput2 type="date" len="20" table="achats_futur" field="reception" :entity-id="achat.ID"/>
@@ -83,12 +81,13 @@ import Pagination from "@/components/Pagination.vue";
 import {LogService} from "@/services/logService";
 import moment from "moment";
 import TableInput2 from "@/components/TableInput2.vue";
+import Cell from "@/components/Cell.vue";
 
 const logger = LogService.logger({name: "QuantiteFutur"})
 
 export default defineComponent({
 	name: "QuantiteFutur",
-	components: {TableInput2, Pagination, TableInput},
+	components: {Cell, TableInput2, Pagination, TableInput},
 	setup() {
 		const services = useMyServices();
 		
