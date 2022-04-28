@@ -13,7 +13,7 @@
 					</tr>
 					<tr>
 						<td>Chaine de connexion:</td>
-						<td><input v-model="mysqlLogin"></td>
+						<td><input :value="getMysqlLogin()" @change="updateMysqlLogin($event.target.value)"></td>
 					</tr>
 				</table>
 			</div>
@@ -61,13 +61,27 @@ import {useMyServices} from "@/config/dataConfig";
 export default defineComponent({
 	name: 'About',
 	components: {},
+  data(){
+    return {
+      mysqlLogin: String
+    }
+  },
 	setup() {
 		const versions = ref(process.versions);
 		const store = useStore<StoreState>();
 		const service = useMyServices();
-		
+
+    function updateMysqlLogin(val){
+      service.data.mysqlLogin.value = JSON.parse(val);
+    }
+    function getMysqlLogin(){
+      return service.data.mysqlLogin.value ? JSON.stringify(service.data.mysqlLogin.value) : JSON.stringify({});
+    }
+
 		return {
 			versions,
+      updateMysqlLogin,
+      getMysqlLogin,
 			
 			ipp: computed({
 				get() {
