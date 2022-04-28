@@ -16,6 +16,15 @@ const logger = LogService.logger({name: "main"})
 ContextMenu.init();
 moment.locale('fr');
 
+if(!store.state.mysqlLogin.host&&process.env.VUE_APP_DB_HOST){
+	store.state.mysqlLogin = {
+		database: process.env.VUE_APP_DB_NAME,
+		user: process.env.VUE_APP_DB_USR,
+		password: process.env.VUE_APP_DB_PWD,
+		host: process.env.VUE_APP_DB_HOST
+	};
+}
+
 (async function () {
 	const stateRaw = localStorage.getItem('state');
 	const stateDeltaRaw = localStorage.getItem('stateDelta');

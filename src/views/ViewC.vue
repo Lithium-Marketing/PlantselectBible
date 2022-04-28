@@ -111,7 +111,7 @@
 					<td :class="line.c?.a0">{{ $valueI(line.achat.years_pastA0) }}</td>
 					<td>{{ $valueI(line.achat.years_pastA1) }}</td>
 					<td :class="line.c?.dateReception">{{ $date(line.oa?.Date_reception) }}</td>
-					<td>{{ $valueI(line.Quantite_recu) }}/{{ $valueI(line.oa?.Quantite_recevoir) }}</td>
+					<td>{{ $valueI(line.oa?.Quantite_recu) }}/{{ $valueI(line.oa?.Quantite_recevoir) }}</td>
 					<td>{{ $valueI(line.years_pastVe0) }}</td>
 					<td>{{ $valueI(line.years_pastVe1) }}</td>
 					<td>{{ $valueI(line.years_pastVe2) }}</td>
