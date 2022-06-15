@@ -93,9 +93,11 @@ export class DataService<T extends TablesDef, C extends TableConfigs<T>> {
 			});
 			return a;
 		}, {} as Record<keyof T, ComputedRef<Record<number, any>>>)
-		
+
+
 		//this.tablesRaw = this._initRawDatas();
 		this.tablesSchema = this._initSchema();
+
 		this.indexesByTable = Object.keys(tables).reduce((a, t) => {
 			const table = t as keyof T;
 			a[t] = {};
@@ -145,8 +147,8 @@ export class DataService<T extends TablesDef, C extends TableConfigs<T>> {
 			const promise = (async () => {
 				this.tablesSchema[table].value = await this.refreshSchema(table);
 				
-				const sql = this.tablesConfig[table].sql ?? `SELECT *
-				                                             FROM ${table}`;
+				const sql = this.tablesConfig[table].sql ?? `SELECT * FROM ${table}`;
+
 				logger.log(table, this.tablesConfig[table]);
 				const register = (() => {
 					const key = this.tablesConfig[table].key;
@@ -164,6 +166,7 @@ export class DataService<T extends TablesDef, C extends TableConfigs<T>> {
 				})();
 				
 				const result = ((await this.conn.query(sql))[0] as any[]).reduce(register, {});
+
 				
 				this.raw[table as keyof T].value = result;
 				

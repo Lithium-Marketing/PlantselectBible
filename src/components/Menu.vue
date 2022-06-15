@@ -21,6 +21,8 @@
 			<span>|</span>
 			<router-link to="/viewB">View B</router-link>
 			<span>|</span>
+      <router-link to="/viewD">View D</router-link>
+      <span>|</span>
 			<router-link to="/futur">Qty. Futur</router-link>
 		</div>
 	</div>

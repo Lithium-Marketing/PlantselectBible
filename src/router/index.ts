@@ -8,6 +8,7 @@ import Tools from "@/views/Tools.vue";
 import ViewB from "@/views/ViewB.vue";
 import ExcelViewer from "@/views/ExcelViewer.vue";
 import ViewC from "@/views/ViewC.vue";
+import ViewD from "@/views/ViewD.vue";
 import QuantiteFutur from "@/views/QuantiteFutur.vue";
 
 const routes: Array<RouteRecordRaw> = [
@@ -32,6 +33,10 @@ const routes: Array<RouteRecordRaw> = [
 		name: 'ViewB',
 		component: ViewB
 	}, {
+		path: '/viewD',
+		name: 'ViewD',
+		component: ViewD
+	},{
 		path: '/futur',
 		name: 'Futur',
 		component: QuantiteFutur

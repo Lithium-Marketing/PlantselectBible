@@ -69,6 +69,9 @@ export const $pastTitle = {
 	years_pastC0: "Coutant " + currentYear,
 	years_pastC1: "Coutant " + (currentYear - 1),
 	years_pastC2: "Coutant " + (currentYear - 2),
+	years_past0: currentYear,
+	years_past1: (currentYear - 1),
+	years_past2: (currentYear - 2)
 }
 export const $money = (val) => {
 	return val ? (parseFloat(val).toFixed(2) + "$") : "-";
