@@ -1,21 +1,28 @@
 <template>
 	<div class="home">
 		<Pagination v-model:page="page" v-model:len="len"/>
-		<table class="product" ref="tableRef">
+    <table class="product" ref="tableRef">
 			<thead>
 			<tr>
         <template v-for="(column, key) of columns">
-          <th :class="column.class">
+          <th :class="column.class" :style="getColumnStyle(key)">
             <span v-html="column.name"></span>
           </th>
         </template>
 			</tr>
+      <tr>
+        <template v-for="(column, key) of columns">
+          <th :class="column.class" :style="getColumnStyle(key)">
+            <input v-if="column.search" v-model="search[column.search]"/>
+          </th>
+        </template>
+      </tr>
 			</thead>
-			<tbody>
-			<template v-for="line of lines" :key="line.oa?.ID">
-				<tr>
-          <template v-for="(column, key) of columns">
-          <td :class="column.class">
+			<tbody id="tBody">
+			<template v-for="(line,lkey) of lines" :key="line.oa?.ID">
+				<tr :style="getRowStyle(line)">
+          <template v-for="(column, ckey) of columns">
+          <td :class="column.class" :style="{backgroundColor:getBackgroundColor(ckey,line,column)}" @click.mouse.right="changeColor(lkey,ckey,line,column);">
 						  <template v-if="column.input">
                 <TableInput2 :table="column.input.table" :field="column.input.field" :entity-id="getColumnValue(column.input.id, line)"/>
               </template>
@@ -29,6 +36,13 @@
 			</tbody>
 		</table>
 		<Pagination v-model:page="page" v-model:len="len"/>
+    <div v-if="showColorPicker" class="colorPickerWraper">
+      <div>
+      <color-picker ref="colorpicker" color="selectedColor" @update:model-value="setSelectedColor($event)"></color-picker>
+      <button class="btn btn-primary" @click="setColor()">Sauvegarder</button>
+      <button class="btn btn-secondary" @click="closeColorPicker()">Annuler</button>
+      </div>
+    </div>
 	</div>
 </template>
 
@@ -38,6 +52,7 @@ import {Store, useStore} from "vuex";
 import {StoreState} from "@/store";
 import Pagination from "@/components/Pagination.vue";
 import TableInput from "@/components/TableInput.vue";
+import ColorPicker from "@/components/ColorPicker.vue";
 import {$pastTitle, currentYear, PricesId} from "@/helper/Const";
 import moment from "moment";
 import {LogService} from "@/services/logService";
@@ -48,41 +63,49 @@ const logger = LogService.logger({name: "ViewD"});
 
 export default defineComponent({
 	name: "ViewD",
-	components: {TableInput2, TableInput, Pagination},
+	components: {TableInput2, TableInput, Pagination,ColorPicker},
+  data(){
+    return {
+      freezeY: 0,
+      styles: [],
+      widths: [],
+      showColorPicker: false,
+      selectedColor: '#cccccc',
+      focusCell: {}
+    };
+  },
 	setup() {
 		const store = useStore<StoreState>();
 		const services = useMyServices();
     const currentYear = moment().year();
 
-    let columns = [
-        {name:"Code", key:'product.Code'},
-        {name:"Cultivars", key:'product.Variete'},
+    let columns = ref([
+        {name:"Code", key:'product.Code', search:'code'},
+        {name:"Cultivars", key:'product.Variete', search:'variete'},
         {name:"Format", key:"product.Format"},
         {name:"pw", key:"oa.PW"},
         {name:"OA", key:"oa.ID"},
-        {name:"Vendant "+(currentYear-2), key:"oa.Vendant_2"},
-        {name:"$ "+(currentYear-2), key:"oa.Coutant_2"},
-        {name:"Transport "+(currentYear-2), key:"oa.Transport_2"},
         {name:"Vendant "+(currentYear-1), key:"oa.Vendant_1"},
         {name:"$ "+(currentYear-1), key:"oa.Coutant_1"},
         {name:"Transport "+(currentYear-1), key:"oa.Transport_1"},
+        {name:"Vendant "+(currentYear), key:"oa.Vendant_0"},
         {name:"$ "+(currentYear), key:"oa.Coutant_0", input:{table:'produits_prix',field:'Prix',id:'mainPrice.ID'}},
+        {name:"Transport "+(currentYear), key:"oa.Transport_0"},
         {name:"Botanix "+(currentYear-1), key:"oa.Botanix_1", class:"botanix"},
-        {name:"Botanix "+(currentYear-1), key:"oa.Botanix_0", class:"botanix"},
-        {name:"Prix Botanix<br>"+(currentYear-1), key:"oa.Botanix_prix_0", class:"botanix"},
+        {name:"Botanix "+(currentYear), key:"oa.Botanix_0", class:"botanix"},
         {name:"Groupex "+(currentYear-1), key:"oa.Groupex_1", class:"groupex"},
-        {name:"Prix Groupex<br>"+(currentYear-1), key:"oa.Groupex_prix_0", class:"groupex"},
+        {name:"Groupex "+(currentYear), key:"oa.Groupex_0", class:"groupex"},
         {name:"Réservation", key:"oa.Reservation"},
-        {name:"Total inventaire<br>"+(currentYear-1), key:"oa.Inventaire"},
+        {name:"Inventaire total", key:"oa.Inventaire"},
         {name:"Format", key:"oa.MP_Format"},
+        {name:"Nbr. Sem.", key:"oa.Semaines"},
+        {name:"Mort", key:"oa.Mort"},
+        {name:"Reception", key:"oa.Reception"},
         {name:"Fournisseur", key:"oa.Fournisseur"},
-        {name:"Date prévue<br>reception", key:"oa.Reception"},
         {name:"Achat "+(currentYear), key:"oa.Achat_0"},
         {name:"Achat "+(currentYear)+"<br>Confirmer", key:"oa.Achat_confirm_0"},
-        {name:"Reception "+(currentYear), key:"oa.Reception"},
-        {name:"Vente "+currentYear, key:"oas.Vente_0"},
         {name:"Vente "+(currentYear-1), key:"oas.Vente_1"},
-        {name:"Vente "+(currentYear-2), key:"oas.Vente_2"},
+        {name:"Vente "+currentYear, key:"oas.Vente_0"},
         {name:"Localisation A", key:"oa.Localisations", index:"0"},
         {name:"Quantité A", key:"oa.Localisations_Quantite", index:"0"},
         {name:"Localisation B", key:"oa.Localisations", index:"1"},
@@ -92,18 +115,25 @@ export default defineComponent({
         {name:"Localisation D", key:"oa.Localisations", index:"3"},
         {name:"Quantité D", key:"oa.Localisations_Quantite", index:"3"},
         {name:"Quantité A+B+C+D", key:"oa.Quantite"},
-        {name:"Mort", key:"oa.Mort"},
-        {name:"Nbr. Sem.", key:"oa.Semaines"},
-        {name:"Ventes 16-17", key:"ventes.Semaine_16_17"},
-        {name:"Ventes 18-19", key:"ventes.Semaine_18_19"},
-        {name:"Ventes 20-21", key:"ventes.Semaine_20_21"},
-        {name:"Ventes 22-23", key:"ventes.Semaine_22_23"},
-        {name:"Ventes 24-25", key:"ventes.Semaine_24_25"},
-        {name:"Ventes 26-27", key:"ventes.Semaine_26_27"},
-        {name:"Ventes 28-30", key:"ventes.Semaine_28_30"},
-        {name:"Ventes 31-34", key:"ventes.Semaine_31_34"},
-        {name:"Ventes 35-38", key:"ventes.Semaine_35_38"},
-    ];
+        {name:"Ventes 16-17 "+(currentYear), key:"ventes.Semaine_16_17_0"},
+        {name:"Ventes 16-17 "+(currentYear-1), key:"ventes.Semaine_16_17_1"},
+        {name:"Ventes 18-19 "+(currentYear), key:"ventes.Semaine_18_19_0"},
+        {name:"Ventes 18-19 "+(currentYear-1), key:"ventes.Semaine_18_19_1"},
+        {name:"Ventes 20-21 "+(currentYear), key:"ventes.Semaine_20_21_0"},
+        {name:"Ventes 20-21 "+(currentYear-1), key:"ventes.Semaine_20_21_1"},
+        {name:"Ventes 22-23 "+(currentYear), key:"ventes.Semaine_22_23_0"},
+        {name:"Ventes 22-23 "+(currentYear-1), key:"ventes.Semaine_22_23_1"},
+        {name:"Ventes 24-25 "+(currentYear), key:"ventes.Semaine_24_25_0"},
+        {name:"Ventes 24-25 "+(currentYear-1), key:"ventes.Semaine_24_25_1"},
+        {name:"Ventes 26-27 "+(currentYear), key:"ventes.Semaine_26_27_0"},
+        {name:"Ventes 26-27 "+(currentYear-1), key:"ventes.Semaine_26_27_1"},
+        {name:"Ventes 28-30 "+(currentYear), key:"ventes.Semaine_28_30_0"},
+        {name:"Ventes 28-30 "+(currentYear-1), key:"ventes.Semaine_28_30_1"},
+        {name:"Ventes 31-34 "+(currentYear), key:"ventes.Semaine_31_34_0"},
+        {name:"Ventes 31-34 "+(currentYear-1), key:"ventes.Semaine_31_34_1"},
+        {name:"Ventes 35-38 "+(currentYear), key:"ventes.Semaine_35_38_0"},
+        {name:"Ventes 35-38 "+(currentYear-1), key:"ventes.Semaine_35_38_1"},
+    ]);
     //ajout des vente semaine
     /*const coli = 16;
     for (let i = 16; i < 27; i++) {
@@ -115,9 +145,10 @@ export default defineComponent({
         });
         i++;
     }*/
-		
+
 		const search = reactive({
-			variete: ""
+      variete: "",
+      code:""
 		});
 
     //console.log(Object.values(services.data.get("vue_bible_vueD").value));
@@ -135,7 +166,14 @@ export default defineComponent({
         const bibleByProd = services.data.indexesByTable.bible.Produit.value;
 
         return Object.values(services.data.get("produits").value).filter(p => {
-          return p.Variete?.toLowerCase()?.indexOf(search.variete.toLocaleLowerCase()) !== -1;
+          const s = search.variete||search.code;
+          const s1 = search.variete&&p.Variete?.toLowerCase()?.indexOf(search.variete.toLocaleLowerCase()) !== -1;
+          const s2 = search.code&&p.Code?.toLowerCase()?.indexOf(search.code.toLocaleLowerCase()) !== -1;
+          if(s){
+            console.log('search '+s1+' : '+s2);
+            return (s1 || s2);
+          }
+          return true;
         }).sort((a, b) => {
           return a.Type - b.Type || String(a.Variete).localeCompare(b.Variete) || a.Format - b.Format;
         }).flatMap(function allFlatMap(product) {
@@ -188,13 +226,13 @@ export default defineComponent({
         logger.timeEnd("all viewd");
       }
     });
-
-    console.log(all);
 		
 		const {len, ipp, lines, page} = table(all, store);
+    const bible = reactive({});
 		return {
       columns,
       search,
+      bible,
 			len, ipp, page,
       lines: computed(() => {
         try {
@@ -206,6 +244,16 @@ export default defineComponent({
 		};
 	},
     methods:{
+      updateBible(){
+        /*const services = useMyServices();
+        const bible = this.bible;
+        services.modification.mod("manual", {
+          bible,
+          id: 1,
+          table: "bible_vueD",
+          field: "Style"
+        }, "Note a" + (isProd ? "u produit" : " l'ordre d'assemblage"))*/
+      },
       getColumnValue(key: string, line: object, column: object = {}){
 
         let keys = [];
@@ -235,14 +283,120 @@ export default defineComponent({
             }
             return value;
           }catch {
-            console.log(value);
+            //console.log(value);
           }
           return value;
         }
         return '';
+      },
+      getColumnStyle(ckey,line,column){
+        let addon = this.styles[ckey];
+        if(line&&column&&line.oa){
+          const row_i = line.oa.ID;
+          const row = this.bible[row_i];
+          if(row&&row.color){
+            this.styles[ckey]['backgroundColor'] = row.color||'#fff';
+          }
+          if(row&&row[column.key]){
+            console.log(row_i+' : '+row);
+            this.styles[ckey]['backgroundColor'] = row[column.key]||'#fff';
+          }
+        }
+        console.log(this.styles[ckey]);
+        return this.styles[ckey];
+      },
+      getBackgroundColor(ckey,line,column){
+        let color = this.styles[ckey];
+        if(line&&column&&line.oa){
+          const row_i = line.oa.ID;
+          const row = this.bible[row_i];
+          if(row&&row.color){
+            color = row.color||'#fff';
+          }
+          if(row&&row[column.key]){
+            color = row[column.key]||'#fff';
+          }
+        }
+        console.log(color);
+        return color;
+      },
+      getRowStyle(line){
+        let addon = {};
+        /*if(line&&line.oa){
+          const row_i = line.oa.ID;
+          const row = this.bible[row_i];
+          if(row){
+            console.log('getRowStyle');
+            addon = {backgroundColor:row.color||'#fff'};
+            console.log(addon);
+          }
+        }*/
+        return addon;
+      },
+      setColumnW () {
+        let ths = this.$refs.tableRef.tHead.rows.item(0).cells;
+        for (let i = 0; i < ths.length; i++) {
+          let w = ths[i].clientWidth;
+          if(i==0){
+            this.styles[i] = {position:'sticky',left:'0px'};
+          }else if(i==1){
+            this.styles[i] = {position:'sticky',left:this.widths[0]+'px',boxShadow:'#000 1px 1px'};
+          }else{
+            this.styles[i] = {};
+          }
+          this.widths[i] = w;
+        }
+
+      },
+      changeColor(row_i,col_i,row,col){
+        this.focusCell = {
+          row_i:row_i,
+          col_i:col_i,
+          row:row,
+          col:col
+        };
+        //this.openColorPicker();
+        //this.$refs.colorpicker.color;
+      },
+      setColor(){
+        console.log(this.focusCell);
+        let isRow = false;
+        if(this.focusCell.col_i==0){
+          isRow = true;
+        }
+        if(this.focusCell.row.oa){
+          const code = this.focusCell.row.oa.ID;
+          const key = this.focusCell.col.key;
+          if(!this.bible[code]){
+            this.bible[code] = {};
+          }
+          if(isRow){
+            this.bible[code]['color'] = this.selectedColor;
+          }else{
+            this.bible[code][key] = this.selectedColor;
+          }
+          console.log(this.bible[code]);
+        }
+
+        //this.bible[]
+        this.focusCell = {};
+        this.closeColorPicker();
+      },
+      setSelectedColor(color){
+        console.log(color);
+        this.selectedColor = color;
+
+      },
+      openColorPicker(){
+        this.showColorPicker = true;
+      },
+      closeColorPicker(){
+        this.showColorPicker = false;
       }
     },
-
+    mounted () {
+      this.setColumnW();
+    }
 });
 
 function table(all: ComputedRef<any[]>, store: Store<StoreState>) {
@@ -263,12 +417,37 @@ function table(all: ComputedRef<any[]>, store: Store<StoreState>) {
 table{
   border-collapse: collapse;
 }
+
 th, td{
   border: #ccc 1px solid;
   padding: 5px;
 }
-th,td{
-  white-space: nowrap;
+th, td{
+  /*white-space: nowrap;*/
+  background-color: #FFFFFF;
+}
+th:focus, td:focus{
+  border: green 2px solid;
+}
+thead{
+  box-shadow: #000 1px 1px;
+}
+
+thead{
+  position: sticky;
+  left: 0px;
+  top: 0px;
+  z-index: 99;
+}
+tbody tr td:nth-child(0),
+tbody tr td:nth-child(1),
+thead tr th:nth-child(0),
+thead tr th:nth-child(1){
+  position: sticky;
+}
+tbody tr td:nth-child(0),
+thead tr th:nth-child(0){
+  left: 0px;
 }
 
 .botanix{
@@ -276,5 +455,22 @@ th,td{
 }
 .groupex{
   background-color: #FCE4D6;
+}
+
+.colorPickerWraper{
+  position: fixed;
+  background: #00000066;
+  width: 100%;
+  height: 100%;
+  left: 0px;
+  top: 0px;
+  z-index: 9998;
+}
+.colorPickerWraper > div{
+  position: fixed;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%,-50%);
+  z-index: 9999;
 }
 </style>

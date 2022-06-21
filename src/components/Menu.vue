@@ -11,7 +11,7 @@
 			<span>|</span>
 			<a href="#" @click.prevent="loading = true">Logs</a>
 			<span>|</span>
-			<strong :class="{pill:true,canUp: canUpdate}" @click.ctrl="update" :title="canUpdate?'Maintenir \'Ctrl\' et cliquez' : ''">{{ version }}</strong>
+			<strong :class="{pill:true,canUp: canUpdate}" @click="update" :title="canUpdate?'Maintenir \'Ctrl\' et cliquez' : ''">{{ version }}</strong>
 		</div>
 		
 		<div class="nav">
@@ -55,6 +55,10 @@ export default defineComponent({
 			canUpdate,
 			version: isDev ? "dev" : window.electronAPI.getVersion(),
 			update() {
+        const c = confirm('Voulez-vous faire la mise-à-jour ?');
+        if(!c){
+          return false;
+        }
 				window.electronAPI.quitAndInstall();
 			},
 			

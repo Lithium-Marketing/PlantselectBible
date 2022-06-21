@@ -1,5 +1,5 @@
 <template>
-	<ul class="pagination">
+	<ul class="pagination" id="pagination">
 		<li>
 			<button @click="page = 0" :disabled="page===0">&lt;&lt;</button>
 		</li>
@@ -88,6 +88,9 @@ export default defineComponent({
 	display: flex;
 	justify-content: center;
 	padding-inline-start: 0;
+  margin: 0px;
+  padding-top: 1em;
+  padding-bottom: 1em;
 	
 	button {
 		font-size: 1.2rem;

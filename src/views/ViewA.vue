@@ -513,4 +513,26 @@ table {
 	}
 }
 
+table{
+  border-collapse: collapse;
+}
+th, td{
+  border: #ccc 1px solid;
+  padding: 5px;
+}
+th{
+  /*white-space: nowrap;*/
+  background-color: #FFFFFF;
+}
+thead{
+  box-shadow: #000 1px 1px;
+}
+
+thead{
+  position: sticky;
+  left: 0px;
+  top: 0px;
+  z-index: 99;
+}
+
 </style>

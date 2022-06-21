@@ -294,5 +294,30 @@ function table(all: ComputedRef<any[]>, store: Store<StoreState>) {
 </script>
 
 <style scoped>
+table{
+  border-collapse: collapse;
+}
+th, td{
+  border: #ccc 1px solid;
+  padding: 5px;
+}
+th{
+  /*white-space: nowrap;*/
+  background-color: #FFFFFF;
+}
+thead{
+  box-shadow: #000 1px 1px;
+}
 
+thead{
+  position: sticky;
+  left: 0px;
+  top: 0px;
+  z-index: 99;
+}
+tbody tr td:nth-child(2),
+thead tr th:nth-child(2){
+  position: sticky;
+  left: 0px;
+}
 </style>
