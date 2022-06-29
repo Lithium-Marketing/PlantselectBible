@@ -1,4 +1,4 @@
-import {ipcRenderer} from "electron";
+import {ipcMain, ipcRenderer} from "electron";
 
 global.appRoot = window.appRoot = __dirname
 

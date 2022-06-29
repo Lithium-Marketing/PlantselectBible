@@ -4,15 +4,15 @@
     <table class="product" ref="tableRef">
 			<thead>
 			<tr>
-        <template v-for="(column, key) of columns">
-          <th :class="column.class" :style="getColumnStyle(key)">
+        <template v-for="(column, ckey) of columns">
+          <th :class="column.class" :style="{backgroundColor:getBackgroundColor(ckey,column),position:getPosition(ckey),left:getLeft(ckey)}"  @click.mouse.right="changeColor(0,ckey,{},column);">
             <span v-html="column.name"></span>
           </th>
         </template>
 			</tr>
       <tr>
-        <template v-for="(column, key) of columns">
-          <th :class="column.class" :style="getColumnStyle(key)">
+        <template v-for="(column, ckey) of columns">
+          <th :class="column.class" :style="{backgroundColor:getBackgroundColor(ckey,column),position:getPosition(ckey),left:getLeft(ckey)}">
             <input v-if="column.search" v-model="search[column.search]"/>
           </th>
         </template>
@@ -22,7 +22,7 @@
 			<template v-for="(line,lkey) of lines" :key="line.oa?.ID">
 				<tr :style="getRowStyle(line)">
           <template v-for="(column, ckey) of columns">
-          <td :class="column.class" :style="{backgroundColor:getBackgroundColor(ckey,line,column)}" @click.mouse.right="changeColor(lkey,ckey,line,column);">
+          <td :class="column.class" :style="{backgroundColor:getBackgroundColor(ckey,column,line),position:getPosition(ckey),left:getLeft(ckey)}" @click.mouse.right="changeColor(lkey,ckey,line,column);">
 						  <template v-if="column.input">
                 <TableInput2 :table="column.input.table" :field="column.input.field" :entity-id="getColumnValue(column.input.id, line)"/>
               </template>
@@ -58,6 +58,9 @@ import moment from "moment";
 import {LogService} from "@/services/logService";
 import {MyTablesDef, useMyServices} from "@/config/dataConfig";
 import TableInput2 from "@/components/TableInput2.vue";
+import axios from "axios";
+import {escape} from "mysql2";
+import {RowDataPacket} from "mysql2/promise";
 
 const logger = LogService.logger({name: "ViewD"});
 
@@ -71,7 +74,8 @@ export default defineComponent({
       widths: [],
       showColorPicker: false,
       selectedColor: '#cccccc',
-      focusCell: {}
+      focusCell: {},
+      bible:{}
     };
   },
 	setup() {
@@ -80,7 +84,6 @@ export default defineComponent({
     const currentYear = moment().year();
 
     let columns = ref([
-        {name:"Code", key:'product.Code', search:'code'},
         {name:"Cultivars", key:'product.Variete', search:'variete'},
         {name:"Format", key:"product.Format"},
         {name:"pw", key:"oa.PW"},
@@ -89,7 +92,7 @@ export default defineComponent({
         {name:"$ "+(currentYear-1), key:"oa.Coutant_1"},
         {name:"Transport "+(currentYear-1), key:"oa.Transport_1"},
         {name:"Vendant "+(currentYear), key:"oa.Vendant_0"},
-        {name:"$ "+(currentYear), key:"oa.Coutant_0", input:{table:'produits_prix',field:'Prix',id:'mainPrice.ID'}},
+        {name:"$ "+(currentYear), key:"oa.Coutant_0"},
         {name:"Transport "+(currentYear), key:"oa.Transport_0"},
         {name:"Botanix "+(currentYear-1), key:"oa.Botanix_1", class:"botanix"},
         {name:"Botanix "+(currentYear), key:"oa.Botanix_0", class:"botanix"},
@@ -104,8 +107,8 @@ export default defineComponent({
         {name:"Fournisseur", key:"oa.Fournisseur"},
         {name:"Achat "+(currentYear), key:"oa.Achat_0"},
         {name:"Achat "+(currentYear)+"<br>Confirmer", key:"oa.Achat_confirm_0"},
-        {name:"Vente "+(currentYear-1), key:"oas.Vente_1"},
-        {name:"Vente "+currentYear, key:"oas.Vente_0"},
+        {name:"Vente "+(currentYear-1), key:"oa.Vente_1"},
+        {name:"Vente "+currentYear, key:"oa.Vente_0"},
         {name:"Localisation A", key:"oa.Localisations", index:"0"},
         {name:"Quantité A", key:"oa.Localisations_Quantite", index:"0"},
         {name:"Localisation B", key:"oa.Localisations", index:"1"},
@@ -166,11 +169,14 @@ export default defineComponent({
         const bibleByProd = services.data.indexesByTable.bible.Produit.value;
 
         return Object.values(services.data.get("produits").value).filter(p => {
+          if(!oasByProd[p.ID]){
+            return false;
+          }
           const s = search.variete||search.code;
           const s1 = search.variete&&p.Variete?.toLowerCase()?.indexOf(search.variete.toLocaleLowerCase()) !== -1;
           const s2 = search.code&&p.Code?.toLowerCase()?.indexOf(search.code.toLocaleLowerCase()) !== -1;
           if(s){
-            console.log('search '+s1+' : '+s2);
+            //console.log('search '+s1+' : '+s2);
             return (s1 || s2);
           }
           return true;
@@ -228,11 +234,10 @@ export default defineComponent({
     });
 		
 		const {len, ipp, lines, page} = table(all, store);
-    const bible = reactive({});
+
 		return {
       columns,
       search,
-      bible,
 			len, ipp, page,
       lines: computed(() => {
         try {
@@ -241,19 +246,33 @@ export default defineComponent({
           });
         } finally {}
       }),
+      async updateBible(){
+        const val = escape(JSON.stringify(this.bible));
+        const conn = await services.data.conn.getConnection();
+        try {
+          await conn.beginTransaction();
+          await conn.execute(`UPDATE bible_vueD SET Style=${val} WHERE ID=1`);
+          await conn.commit()
+        } catch (e) {
+          if (conn) await conn.rollback();
+          logger.error(e);
+        } finally {
+          if (conn) await conn.release();
+        }
+      },
+      async getBible(){
+        const conn = await services.data.conn.getConnection();
+        const [rows, metas] = await conn.query(`SELECT * FROM bible_vueD WHERE ID=1`);
+        if (Array.isArray(rows) && rows.length === 1) {
+          const row = rows[0] as RowDataPacket;
+          if(row['Style']){
+            //this.bible = JSON.parse(decodeURIComponent(row['Style']));
+          }
+        }
+      }
 		};
 	},
     methods:{
-      updateBible(){
-        /*const services = useMyServices();
-        const bible = this.bible;
-        services.modification.mod("manual", {
-          bible,
-          id: 1,
-          table: "bible_vueD",
-          field: "Style"
-        }, "Note a" + (isProd ? "u produit" : " l'ordre d'assemblage"))*/
-      },
       getColumnValue(key: string, line: object, column: object = {}){
 
         let keys = [];
@@ -290,35 +309,43 @@ export default defineComponent({
         return '';
       },
       getColumnStyle(ckey,line,column){
-        let addon = this.styles[ckey];
-        if(line&&column&&line.oa){
-          const row_i = line.oa.ID;
-          const row = this.bible[row_i];
-          if(row&&row.color){
-            this.styles[ckey]['backgroundColor'] = row.color||'#fff';
-          }
-          if(row&&row[column.key]){
-            console.log(row_i+' : '+row);
-            this.styles[ckey]['backgroundColor'] = row[column.key]||'#fff';
-          }
-        }
-        console.log(this.styles[ckey]);
         return this.styles[ckey];
       },
-      getBackgroundColor(ckey,line,column){
+      getBackgroundColor(ckey,column,line){
         let color = this.styles[ckey];
+        if(column&&column.key){
+          const row = this.bible[column.key];
+          if(row){
+            color = row||'';
+          }
+        }
         if(line&&column&&line.oa){
           const row_i = line.oa.ID;
           const row = this.bible[row_i];
-          if(row&&row.color){
-            color = row.color||'#fff';
+          if(row){
+            color = row.color||'';
           }
           if(row&&row[column.key]){
-            color = row[column.key]||'#fff';
+            color = row[column.key]||'';
           }
         }
-        console.log(color);
+
+        //console.log(color);
         return color;
+      },
+      getPosition(ckey){
+        let style = this.styles[ckey];
+        if(style&&style.position){
+          return style.position;
+        }
+        return '';
+      },
+      getLeft(ckey){
+        let style = this.styles[ckey];
+        if(style&&style.left){
+          return style.left;
+        }
+        return '';
       },
       getRowStyle(line){
         let addon = {};
@@ -355,35 +382,48 @@ export default defineComponent({
           row:row,
           col:col
         };
-        //this.openColorPicker();
+        this.openColorPicker();
         //this.$refs.colorpicker.color;
       },
       setColor(){
-        console.log(this.focusCell);
+        //console.log(this.focusCell);
         let isRow = false;
+        let isCol = false;
         if(this.focusCell.col_i==0){
           isRow = true;
+        }else if(this.focusCell.row_i==0){
+          isCol = true;
         }
-        if(this.focusCell.row.oa){
+        if(isCol){//priorite colonne
+          console.log('set column color');
+          this.bible[this.focusCell.col.key] = this.selectedColor;
+        }else if(this.focusCell.row.oa){
           const code = this.focusCell.row.oa.ID;
           const key = this.focusCell.col.key;
           if(!this.bible[code]){
             this.bible[code] = {};
           }
+          if(this.selectedColor=='#FFFFFF'){
+            console.log('remove color');
+            this.selectedColor = '';
+          }
           if(isRow){
+            console.log('set row color');
             this.bible[code]['color'] = this.selectedColor;
           }else{
+            console.log('set row column color');
             this.bible[code][key] = this.selectedColor;
           }
-          console.log(this.bible[code]);
+          //console.log(this.bible[code]);
         }
-
+        console.log(this.bible);
         //this.bible[]
         this.focusCell = {};
         this.closeColorPicker();
+        this.updateBible();
       },
       setSelectedColor(color){
-        console.log(color);
+        //console.log(color);
         this.selectedColor = color;
 
       },
@@ -396,6 +436,7 @@ export default defineComponent({
     },
     mounted () {
       this.setColumnW();
+      this.getBible();
     }
 });
 

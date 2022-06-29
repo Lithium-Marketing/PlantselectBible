@@ -49,12 +49,13 @@ export default defineComponent({
 		console.log(isDev);
 		const canUpdate = ref(false);
 		
-		window.electronAPI.onUpdateAvailable(() => canUpdate.value = true)
+		window.electronAPI.onUpdateAvailable(() => canUpdate.value = true);
 		
 		return {
 			canUpdate,
 			version: isDev ? "dev" : window.electronAPI.getVersion(),
 			update() {
+        console.log('update');
         const c = confirm('Voulez-vous faire la mise-à-jour ?');
         if(!c){
           return false;

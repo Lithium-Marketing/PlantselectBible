@@ -1,6 +1,6 @@
 'use strict'
 
-import {app, BrowserWindow, ipcMain, Menu, MenuItemConstructorOptions, protocol} from 'electron'
+import {app, BrowserWindow, ipcMain, Menu, MenuItemConstructorOptions, protocol, dialog} from 'electron'
 import {createProtocol} from 'vue-cli-plugin-electron-builder/lib'
 import installExtension, {VUEJS3_DEVTOOLS} from 'electron-devtools-installer'
 import {autoUpdater} from "electron-updater"
@@ -30,7 +30,7 @@ async function createWindow() {
 			contextIsolation: false
 		}
 	})
-	
+
 	if (process.env.WEBPACK_DEV_SERVER_URL) {
 		// Load the url of the dev server if in development mode
 		await win.loadURL(process.env.WEBPACK_DEV_SERVER_URL as string)
@@ -85,9 +85,7 @@ app.on('ready', async () => {
 	///////
 	
 	const mainWindow = await createWindow();
-	
-	/////// Event
-	
+
 	autoUpdater.on("update-available", () => mainWindow.webContents.send("update-available"));
 })
 
@@ -108,8 +106,7 @@ if (isDevelopment) {
 
 async function checkUpdate() {
 	const result = await autoUpdater.checkForUpdatesAndNotify();
-	
-	setTimeout(checkUpdate, 1000 * 60 * 5);
+	setTimeout(checkUpdate, 1000 * 30);
 }
 
 function handleSetTitle(event, title) {

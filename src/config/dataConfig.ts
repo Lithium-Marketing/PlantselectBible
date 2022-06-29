@@ -71,6 +71,7 @@ const tablesConfig = {
 	// utilisateurs: {},
 	vue_inventaire: {},
 	vue_bible_vueD:{indexes: ["Code"]},
+	bible_vueD: {},
 	vue_ventes: {},
 } as const;
 export type MyTablesConfig = typeof tablesConfig;
@@ -287,9 +288,15 @@ export interface MyTablesDef extends TablesDef {
 	vue_bible_vueD: {
 		Produit
 		Code
-		Variete: String
+		Variete: string
 		Format
 		OA_ID
+	},
+
+	bible_vueD: {
+		ID
+		Type
+		Style: string
 	},
 
 	vue_ventes: {}
