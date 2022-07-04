@@ -11,10 +11,13 @@ import {Const} from "@/helper/Const";
 import {createMyServices} from "@/config/dataConfig";
 import {LogService} from "@/services/logService";
 
+
 const logger = LogService.logger({name: "main"})
 
 ContextMenu.init();
 moment.locale('fr');
+
+
 
 if(!store.state.mysqlLogin.host&&process.env.VUE_APP_DB_HOST){
 	store.state.mysqlLogin = {

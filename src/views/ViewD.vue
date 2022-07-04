@@ -101,8 +101,6 @@ export default defineComponent({
         {name:"Réservation", key:"oa.Reservation"},
         {name:"Inventaire total", key:"oa.Inventaire"},
         {name:"Format", key:"oa.MP_Format"},
-        {name:"Nbr. Sem.", key:"oa.Semaines"},
-        {name:"Mort", key:"oa.Mort"},
         {name:"Reception", key:"oa.Reception"},
         {name:"Fournisseur", key:"oa.Fournisseur"},
         {name:"Achat "+(currentYear), key:"oa.Achat_0"},
@@ -118,6 +116,8 @@ export default defineComponent({
         {name:"Localisation D", key:"oa.Localisations", index:"3"},
         {name:"Quantité D", key:"oa.Localisations_Quantite", index:"3"},
         {name:"Quantité A+B+C+D", key:"oa.Quantite"},
+        {name:"Mort", key:"oa.Mort"},
+        {name:"Nbr. Sem.", key:"oa.Semaines"},
         {name:"Ventes 16-17 "+(currentYear), key:"ventes.Semaine_16_17_0"},
         {name:"Ventes 16-17 "+(currentYear-1), key:"ventes.Semaine_16_17_1"},
         {name:"Ventes 18-19 "+(currentYear), key:"ventes.Semaine_18_19_0"},
@@ -266,7 +266,7 @@ export default defineComponent({
         if (Array.isArray(rows) && rows.length === 1) {
           const row = rows[0] as RowDataPacket;
           if(row['Style']){
-            //this.bible = JSON.parse(decodeURIComponent(row['Style']));
+            this.bible = JSON.parse(decodeURIComponent(row['Style']));
           }
         }
       }
@@ -330,6 +330,10 @@ export default defineComponent({
           }
         }
 
+        if(color==''){
+          //color = 'initial';
+        }
+
         //console.log(color);
         return color;
       },
@@ -367,7 +371,7 @@ export default defineComponent({
           if(i==0){
             this.styles[i] = {position:'sticky',left:'0px'};
           }else if(i==1){
-            this.styles[i] = {position:'sticky',left:this.widths[0]+'px',boxShadow:'#000 1px 1px'};
+            this.styles[i] = {};
           }else{
             this.styles[i] = {};
           }
