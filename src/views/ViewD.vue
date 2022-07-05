@@ -5,14 +5,14 @@
 			<thead>
 			<tr>
         <template v-for="(column, ckey) of columns">
-          <th :class="column.class" :style="{backgroundColor:getBackgroundColor(ckey,column),position:getPosition(ckey),left:getLeft(ckey)}"  @click.mouse.right="changeColor(0,ckey,{},column);">
+          <th :class="column.class" :style="getStyle(ckey,column,{})"  @click.mouse.right="changeColor(0,ckey,{},column);">
             <span v-html="column.name"></span>
           </th>
         </template>
 			</tr>
       <tr>
         <template v-for="(column, ckey) of columns">
-          <th :class="column.class" :style="{backgroundColor:getBackgroundColor(ckey,column),position:getPosition(ckey),left:getLeft(ckey)}">
+          <th :class="column.class" :style="getStyle(ckey,column,{})">
             <input v-if="column.search" v-model="search[column.search]"/>
           </th>
         </template>
@@ -22,12 +22,22 @@
 			<template v-for="(line,lkey) of lines" :key="line.oa?.ID">
 				<tr :style="getRowStyle(line)">
           <template v-for="(column, ckey) of columns">
-          <td :class="column.class" :style="{backgroundColor:getBackgroundColor(ckey,column,line),position:getPosition(ckey),left:getLeft(ckey)}" @click.mouse.right="changeColor(lkey,ckey,line,column);">
+          <td :class="column.class" :style="getStyle(ckey,column,line)" @click.mouse.right="changeColor(lkey,ckey,line,column);" @click.mouse.left="openPopper($event,column,line)">
 						  <template v-if="column.input">
                 <TableInput2 :table="column.input.table" :field="column.input.field" :entity-id="getColumnValue(column.input.id, line)"/>
               </template>
               <template v-else-if="column.key">
+                <div>
                 {{ getColumnValue(column.key, line, column) }}
+                <div class="hasNote" v-if="getNote(column,line)"></div>
+                <Popper arrow :show="showPopper[line.oa?.ID][column.key]" offset-distance="0" v-if="column.key!='product.Variete'">
+                  <button></button>
+                  <template #content="{close}">
+                    <textarea rows="3" :value="getNote(column,line)" @change="setNote($event,column,line)"></textarea>
+                    <Button @click="updateNotes($event)">Sauvegarder</Button><Button @click="closePopper($event)">X</Button>
+                  </template>
+                </Popper>
+                </div>
               </template>
 					</td>
           </template>
@@ -47,7 +57,7 @@
 </template>
 
 <script lang="ts">
-import {computed, ComputedRef, defineComponent, reactive, ref} from "vue";
+import {computed, ComputedRef, defineComponent, isProxy, reactive, ref} from "vue";
 import {Store, useStore} from "vuex";
 import {StoreState} from "@/store";
 import Pagination from "@/components/Pagination.vue";
@@ -61,12 +71,13 @@ import TableInput2 from "@/components/TableInput2.vue";
 import axios from "axios";
 import {escape} from "mysql2";
 import {RowDataPacket} from "mysql2/promise";
+import Popper from "vue3-popper";
 
 const logger = LogService.logger({name: "ViewD"});
 
 export default defineComponent({
 	name: "ViewD",
-	components: {TableInput2, TableInput, Pagination,ColorPicker},
+	components: {TableInput2, TableInput, Pagination,ColorPicker,Popper },
   data(){
     return {
       freezeY: 0,
@@ -75,7 +86,9 @@ export default defineComponent({
       showColorPicker: false,
       selectedColor: '#cccccc',
       focusCell: {},
-      bible:{}
+      bible:{},
+      bible_notes:{},
+      currentPopper:{}
     };
   },
 	setup() {
@@ -84,7 +97,7 @@ export default defineComponent({
     const currentYear = moment().year();
 
     let columns = ref([
-        {name:"Cultivars", key:'product.Variete', search:'variete'},
+        {name:"Cultivars", key:'product.Variete', search:'variete', notooltip:true},
         {name:"Format", key:"product.Format"},
         {name:"pw", key:"oa.PW"},
         {name:"OA", key:"oa.ID"},
@@ -154,6 +167,8 @@ export default defineComponent({
       code:""
 		});
 
+    const showPopper = reactive([]);
+
     //console.log(Object.values(services.data.get("vue_bible_vueD").value));
 
     const all = computed(function allCompute() {//`produits`.`Type` asc,`vue_produits`.`Variete` asc,`vue_produits`.`Format` asc"
@@ -205,6 +220,7 @@ export default defineComponent({
           };
 
           oasByProd[product.ID]?.forEach((oa) => {
+            showPopper[oa.ID] = [];
             const year = moment.unix(oa.Date_reception).year();
             if (currentYear == year)
               achat.years_pastA0 += oa.Quantite_recevoir;
@@ -213,6 +229,7 @@ export default defineComponent({
           });
 
           return oasByProd[product.ID]?.map(function oasByProdMap(oa) {
+
             return {
               oa,
               product,
@@ -234,8 +251,10 @@ export default defineComponent({
     });
 		
 		const {len, ipp, lines, page} = table(all, store);
-
+    //console.log('showPopper');
+    //console.log(showPopper.length);
 		return {
+      showPopper,
       columns,
       search,
 			len, ipp, page,
@@ -248,10 +267,11 @@ export default defineComponent({
       }),
       async updateBible(){
         const val = escape(JSON.stringify(this.bible));
+        const notes = escape(JSON.stringify(this.bible_notes));
         const conn = await services.data.conn.getConnection();
         try {
           await conn.beginTransaction();
-          await conn.execute(`UPDATE bible_vueD SET Style=${val} WHERE ID=1`);
+          await conn.execute(`UPDATE bible_vueD SET Style=${val},Notes=${notes} WHERE ID=1`);
           await conn.commit()
         } catch (e) {
           if (conn) await conn.rollback();
@@ -266,15 +286,46 @@ export default defineComponent({
         if (Array.isArray(rows) && rows.length === 1) {
           const row = rows[0] as RowDataPacket;
           if(row['Style']){
-            this.bible = JSON.parse(decodeURIComponent(row['Style']));
+            this.bible = row['Style'] ? JSON.parse(decodeURIComponent(row['Style'])) : {};
+            this.bible_notes = row['Notes'] ? JSON.parse(decodeURIComponent(row['Notes'])) : {};
           }
         }
-      }
+      },
+      async updateNotes($event){
+        this.bible_notes
+        const notes = escape(JSON.stringify(this.bible_notes));
+        const conn = await services.data.conn.getConnection();
+        try {
+          await conn.beginTransaction();
+          await conn.execute(`UPDATE bible_vueD SET Notes=${notes} WHERE ID=1`);
+          await conn.commit();
+          this.closePopper($event);
+        } catch (e) {
+          if (conn) await conn.rollback();
+        } finally {
+          if (conn) await conn.release();
+        }
+      },
+
 		};
 	},
     methods:{
+      openPopper($event,col,row){
+        this.closePopper($event);
+        if(!this.showPopper[row.oa?.ID]){
+          this.showPopper[row.oa?.ID] = {};
+        }
+        this.showPopper[row.oa?.ID][col.key] = true;
+        this.currentPopper = {col:col,row:row};
+        console.log(this.showPopper[row.oa?.ID]);
+      },
+      closePopper(event){
+        event.stopPropagation();
+        if(this.currentPopper&&this.currentPopper.row){
+          this.showPopper[this.currentPopper.row.oa?.ID][this.currentPopper.col.key] = false;
+        }
+      },
       getColumnValue(key: string, line: object, column: object = {}){
-
         let keys = [];
         if(key.includes('.')){
           keys = key.split('.');
@@ -330,8 +381,8 @@ export default defineComponent({
           }
         }
 
-        if(color==''){
-          //color = 'initial';
+        if(color=='#FFFFFF'){
+          color = '';
         }
 
         //console.log(color);
@@ -364,6 +415,29 @@ export default defineComponent({
         }*/
         return addon;
       },
+      getStyle(ckey,column,line){
+        let bgcolor = this.getBackgroundColor(ckey,column,line);
+        let position = this.getPosition(ckey);
+        let left = this.getLeft(ckey);
+        const height = 1;
+        let styles = {};
+        if(!isProxy(bgcolor)&&bgcolor){
+          styles['backgroundColor'] = bgcolor;
+        }
+        if(position){
+          styles['position'] = position;
+        }
+        if(left){
+          styles['left'] = left;
+        }
+        if(height){
+          styles['height'] = height;
+        }
+        if(column.key=='oa.Groupex_1'){
+          //console.log(styles);
+        }
+        return styles;
+      },
       setColumnW () {
         let ths = this.$refs.tableRef.tHead.rows.item(0).cells;
         for (let i = 0; i < ths.length; i++) {
@@ -395,11 +469,15 @@ export default defineComponent({
         let isCol = false;
         if(this.focusCell.col_i==0){
           isRow = true;
-        }else if(this.focusCell.row_i==0){
+        }else if(this.focusCell.row_i==0&&!this.focusCell.row.oa){
           isCol = true;
         }
         if(isCol){//priorite colonne
-          console.log('set column color');
+          //console.log('set column color');
+          if(this.selectedColor=='#FFFFFF'){
+            //console.log('remove color');
+            this.selectedColor = '';
+          }
           this.bible[this.focusCell.col.key] = this.selectedColor;
         }else if(this.focusCell.row.oa){
           const code = this.focusCell.row.oa.ID;
@@ -408,19 +486,19 @@ export default defineComponent({
             this.bible[code] = {};
           }
           if(this.selectedColor=='#FFFFFF'){
-            console.log('remove color');
+            //console.log('remove color');
             this.selectedColor = '';
           }
           if(isRow){
-            console.log('set row color');
+            //console.log('set row color');
             this.bible[code]['color'] = this.selectedColor;
           }else{
-            console.log('set row column color');
+            //console.log('set row column color');
             this.bible[code][key] = this.selectedColor;
           }
           //console.log(this.bible[code]);
         }
-        console.log(this.bible);
+        //console.log(this.bible);
         //this.bible[]
         this.focusCell = {};
         this.closeColorPicker();
@@ -436,6 +514,21 @@ export default defineComponent({
       },
       closeColorPicker(){
         this.showColorPicker = false;
+      },
+      getNote(column,line){
+        if(this.bible_notes[line.oa?.ID]&&this.bible_notes[line.oa?.ID][column.key]){
+          console.log(this.bible_notes[line.oa?.ID][column.key]);
+          return this.bible_notes[line.oa?.ID][column.key];
+        }
+        return '';
+      },
+      setNote(event,column,line){
+        console.log(event);
+        if(!this.bible_notes[line.oa?.ID]){
+          this.bible_notes[line.oa?.ID] = {};
+        }
+        this.bible_notes[line.oa?.ID][column.key] = event.target.value;
+        console.log(this.bible_notes[line.oa?.ID]);
       }
     },
     mounted () {
@@ -471,7 +564,16 @@ th, td{
   /*white-space: nowrap;*/
   background-color: #FFFFFF;
 }
-th:focus, td:focus{
+td{
+  padding: 0px;
+}
+td > div{
+  padding: 5px;
+  position: relative;
+  height: 100%;
+  box-sizing: border-box;
+}
+th:focus, td:focus, td:focus-within{
   border: green 2px solid;
 }
 thead{
@@ -493,6 +595,15 @@ thead tr th:nth-child(1){
 tbody tr td:nth-child(0),
 thead tr th:nth-child(0){
   left: 0px;
+}
+
+.hasNote{
+  background-color: red;
+  position: absolute;
+  width: 5px;
+  height: 5px;
+  right: 0px;
+  top: 0px;
 }
 
 .botanix{
@@ -517,5 +628,31 @@ thead tr th:nth-child(0){
   top: 50%;
   transform: translate(-50%,-50%);
   z-index: 9999;
+}
+td::v-deep(.inline-block > div:nth-child(1)){
+  visibility: hidden;
+  position: absolute;
+  top: 0px;
+  height: 100%;
+  width: 0px;
+}
+td::v-deep(.inline-block){
+  position: relative;
+}
+td::v-deep(.popper){
+  padding: 1em;
+  background-color: #ffffff;
+  border: #000000 1px solid;
+  border-radius: 1em;
+}
+td::v-deep(.popper button){
+  font-size: 0.8em;
+}
+td::v-deep(.popper:hover){
+  background-color: #ffffff;
+}
+td::v-deep(.popper #arrow::before),
+td::v-deep(.popper:hover #arrow::before){
+  background: #8daa26;
 }
 </style>

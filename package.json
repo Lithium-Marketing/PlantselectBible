@@ -1,6 +1,6 @@
 {
   "name": "plantselect_bible",
-  "version": "1.1.6",
+  "version": "1.1.7",
   "private": true,
   "scripts": {
     "serve": "vue-cli-service serve",
@@ -15,7 +15,6 @@
   "main": "background.js",
   "dependencies": {
     "axios": "^0.21.4",
-    "bootstrap-vue": "^2.22.0",
     "core-js": "^3.6.5",
     "electron-updater": "^5.0.1",
     "exceljs": "^4.3.0",
@@ -28,6 +27,7 @@
     "vue-router": "^4.0.12",
     "vue-swatches": "^2.1.1",
     "vue-virtual-scroller": "^2.0.0-alpha.1",
+    "vue3-popper": "^1.5.0",
     "vuex": "^4.0.2"
   },
   "devDependencies": {
