@@ -1,19 +1,35 @@
 <template>
+  <div class="tools">
+      <div class="tool-col">
+        <button class="btn btn-secondary" @click="openColumnsSetting()"><font-awesome-icon :icon="['fas', 'gear']" /></button>
+        <div ref="columnsSetting" :class="['columnsSetting',showColumnsSetting?'show':'', 'row']">
+          <div class="setting-header">
+            <h3>Colonnes visibles</h3>
+          </div>
+          <template v-for="(column, ckey) of columns">
+              <div class="col-12 col-md-6 col-lg-4 col-xl-3 col-xxl-2"><input type="checkbox" v-model="columnVisible[column.key]"/><span v-html="column.name"></span></div>
+          </template>
+          <div class="setting-footer">
+            <button class="btn btn-secondary" @click="closeColumnsSetting()">Fermer</button>
+          </div>
+        </div>
+      </div>
+  </div>
 	<div class="home">
 		<Pagination v-model:page="page" v-model:len="len"/>
     <table class="product" ref="tableRef">
 			<thead>
 			<tr>
         <template v-for="(column, ckey) of columns">
-          <th :class="column.class" :style="getStyle(ckey,column,{})"  @click.mouse.right="changeColor(0,ckey,{},column);">
+          <th :class="column.class" :style="getStyle(ckey,column,{})"  @click.mouse.right="changeColor(0,ckey,{},column);" v-if="columnVisible[column.key]">
             <span v-html="column.name"></span>
           </th>
         </template>
 			</tr>
       <tr>
         <template v-for="(column, ckey) of columns">
-          <th :class="column.class" :style="getStyle(ckey,column,{})">
-            <input v-if="column.search" v-model="search[column.search]"/>
+          <th :class="column.class" :style="getStyle(ckey,column,{})" v-if="columnVisible[column.key]">
+            <div><input class="search-input" v-if="column.search" v-model="search[column.search]"/></div>
           </th>
         </template>
       </tr>
@@ -22,21 +38,23 @@
 			<template v-for="(line,lkey) of lines" :key="line.oa?.ID">
 				<tr :style="getRowStyle(line)">
           <template v-for="(column, ckey) of columns">
-          <td :class="column.class" :style="getStyle(ckey,column,line)" @click.mouse.right="changeColor(lkey,ckey,line,column);" @click.mouse.left="openPopper($event,column,line)">
+          <td :class="column.class" :style="getStyle(ckey,column,line)" @click.mouse.right="changeColor(lkey,ckey,line,column);" @click.mouse.left="openPopper($event,column,line)" v-if="columnVisible[column.key]">
 						  <template v-if="column.input">
                 <TableInput2 :table="column.input.table" :field="column.input.field" :entity-id="getColumnValue(column.input.id, line)"/>
               </template>
               <template v-else-if="column.key">
                 <div>
                 {{ getColumnValue(column.key, line, column) }}
-                <div class="hasNote" v-if="getNote(column,line)"></div>
                 <Popper arrow :show="showPopper[line.oa?.ID][column.key]" offset-distance="0" v-if="column.key!='product.Variete'">
                   <button></button>
                   <template #content="{close}">
                     <textarea rows="3" :value="getNote(column,line)" @change="setNote($event,column,line)"></textarea>
-                    <Button @click="updateNotes($event)">Sauvegarder</Button><Button @click="closePopper($event)">X</Button>
+                    <span class="error small" v-if="errors.updateNotes">Erreur de connexion au serveur. Veuillez réessayer.</span>
+                    <span class="small" v-if="saving">Sauvegarde en cours</span>
+                    <span v-if="!saving"><Button @click="updateNotes($event)">Sauvegarder</Button><Button @click="closePopper($event)">X</Button></span>
                   </template>
                 </Popper>
+                  <div class="hasNote small" v-if="getNote(column,line)">{{getNote(column,line)}}</div>
                 </div>
               </template>
 					</td>
@@ -72,12 +90,13 @@ import axios from "axios";
 import {escape} from "mysql2";
 import {RowDataPacket} from "mysql2/promise";
 import Popper from "vue3-popper";
+import { FontAwesomeIcon } from '@fortawesome/vue-fontawesome';
 
 const logger = LogService.logger({name: "ViewD"});
 
 export default defineComponent({
 	name: "ViewD",
-	components: {TableInput2, TableInput, Pagination,ColorPicker,Popper },
+	components: {TableInput2, TableInput, Pagination,ColorPicker,Popper,FontAwesomeIcon },
   data(){
     return {
       freezeY: 0,
@@ -88,7 +107,14 @@ export default defineComponent({
       focusCell: {},
       bible:{},
       bible_notes:{},
-      currentPopper:{}
+      currentPopper:{},
+      errors: {
+        updateNotes:false
+      },
+      saving: false,
+      saving_retry: 3,
+      columnVisible: {},
+      showColumnsSetting: false
     };
   },
 	setup() {
@@ -100,7 +126,7 @@ export default defineComponent({
         {name:"Cultivars", key:'product.Variete', search:'variete', notooltip:true},
         {name:"Format", key:"product.Format"},
         {name:"pw", key:"oa.PW"},
-        {name:"OA", key:"oa.ID"},
+        {name:"OA", key:"oa.ID", search:'id'},
         {name:"Vendant "+(currentYear-1), key:"oa.Vendant_1"},
         {name:"$ "+(currentYear-1), key:"oa.Coutant_1"},
         {name:"Transport "+(currentYear-1), key:"oa.Transport_1"},
@@ -117,7 +143,8 @@ export default defineComponent({
         {name:"Reception", key:"oa.Reception"},
         {name:"Fournisseur", key:"oa.Fournisseur"},
         {name:"Achat "+(currentYear), key:"oa.Achat_0"},
-        {name:"Achat "+(currentYear)+"<br>Confirmer", key:"oa.Achat_confirm_0"},
+        {name:"Achat "+(currentYear)+" Confirmer", key:"oa.Achat_confirm_0"},
+        {name:"Achat "+(currentYear+1), key:"oa.Achat_"},
         {name:"Vente "+(currentYear-1), key:"oa.Vente_1"},
         {name:"Vente "+currentYear, key:"oa.Vente_0"},
         {name:"Localisation A", key:"oa.Localisations", index:"0"},
@@ -164,7 +191,8 @@ export default defineComponent({
 
 		const search = reactive({
       variete: "",
-      code:""
+      code:"",
+      id:""
 		});
 
     const showPopper = reactive([]);
@@ -176,8 +204,15 @@ export default defineComponent({
       try {
         const oas: MyTablesDef["vue_bible_vueD"][] = Object.values(services.data.get("vue_bible_vueD").value);
         const oasByProd = oas.reduce(function oasByProdReduce(a, oa) {
-          a[oa.Produit] = a[oa.Produit] || [];
-          a[oa.Produit].push(oa);
+          const s = search.id;
+          const s1 = s&&search.id==oa['ID'];
+          if(s&&s1){
+            a[oa.Produit] = a[oa.Produit] || [];
+            a[oa.Produit].push(oa);
+          }else if(!s){
+            a[oa.Produit] = a[oa.Produit] || [];
+            a[oa.Produit].push(oa);
+          }
           return a;
         }, {});
 
@@ -292,7 +327,7 @@ export default defineComponent({
         }
       },
       async updateNotes($event){
-        this.bible_notes
+        this.saving = true
         const notes = escape(JSON.stringify(this.bible_notes));
         const conn = await services.data.conn.getConnection();
         try {
@@ -300,10 +335,15 @@ export default defineComponent({
           await conn.execute(`UPDATE bible_vueD SET Notes=${notes} WHERE ID=1`);
           await conn.commit();
           this.closePopper($event);
+          this.saving = false;
+          this.errors.updateNotes = false;
         } catch (e) {
           if (conn) await conn.rollback();
+          this.saving = false;
+          this.errors.updateNotes = true;
         } finally {
           if (conn) await conn.release();
+          this.saving = false;
         }
       },
 
@@ -436,6 +476,9 @@ export default defineComponent({
         if(column.key=='oa.Groupex_1'){
           //console.log(styles);
         }
+        if(ckey==0){
+          styles['zIndex'] = 1;
+        }
         return styles;
       },
       setColumnW () {
@@ -529,9 +572,37 @@ export default defineComponent({
         }
         this.bible_notes[line.oa?.ID][column.key] = event.target.value;
         console.log(this.bible_notes[line.oa?.ID]);
+      },
+      openColumnsSetting(){
+        this.showColumnsSetting = true;
+      },
+      closeColumnsSetting(){
+        this.showColumnsSetting = false;
+        this.saveColumnVisibility();
+      },
+      iniColumnVisibility(){
+        //localStorage.setItem('columnVisible','');
+        let columnVisible = localStorage.getItem('columnVisible');
+        if(typeof(columnVisible)=='string'&&columnVisible){
+          this.columnVisible = JSON.parse(columnVisible);
+        }
+        this.columns.forEach((col) => {
+          if(typeof(this.columnVisible[col.key])!='boolean'){
+            this.columnVisible[col.key] = true;
+          }
+        });
+        if(!columnVisible){
+          localStorage.setItem('columnVisible',JSON.stringify(this.columnVisible));
+        }
+      },
+      saveColumnVisibility(){
+        if(this.columnVisible){
+          localStorage.setItem('columnVisible',JSON.stringify(this.columnVisible));
+        }
       }
     },
     mounted () {
+      this.iniColumnVisibility();
       this.setColumnW();
       this.getBible();
     }
@@ -598,12 +669,10 @@ thead tr th:nth-child(0){
 }
 
 .hasNote{
-  background-color: red;
-  position: absolute;
-  width: 5px;
-  height: 5px;
-  right: 0px;
-  top: 0px;
+  border:#8daa26 1px solid;
+  padding: 0.3em;
+  max-width: 100px;
+  width: 100px;
 }
 
 .botanix{
@@ -654,5 +723,48 @@ td::v-deep(.popper:hover){
 td::v-deep(.popper #arrow::before),
 td::v-deep(.popper:hover #arrow::before){
   background: #8daa26;
+}
+
+.search-input{
+  max-width: 100%;
+  width: 100%;
+  box-sizing: border-box;
+}
+.error{
+  color: red;
+}
+.small{
+  font-size: 0.7em;
+}
+
+.columnsSetting {
+  padding: 3em;
+  width: 90%;
+  margin: auto;
+  border: #ccc 1px solid;
+  border-radius: 1em;
+  background: #eee;
+  display: none;
+}
+.columnsSetting.show {
+  display: flex;
+}
+.columnsSetting > div:nth-child(1),
+.columnsSetting > div:last-child{
+  width: 100%;
+  margin: 1em 0em;
+}
+.columnsSetting > div {
+  display: flex;
+  align-items: center;
+}
+.columnsSetting > div span br {
+  display: none;
+}
+.columnsSetting > div input {
+  margin-right: 1em;
+}
+.columnsSetting > div span {
+  white-space: nowrap;
 }
 </style>

@@ -4,12 +4,18 @@ import router from './router'
 import store from './store'
 
 import "./style.scss";
+import "bootstrap/dist/css/bootstrap.min.css"
 import moment from "moment";
 import {ContextMenu} from "@/helper/ContextMenu";
 import {Services} from "@/services";
 import {Const} from "@/helper/Const";
 import {createMyServices} from "@/config/dataConfig";
 import {LogService} from "@/services/logService";
+import { library } from '@fortawesome/fontawesome-svg-core';
+import { FontAwesomeIcon } from '@fortawesome/vue-fontawesome';
+
+import { faGear } from '@fortawesome/free-solid-svg-icons';
+library.add(faGear)
 
 
 const logger = LogService.logger({name: "main"})
@@ -77,6 +83,7 @@ if(!store.state.mysqlLogin.host&&process.env.VUE_APP_DB_HOST){
 	app.use(createMyServices());
 	app.use(store);
 	app.use(router);
+	app.component('font-awesome-icon', FontAwesomeIcon)
 	
 	Object.assign(window, app.config.globalProperties);
 	console.log(app.config.globalProperties);
