@@ -145,6 +145,7 @@ export default defineComponent({
         {name:"Achat "+(currentYear), key:"oa.Achat_0"},
         {name:"Achat "+(currentYear)+" Confirmer", key:"oa.Achat_confirm_0"},
         {name:"Achat "+(currentYear+1), key:"oa.Achat_"},
+        {name:"Achat "+(currentYear+1)+" Confirmer", key:"oa.Achat_confirm_"},
         {name:"Vente "+(currentYear-1), key:"oa.Vente_1"},
         {name:"Vente "+currentYear, key:"oa.Vente_0"},
         {name:"Localisation A", key:"oa.Localisations", index:"0"},
