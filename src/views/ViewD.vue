@@ -468,7 +468,7 @@ export default defineComponent({
         if(position){
           styles['position'] = position;
         }
-        if(left){
+        if(typeof(left)=='number'){
           styles['left'] = left;
         }
         if(height){
@@ -479,6 +479,7 @@ export default defineComponent({
         }
         if(ckey==0){
           styles['zIndex'] = 1;
+          styles['left'] = 0;
         }
         return styles;
       },
