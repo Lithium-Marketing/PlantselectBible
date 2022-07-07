@@ -468,7 +468,7 @@ export default defineComponent({
         if(position){
           styles['position'] = position;
         }
-        if(left){
+        if(typeof('left')=='number'){
           styles['left'] = left;
         }
         if(height){
@@ -479,6 +479,7 @@ export default defineComponent({
         }
         if(ckey==0){
           styles['zIndex'] = 1;
+          styles['left'] = 0;
         }
         return styles;
       },
@@ -486,13 +487,13 @@ export default defineComponent({
         let ths = this.$refs.tableRef.tHead.rows.item(0).cells;
         for (let i = 0; i < ths.length; i++) {
           let w = ths[i].clientWidth;
-          if(i==0){
+          /*if(i==0){
             this.styles[i] = {position:'sticky',left:'0px'};
           }else if(i==1){
             this.styles[i] = {};
           }else{
             this.styles[i] = {};
-          }
+          }*/
           this.widths[i] = w;
         }
 
