@@ -83,7 +83,13 @@ if(!store.state.mysqlLogin.host&&process.env.VUE_APP_DB_HOST){
 	app.use(createMyServices());
 	app.use(store);
 	app.use(router);
-	app.component('font-awesome-icon', FontAwesomeIcon)
+	app.component('font-awesome-icon', FontAwesomeIcon);
+
+	app.config.globalProperties.$methods = {
+		scrollToTop: function () {
+			window.scrollTo(0,0);
+		}
+	}
 	
 	Object.assign(window, app.config.globalProperties);
 	console.log(app.config.globalProperties);

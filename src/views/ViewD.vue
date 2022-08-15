@@ -16,7 +16,7 @@
       </div>
   </div>
 	<div class="home">
-		<Pagination v-model:page="page" v-model:len="len"/>
+		<Pagination v-model:page="page" v-model:len="len" @update:page="$methods.scrollToTop();"/>
     <table class="product" ref="tableRef">
 			<thead>
 			<tr>
@@ -63,7 +63,7 @@
 			</template>
 			</tbody>
 		</table>
-		<Pagination v-model:page="page" v-model:len="len"/>
+		<Pagination v-model:page="page" v-model:len="len" @update:page="$methods.scrollToTop();"/>
     <div v-if="showColorPicker" class="colorPickerWraper">
       <div>
       <color-picker ref="colorpicker" color="selectedColor" @update:model-value="setSelectedColor($event)"></color-picker>
@@ -120,43 +120,59 @@ export default defineComponent({
 	setup() {
 		const store = useStore<StoreState>();
 		const services = useMyServices();
-    const currentYear = moment().year();
+    let years = [];
+    let productionYears = [];
+    years[0] = moment().year();
+    years[1] = years[0]-1;
+    years[2] = years[0]-2;
+
+    productionYears[0] = years[0];
+
+    const productionMonth = moment().month();
+    if(productionMonth>=7){//7 = august
+      productionYears[0] = productionYears[0]+1;
+    }
+    productionYears[1] = productionYears[0]-1;
+    productionYears[2] = productionYears[0]-2;
 
     let columns = ref([
-        {name:"Cultivars", key:'product.Variete', search:'variete', notooltip:true},
+        {name:"Cul.", key:'product.Variete', search:'variete', notooltip:true},
         {name:"Format", key:"product.Format"},
         {name:"pw", key:"oa.PW"},
         {name:"OA", key:"oa.ID", search:'id'},
-        {name:"Vendant "+(currentYear-1), key:"oa.Vendant_1"},
-        {name:"$ "+(currentYear-1), key:"oa.Coutant_1"},
-        {name:"Transport "+(currentYear-1), key:"oa.Transport_1"},
-        {name:"Vendant "+(currentYear), key:"oa.Vendant_0"},
-        {name:"$ "+(currentYear), key:"oa.Coutant_0"},
-        {name:"Transport "+(currentYear), key:"oa.Transport_0"},
-        {name:"Botanix "+(currentYear-1), key:"oa.Botanix_1", class:"botanix"},
-        {name:"Botanix "+(currentYear), key:"oa.Botanix_0", class:"botanix"},
-        {name:"Groupex "+(currentYear-1), key:"oa.Groupex_1", class:"groupex"},
-        {name:"Groupex "+(currentYear), key:"oa.Groupex_0", class:"groupex"},
-        {name:"Réservation", key:"oa.Reservation"},
-        {name:"Inventaire total", key:"oa.Inventaire"},
+        {name:"Ven. "+productionYears[2], key:"oa.Vendant_2"},
+        {name:"$ "+productionYears[2], key:"oa.Coutant_2"},
+        {name:"Tran. "+productionYears[2], key:"oa.Transport_2"},
+        {name:"Ven. "+productionYears[1], key:"oa.Vendant_1"},
+        {name:"$ "+productionYears[1], key:"oa.Coutant_1"},
+        {name:"Tran. "+productionYears[1], key:"oa.Transport_1"},
+        {name:"Ven. "+productionYears[0], key:"oa.Vendant_0"},
+        {name:"$ "+productionYears[0], key:"oa.Coutant_0"},
+        {name:"Tran. "+productionYears[0], key:"oa.Transport_0"},
+        {name:"Botanix "+years[1], key:"oa.Botanix_1", class:"botanix"},
+        {name:"Botanix "+years[0], key:"oa.Botanix_0", class:"botanix"},
+        {name:"Groupex "+years[1], key:"oa.Groupex_1", class:"groupex"},
+        {name:"Groupex "+years[0], key:"oa.Groupex_0", class:"groupex"},
+        {name:"Rés.", key:"oa.Reservation"},
+        {name:"Inv. total", key:"oa.Inventaire"},
         {name:"Format", key:"oa.MP_Format"},
-        {name:"Reception", key:"oa.Reception"},
-        {name:"Fournisseur", key:"oa.Fournisseur"},
-        {name:"Achat "+(currentYear), key:"oa.Achat_0"},
-        {name:"Achat "+(currentYear)+" Confirmer", key:"oa.Achat_confirm_0"},
-        {name:"Achat "+(currentYear+1), key:"oa.Achat_"},
-        {name:"Achat "+(currentYear+1)+" Confirmer", key:"oa.Achat_confirm_"},
-        {name:"Vente "+(currentYear-1), key:"oa.Vente_1"},
-        {name:"Vente "+currentYear, key:"oa.Vente_0"},
-        {name:"Localisation A", key:"oa.Localisations", index:"0"},
-        {name:"Quantité A", key:"oa.Localisations_Quantite", index:"0"},
-        {name:"Localisation B", key:"oa.Localisations", index:"1"},
-        {name:"Quantité B", key:"oa.Localisations_Quantite", index:"1"},
-        {name:"Localisation C", key:"oa.Localisations", index:"2"},
-        {name:"Quantité C", key:"oa.Localisations_Quantite", index:"2"},
-        {name:"Localisation D", key:"oa.Localisations", index:"3"},
-        {name:"Quantité D", key:"oa.Localisations_Quantite", index:"3"},
-        {name:"Quantité A+B+C+D", key:"oa.Quantite"},
+        {name:"Recep.", key:"oa.Reception"},
+        {name:"Four.", key:"oa.Fournisseur"},
+        {name:"Achat "+years[0], key:"oa.Achat_0"},
+        {name:"Achat "+years[0]+" Confirmer", key:"oa.Achat_confirm_0"},
+        {name:"Achat "+(years[0]+1), key:"oa.Achat_"},
+        {name:"Achat "+(years[0]+1)+" Confirmer", key:"oa.Achat_confirm_"},
+        {name:"Vente "+years[1], key:"oa.Vente_1"},
+        {name:"Vente "+years[0], key:"oa.Vente_0"},
+        {name:"Loc. A", key:"oa.Localisations", index:"0"},
+        {name:"Qté A", key:"oa.Localisations_Quantite", index:"0"},
+        {name:"Loc. B", key:"oa.Localisations", index:"1"},
+        {name:"Qté B", key:"oa.Localisations_Quantite", index:"1"},
+        {name:"Loc. C", key:"oa.Localisations", index:"2"},
+        {name:"Qté C", key:"oa.Localisations_Quantite", index:"2"},
+        {name:"Loc. D", key:"oa.Localisations", index:"3"},
+        {name:"Qté D", key:"oa.Localisations_Quantite", index:"3"},
+        {name:"Qté A+B+C+D", key:"oa.Quantite"},
         {name:"Mort", key:"oa.Mort"},
         {name:"Nbr. Sem.", key:"oa.Semaines"},
         {name:"Ventes 16-17 "+(currentYear), key:"ventes.Semaine_16_17_0"},
@@ -481,20 +497,28 @@ export default defineComponent({
           styles['zIndex'] = 1;
           styles['left'] = 0;
         }
+        if(ckey==1){
+          styles['zIndex'] = 1;
+          styles['left'] = this.widths[0];
+
+        }
         return styles;
       },
       setColumnW () {
         let ths = this.$refs.tableRef.tHead.rows.item(0).cells;
+        console.log(ths);
         for (let i = 0; i < ths.length; i++) {
+
           let w = ths[i].clientWidth;
           if(i==0){
             this.styles[i] = {position:'sticky',left:'0px'};
           }else if(i==1){
-            this.styles[i] = {};
+            this.styles[i] = {position:'sticky',left:this.widths[0]};
           }else{
             this.styles[i] = {};
           }
           this.widths[i] = w;
+
         }
 
       },
