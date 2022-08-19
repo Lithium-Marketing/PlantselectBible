@@ -66,7 +66,7 @@
 		<Pagination v-model:page="page" v-model:len="len" @update:page="$methods.scrollToTop();"/>
     <div v-if="showColorPicker" class="colorPickerWraper">
       <div>
-      <color-picker ref="colorpicker" color="selectedColor" @update:model-value="setSelectedColor($event)"></color-picker>
+      <color-picker ref="colorpicker" :color="selectedColor" :colors="usedColors" @update:model-value="setSelectedColor($event)"></color-picker>
       <button class="btn btn-primary" @click="setColor()">Sauvegarder</button>
       <button class="btn btn-secondary" @click="closeColorPicker()">Annuler</button>
       </div>
@@ -114,7 +114,8 @@ export default defineComponent({
       saving: false,
       saving_retry: 3,
       columnVisible: {},
-      showColumnsSetting: false
+      showColumnsSetting: false,
+      usedColors:['#000000', '#FFFFFF', '#999999', '#FF1900']
     };
   },
 	setup() {
@@ -248,7 +249,9 @@ export default defineComponent({
           }
           return true;
         }).sort((a, b) => {
-          return a.Type - b.Type || String(a.Variete).localeCompare(b.Variete) || a.Format - b.Format;
+          const aV = a.Variete.replace("'",'');//enleve les apostrophes
+          const bV = b.Variete.replace("'",'');//enleve les apostrophes
+          return String(aV).localeCompare(bV) || a.Type - b.Type || a.Format - b.Format;
         }).flatMap(function allFlatMap(product) {
           const prodCache = services.cache.caches.byProd.value[product.ID].value;
           const prices = prodCache.prices;
@@ -421,25 +424,45 @@ export default defineComponent({
       },
       getBackgroundColor(ckey,column,line){
         let color = this.styles[ckey];
+        let col_color = color;
         if(column&&column.key){
           const row = this.bible[column.key];
           if(row){
-            color = row||'';
+            col_color = row||'';
+          }
+          if(column.key=='oa.Inventaire'){
+            console.log('col_color 21895 : '+col_color);
           }
         }
         if(line&&column&&line.oa){
           const row_i = line.oa.ID;
           const row = this.bible[row_i];
+
           if(row){
             color = row.color||'';
           }
           if(row&&row[column.key]){
             color = row[column.key]||'';
           }
+          if(row_i===21895&&column.key=='oa.Inventaire'){
+            console.log(this.bible);
+            console.log('cell 21895 : '+color);
+          }
+        }
+
+        if(!color&&col_color){
+          color = col_color;
         }
 
         if(color=='#FFFFFF'){
           color = '';
+        }
+
+        if(color){
+          if(!this.usedColors.includes(color)){
+            this.usedColors.push(color);
+            //console.log(this.usedColors);
+          }
         }
 
         //console.log(color);
@@ -567,6 +590,9 @@ export default defineComponent({
           }
           //console.log(this.bible[code]);
         }
+        if(!this.usedColors.includes(this.selectedColor)){
+          this.usedColors.push(this.selectedColor);
+        }
         //console.log(this.bible);
         //this.bible[]
         this.focusCell = {};
@@ -574,9 +600,7 @@ export default defineComponent({
         this.updateBible();
       },
       setSelectedColor(color){
-        //console.log(color);
         this.selectedColor = color;
-
       },
       openColorPicker(){
         this.showColorPicker = true;

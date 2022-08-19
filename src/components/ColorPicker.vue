@@ -3,6 +3,7 @@
     <ColorPicker
         theme="light"
         :color="color"
+        :colors-default="colors"
         :sucker-hide="false"
         :sucker-canvas="suckerCanvas"
         :sucker-area="suckerArea"
@@ -15,6 +16,7 @@
 <script lang="ts">
 import { ColorPicker } from 'vue-color-kit';
 import 'vue-color-kit/dist/vue-color-kit.css';
+import {ref} from "vue";
 export default {
   components: {
     ColorPicker,
@@ -23,19 +25,30 @@ export default {
     return {
       suckerCanvas: null,
       suckerArea: [],
-      isSucking: false,
+      isSucking: false
     }
   },
   props:{
-    color: String
+    color: String,
+    colors: Array
   },
   setup(props,{emit}){
     let color = '#59c7f9';
     if(props.color){
       color = props.color;
     }
+
+    let colors = ref([]);
+    console.log('props.colors');
+    console.log(props.colors);
+    if(props.colors){
+      colors.value = [...colors.value,...props.colors];
+    }
+    colors.value.push('rgba(0,0,0,0)');
+
     return {
       color,
+      colors,
       changeColor(color) {
         console.log(color);
         //this.color = `rgba(${r}, ${g}, ${b}, ${a})`;
@@ -52,11 +65,13 @@ export default {
       } else {
         // this.suckerCanvas && this.suckerCanvas.remove
       }
-    },
+    }
   },
 }
 </script>
 
 <style lang="scss" scoped>
-
+::v-deep(.hu-color-picker){
+  width: 230px !important;
+}
 </style>
