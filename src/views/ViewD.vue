@@ -251,7 +251,7 @@ export default defineComponent({
         }).sort((a, b) => {
           const aV = a.Variete.replace("'",'');//enleve les apostrophes
           const bV = b.Variete.replace("'",'');//enleve les apostrophes
-          return String(aV).localeCompare(bV) || a.Type - b.Type || a.Format - b.Format;
+          return a.Type - b.Type || String(aV).localeCompare(bV) || a.Format - b.Format;
         }).flatMap(function allFlatMap(product) {
           const prodCache = services.cache.caches.byProd.value[product.ID].value;
           const prices = prodCache.prices;
