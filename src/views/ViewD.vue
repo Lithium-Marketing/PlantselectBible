@@ -1,22 +1,34 @@
 <template>
   <div class="tools">
       <div class="tool-col">
-        <button class="btn btn-secondary" @click="openColumnsSetting()"><font-awesome-icon :icon="['fas', 'gear']" /></button>
-        <div ref="columnsSetting" :class="['columnsSetting',showColumnsSetting?'show':'', 'row']">
+        <button class="btn btn-secondary" @click="openGeneralSettings()"><font-awesome-icon :icon="['fas', 'gear']" /></button>
+        <div ref="generalSettings" :class="['generalSettings',showGeneralSettings?'show':'', 'row']">
           <div class="setting-header">
+            <h3>Affichage</h3>
+          </div>
+          <div class="col-12 col-md-6 col-lg-4 col-xl-3 col-xxl-2"><input type="checkbox" v-model="_showOnlyActif"/><span>Afficher seulement les produits actifs</span></div>
+          <template v-for="(item, key) of _showOAYears">
+            <div class="col-12 col-md-6 col-lg-4 col-xl-3 col-xxl-2"><input type="checkbox" v-model="_showOAYears[key].checked"/><span>Afficher les OAs {{ _showOAYears[key].year }}</span></div>
+          </template>
+          <div class="setting-header mt-4">
             <h3>Colonnes visibles</h3>
           </div>
           <template v-for="(column, ckey) of columns">
-              <div class="col-12 col-md-6 col-lg-4 col-xl-3 col-xxl-2"><input type="checkbox" v-model="columnVisible[column.key]"/><span v-html="column.name"></span></div>
+              <div class="col-12 col-md-6 col-lg-4 col-xl-3 col-xxl-2"><input type="checkbox" v-model="_columnVisible[column.key]"/><span v-html="column.name"></span></div>
           </template>
           <div class="setting-footer">
-            <button class="btn btn-secondary" @click="closeColumnsSetting()">Fermer</button>
+            <button class="btn btn-primary" @click="applySetting()">Appliquer</button> <button class="btn btn-secondary" @click="closeSetting()">Fermer</button>
           </div>
         </div>
       </div>
   </div>
 	<div class="home">
 		<Pagination v-model:page="page" v-model:len="len" @update:page="$methods.scrollToTop();"/>
+    <div class="row justify-content-center align-items-center">
+      <div class="col">
+        Total : {{ total }} OAs trouvés
+      </div>
+    </div>
     <table class="product" ref="tableRef">
 			<thead>
 			<tr>
@@ -29,7 +41,7 @@
       <tr>
         <template v-for="(column, ckey) of columns">
           <th :class="column.class" :style="getStyle(ckey,column,{})" v-if="columnVisible[column.key]">
-            <div><input class="search-input" v-if="column.search" v-model="search[column.search]"/></div>
+            <div><input class="search-input" v-if="column.search" :value="search[column.search]" @keyup.enter="setSearch(column.search,$event.target.value)"/></div>
           </th>
         </template>
       </tr>
@@ -114,7 +126,8 @@ export default defineComponent({
       saving: false,
       saving_retry: 3,
       columnVisible: {},
-      showColumnsSetting: false,
+      _columnVisible: {},
+      showGeneralSettings: false,
       usedColors:['#000000', '#FFFFFF', '#999999', '#FF1900']
     };
   },
@@ -126,6 +139,38 @@ export default defineComponent({
     years[0] = moment().year();
     years[1] = years[0]-1;
     years[2] = years[0]-2;
+
+    //OAYearsSetting
+    const loadOAYearsSetting = function(ini){
+      let showOAYears = localStorage.getItem('showOAYears');
+      if(showOAYears&&typeof(showOAYears)=='string'){
+        showOAYears = JSON.parse(showOAYears);
+        return showOAYears;
+      }
+      return ini;
+    }
+    const saveOAYearsSetting = function(){
+      console.log('saveOAYears : '+_showOAYears);
+      console.log(_showOAYears);
+      const y = [];
+      _showOAYears.forEach((item,i) => {
+        if(item.checked){
+          y.push(item.year);
+        }
+      });
+      showOAYears.value = y;
+      console.log(showOAYears);
+      localStorage.setItem('showOAYears',JSON.stringify(_showOAYears));
+    }
+    let _showOAYears = [
+      {year: years[0]+1,checked:true},
+      {year: years[0],checked:true},
+      {year: years[1],checked:true}
+    ];
+    _showOAYears = loadOAYearsSetting(_showOAYears);
+    const showOAYears = ref([]);
+    saveOAYearsSetting();
+
 
     productionYears[0] = years[0];
 
@@ -207,21 +252,42 @@ export default defineComponent({
         i++;
     }*/
 
-		const search = reactive({
+    const _search = {
       variete: "",
       code:"",
       id:""
-		});
+    };
+		const search = reactive(_search);
 
     const showPopper = reactive([]);
+    const _showOnlyActif = ref(true);//default
+    const showOnlyActif = ref(true);
+    const total = ref(0);
+    let fromYear = years[0];
 
-    //console.log(Object.values(services.data.get("vue_bible_vueD").value));
+    ////console.log(Object.values(services.data.get("vue_bible_vueD").value));
 
     const all = computed(function allCompute() {//`produits`.`Type` asc,`vue_produits`.`Variete` asc,`vue_produits`.`Format` asc"
       logger.time("all viewd");
       try {
+        console.log('computed');
+        console.log('showOnlyActif : '+showOnlyActif.value);
+        console.log('showOAYears : ');
+        console.log(showOAYears);
         const oas: MyTablesDef["vue_bible_vueD"][] = Object.values(services.data.get("vue_bible_vueD").value);
         const oasByProd = oas.reduce(function oasByProdReduce(a, oa) {
+          if(!showOAYears.value.includes(oa.Annee)){
+            console.log('skip year : '+oa.Annee);
+            return a;
+          }
+
+          if(showOnlyActif.value){
+            if(!oa.Active){
+              return a;
+            }
+            //console.log('showOnlyActif : '+oa.Active);
+          }
+
           const s = search.id;
           const s1 = s&&search.id==oa['ID'];
           if(s&&s1){
@@ -233,18 +299,20 @@ export default defineComponent({
           }
           return a;
         }, {});
+        console.log('length : '+Object.keys(oasByProd).length);
 
         const bibleByProd = services.data.indexesByTable.bible.Produit.value;
 
-        return Object.values(services.data.get("produits").value).filter(p => {
+        const pr = Object.values(services.data.get("produits").value).filter(p => {
           if(!oasByProd[p.ID]){
             return false;
           }
+
           const s = search.variete||search.code;
           const s1 = search.variete&&p.Variete?.toLowerCase()?.indexOf(search.variete.toLocaleLowerCase()) !== -1;
           const s2 = search.code&&p.Code?.toLowerCase()?.indexOf(search.code.toLocaleLowerCase()) !== -1;
           if(s){
-            //console.log('search '+s1+' : '+s2);
+            ////console.log('search '+s1+' : '+s2);
             return (s1 || s2);
           }
           return true;
@@ -300,18 +368,33 @@ export default defineComponent({
             achat
           }]
         })
+        console.log('length : '+pr.length);
+        total.value = pr.length;
+        return pr;
       } finally {
         logger.timeEnd("all viewd");
       }
+
     });
 		
 		const {len, ipp, lines, page} = table(all, store);
-    //console.log('showPopper');
-    //console.log(showPopper.length);
+    ////console.log('showPopper');
+    ////console.log(showPopper.length);
 		return {
+      showOnlyActif,
+      _showOnlyActif,
+      showOAYears,
+      _showOAYears,
       showPopper,
       columns,
       search,
+      _search,
+      setSearch(key,value){
+        console.log('search : '+key+' '+value);
+        console.log(search);
+        search[key] = value;
+      },
+      total,
 			len, ipp, page,
       lines: computed(() => {
         try {
@@ -367,6 +450,8 @@ export default defineComponent({
         }
       },
 
+      loadOAYearsSetting,
+      saveOAYearsSetting
 		};
 	},
     methods:{
@@ -377,7 +462,7 @@ export default defineComponent({
         }
         this.showPopper[row.oa?.ID][col.key] = true;
         this.currentPopper = {col:col,row:row};
-        console.log(this.showPopper[row.oa?.ID]);
+        //console.log(this.showPopper[row.oa?.ID]);
       },
       closePopper(event){
         event.stopPropagation();
@@ -413,7 +498,7 @@ export default defineComponent({
             }
             return value;
           }catch {
-            //console.log(value);
+            ////console.log(value);
           }
           return value;
         }
@@ -431,7 +516,7 @@ export default defineComponent({
             col_color = row||'';
           }
           if(column.key=='oa.Inventaire'){
-            console.log('col_color 21895 : '+col_color);
+            //console.log('col_color 21895 : '+col_color);
           }
         }
         if(line&&column&&line.oa){
@@ -445,8 +530,8 @@ export default defineComponent({
             color = row[column.key]||'';
           }
           if(row_i===21895&&column.key=='oa.Inventaire'){
-            console.log(this.bible);
-            console.log('cell 21895 : '+color);
+            //console.log(this.bible);
+            //console.log('cell 21895 : '+color);
           }
         }
 
@@ -461,11 +546,11 @@ export default defineComponent({
         if(color){
           if(!this.usedColors.includes(color)){
             this.usedColors.push(color);
-            //console.log(this.usedColors);
+            ////console.log(this.usedColors);
           }
         }
 
-        //console.log(color);
+        ////console.log(color);
         return color;
       },
       getPosition(ckey){
@@ -488,9 +573,9 @@ export default defineComponent({
           const row_i = line.oa.ID;
           const row = this.bible[row_i];
           if(row){
-            console.log('getRowStyle');
+            //console.log('getRowStyle');
             addon = {backgroundColor:row.color||'#fff'};
-            console.log(addon);
+            //console.log(addon);
           }
         }*/
         return addon;
@@ -514,7 +599,7 @@ export default defineComponent({
           styles['height'] = height;
         }
         if(column.key=='oa.Groupex_1'){
-          //console.log(styles);
+          ////console.log(styles);
         }
         if(ckey==0){
           styles['zIndex'] = 1;
@@ -529,7 +614,7 @@ export default defineComponent({
       },
       setColumnW () {
         let ths = this.$refs.tableRef.tHead.rows.item(0).cells;
-        console.log(ths);
+        //console.log(ths);
         for (let i = 0; i < ths.length; i++) {
 
           let w = ths[i].clientWidth;
@@ -556,7 +641,7 @@ export default defineComponent({
         //this.$refs.colorpicker.color;
       },
       setColor(){
-        //console.log(this.focusCell);
+        ////console.log(this.focusCell);
         let isRow = false;
         let isCol = false;
         if(this.focusCell.col_i==0){
@@ -565,9 +650,9 @@ export default defineComponent({
           isCol = true;
         }
         if(isCol){//priorite colonne
-          //console.log('set column color');
+          ////console.log('set column color');
           if(this.selectedColor=='#FFFFFF'){
-            //console.log('remove color');
+            ////console.log('remove color');
             this.selectedColor = '';
           }
           this.bible[this.focusCell.col.key] = this.selectedColor;
@@ -578,22 +663,22 @@ export default defineComponent({
             this.bible[code] = {};
           }
           if(this.selectedColor=='#FFFFFF'){
-            //console.log('remove color');
+            ////console.log('remove color');
             this.selectedColor = '';
           }
           if(isRow){
-            //console.log('set row color');
+            ////console.log('set row color');
             this.bible[code]['color'] = this.selectedColor;
           }else{
-            //console.log('set row column color');
+            ////console.log('set row column color');
             this.bible[code][key] = this.selectedColor;
           }
-          //console.log(this.bible[code]);
+          ////console.log(this.bible[code]);
         }
         if(!this.usedColors.includes(this.selectedColor)){
           this.usedColors.push(this.selectedColor);
         }
-        //console.log(this.bible);
+        ////console.log(this.bible);
         //this.bible[]
         this.focusCell = {};
         this.closeColorPicker();
@@ -610,27 +695,43 @@ export default defineComponent({
       },
       getNote(column,line){
         if(this.bible_notes[line.oa?.ID]&&this.bible_notes[line.oa?.ID][column.key]){
-          console.log(this.bible_notes[line.oa?.ID][column.key]);
+          ////console.log(this.bible_notes[line.oa?.ID][column.key]);
           return this.bible_notes[line.oa?.ID][column.key];
         }
         return '';
       },
       setNote(event,column,line){
-        console.log(event);
+        ////console.log(event);
         if(!this.bible_notes[line.oa?.ID]){
           this.bible_notes[line.oa?.ID] = {};
         }
         this.bible_notes[line.oa?.ID][column.key] = event.target.value;
-        console.log(this.bible_notes[line.oa?.ID]);
+        ////console.log(this.bible_notes[line.oa?.ID]);
       },
-      openColumnsSetting(){
-        this.showColumnsSetting = true;
+      openGeneralSettings(){
+        this.showGeneralSettings = true;
       },
-      closeColumnsSetting(){
-        this.showColumnsSetting = false;
-        this.saveColumnVisibility();
+      applySetting(){
+        this.saveOAYearsSetting();
+        this.saveProductSetting();
+        this.saveColumnSetting();
+        this.closeSetting();
       },
-      iniColumnVisibility(){
+      closeSetting(){
+        this.showGeneralSettings = false;
+      },
+      iniProductSetting(){
+        let showOnlyActif = localStorage.getItem('showOnlyActif');
+        if(typeof(showOnlyActif)=='string'){
+          showOnlyActif = JSON.parse(showOnlyActif);
+          this.showOnlyActif = showOnlyActif;
+          this._showOnlyActif = showOnlyActif;
+        }else{
+          localStorage.setItem('showOnlyActif',this.showOnlyActif);
+        }
+
+      },
+      iniColumnSetting(){
         //localStorage.setItem('columnVisible','');
         let columnVisible = localStorage.getItem('columnVisible');
         if(typeof(columnVisible)=='string'&&columnVisible){
@@ -641,18 +742,26 @@ export default defineComponent({
             this.columnVisible[col.key] = true;
           }
         });
+        this._columnVisible = this.columnVisible;
         if(!columnVisible){
           localStorage.setItem('columnVisible',JSON.stringify(this.columnVisible));
         }
       },
-      saveColumnVisibility(){
+      saveColumnSetting(){
+        this.columnVisible = this._columnVisible;
         if(this.columnVisible){
           localStorage.setItem('columnVisible',JSON.stringify(this.columnVisible));
         }
+      },
+      saveProductSetting(){
+        console.log('saveProductSetting : '+this._showOnlyActif);
+        this.showOnlyActif = this._showOnlyActif;
+        localStorage.setItem('showOnlyActif',this.showOnlyActif);
       }
     },
     mounted () {
-      this.iniColumnVisibility();
+      this.iniColumnSetting();
+      this.iniProductSetting();
       this.setColumnW();
       this.getBible();
     }
@@ -787,7 +896,7 @@ td::v-deep(.popper:hover #arrow::before){
   font-size: 0.7em;
 }
 
-.columnsSetting {
+.generalSettings {
   padding: 3em;
   width: 90%;
   margin: auto;
@@ -796,25 +905,26 @@ td::v-deep(.popper:hover #arrow::before){
   background: #eee;
   display: none;
 }
-.columnsSetting.show {
+.generalSettings.show {
   display: flex;
 }
-.columnsSetting > div:nth-child(1),
-.columnsSetting > div:last-child{
+.generalSettings > div:nth-child(1),
+.generalSettings > div:last-child{
   width: 100%;
   margin: 1em 0em;
 }
-.columnsSetting > div {
+.generalSettings > div {
   display: flex;
   align-items: center;
 }
-.columnsSetting > div span br {
+.generalSettings > div span br {
   display: none;
 }
-.columnsSetting > div input {
+.generalSettings > div input {
   margin-right: 1em;
 }
-.columnsSetting > div span {
-  white-space: nowrap;
+.generalSettings > div span {
+  /*white-space: nowrap;*/
+  text-align: left;
 }
 </style>

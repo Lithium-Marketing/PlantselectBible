@@ -291,6 +291,8 @@ export interface MyTablesDef extends TablesDef {
 		Variete: string
 		Format
 		OA_ID
+		Active
+		Annee
 	},
 
 	bible_vueD: {
