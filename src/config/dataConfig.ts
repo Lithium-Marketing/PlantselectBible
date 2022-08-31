@@ -293,6 +293,8 @@ export interface MyTablesDef extends TablesDef {
 		OA_ID
 		Active
 		Annee
+		Fournisseur
+		Achat_
 	},
 
 	bible_vueD: {

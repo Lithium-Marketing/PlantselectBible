@@ -200,16 +200,16 @@ export default defineComponent({
         {name:"Groupex "+years[1], key:"oa.Groupex_1", class:"groupex"},
         {name:"Groupex "+years[0], key:"oa.Groupex_0", class:"groupex"},
         {name:"Rés.", key:"oa.Reservation"},
-        {name:"Inv. total", key:"oa.Inventaire"},
         {name:"Format", key:"oa.MP_Format"},
         {name:"Recep.", key:"oa.Reception"},
-        {name:"Four.", key:"oa.Fournisseur"},
+        {name:"Four.", key:"oa.Fournisseur", search:"fournisseur"},
         {name:"Achat "+years[0], key:"oa.Achat_0"},
         {name:"Achat "+years[0]+" Confirmer", key:"oa.Achat_confirm_0"},
-        {name:"Achat "+(years[0]+1), key:"oa.Achat_"},
+        {name:"Achat "+(years[0]+1), key:"oa.Achat_", search:"Achat_"},
         {name:"Achat "+(years[0]+1)+" Confirmer", key:"oa.Achat_confirm_"},
-        {name:"Vente "+years[1], key:"oa.Vente_1"},
+        {name:"Inv. total", key:"oa.Inventaire"},
         {name:"Vente "+years[0], key:"oa.Vente_0"},
+        {name:"Vente "+years[1], key:"oa.Vente_1"},
         {name:"Loc. A", key:"oa.Localisations", index:"0"},
         {name:"Qté A", key:"oa.Localisations_Quantite", index:"0"},
         {name:"Loc. B", key:"oa.Localisations", index:"1"},
@@ -255,7 +255,9 @@ export default defineComponent({
     const _search = {
       variete: "",
       code:"",
-      id:""
+      id:"",
+      fournisseur:"",
+      Achat_:""
     };
 		const search = reactive(_search);
 
@@ -270,14 +272,14 @@ export default defineComponent({
     const all = computed(function allCompute() {//`produits`.`Type` asc,`vue_produits`.`Variete` asc,`vue_produits`.`Format` asc"
       logger.time("all viewd");
       try {
-        console.log('computed');
-        console.log('showOnlyActif : '+showOnlyActif.value);
-        console.log('showOAYears : ');
-        console.log(showOAYears);
+        //console.log('computed');
+        //console.log('showOnlyActif : '+showOnlyActif.value);
+        //console.log('showOAYears : ');
+        //console.log(showOAYears);
         const oas: MyTablesDef["vue_bible_vueD"][] = Object.values(services.data.get("vue_bible_vueD").value);
         const oasByProd = oas.reduce(function oasByProdReduce(a, oa) {
           if(!showOAYears.value.includes(oa.Annee)){
-            console.log('skip year : '+oa.Annee);
+            //console.log('skip year : '+oa.Annee);
             return a;
           }
 
@@ -288,9 +290,11 @@ export default defineComponent({
             //console.log('showOnlyActif : '+oa.Active);
           }
 
-          const s = search.id;
+          const s = search.id||search.fournisseur||search.Achat_;
           const s1 = s&&search.id==oa['ID'];
-          if(s&&s1){
+          const s2 = search.fournisseur&&oa.Fournisseur&&oa.Fournisseur?.toLowerCase()?.indexOf(search.fournisseur.toLocaleLowerCase()) !== -1;
+          const s3 = search.Achat_&&oa.Achat_==search.Achat_;
+          if(s&&(s1 || s2 || s3)){
             a[oa.Produit] = a[oa.Produit] || [];
             a[oa.Produit].push(oa);
           }else if(!s){
@@ -299,7 +303,7 @@ export default defineComponent({
           }
           return a;
         }, {});
-        console.log('length : '+Object.keys(oasByProd).length);
+        //console.log('length : '+Object.keys(oasByProd).length);
 
         const bibleByProd = services.data.indexesByTable.bible.Produit.value;
 
@@ -475,6 +479,13 @@ export default defineComponent({
         if(key.includes('.')){
           keys = key.split('.');
           let current = line;
+          if(key=='oa.Vendant_0'){
+            if(!line['oa'].Vendant_0_annee||(line['oa'].Vendant_0==line['oa'].Vendant_1)){
+              //console.log(key);
+              column['unit'] = '*';
+            }
+
+          }
           for (let i = 0; i < keys.length; i++) {
             if(typeof(current[keys[i]])!='object'){
               return this.getIndexedValue(current[keys[i]], column);
@@ -491,16 +502,20 @@ export default defineComponent({
       },
       getIndexedValue(value: string, column: object){
         if(value&&value!='undefined'){
+          let unit = '';
+          if(column['unit']){
+            unit = column['unit'];
+          }
           try{
             if(column['index']>-1){
               const v = value.split(',');
-              return v[column['index']];
+              return v[column['index']]+unit;
             }
-            return value;
+            return value+unit;
           }catch {
             ////console.log(value);
           }
-          return value;
+          return value+unit;
         }
         return '';
       },
