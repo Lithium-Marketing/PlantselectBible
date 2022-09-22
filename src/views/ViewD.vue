@@ -197,8 +197,10 @@ export default defineComponent({
         {name:"Tran. "+productionYears[0], key:"oa.Transport_0"},
         {name:"Botanix "+years[1], key:"oa.Botanix_1", class:"botanix"},
         {name:"Botanix "+years[0], key:"oa.Botanix_0", class:"botanix"},
+        {name:"Botanix "+(years[0]+1), key:"oa.Botanix_", class:"botanix"},
         {name:"Groupex "+years[1], key:"oa.Groupex_1", class:"groupex"},
         {name:"Groupex "+years[0], key:"oa.Groupex_0", class:"groupex"},
+        {name:"Groupex "+(years[0]+1), key:"oa.Groupex_", class:"groupex"},
         {name:"Rés.", key:"oa.Reservation"},
         {name:"Format", key:"oa.MP_Format"},
         {name:"Recep.", key:"oa.Reception"},
@@ -220,25 +222,26 @@ export default defineComponent({
         {name:"Qté D", key:"oa.Localisations_Quantite", index:"3"},
         {name:"Qté A+B+C+D", key:"oa.Quantite"},
         {name:"Mort", key:"oa.Mort"},
+        {name:"Ajust", key:"oa.Ajustement"},
         {name:"Nbr. Sem.", key:"oa.Semaines"},
-        {name:"Ventes 16-17 "+(currentYear), key:"ventes.Semaine_16_17_0"},
-        {name:"Ventes 16-17 "+(currentYear-1), key:"ventes.Semaine_16_17_1"},
-        {name:"Ventes 18-19 "+(currentYear), key:"ventes.Semaine_18_19_0"},
-        {name:"Ventes 18-19 "+(currentYear-1), key:"ventes.Semaine_18_19_1"},
-        {name:"Ventes 20-21 "+(currentYear), key:"ventes.Semaine_20_21_0"},
-        {name:"Ventes 20-21 "+(currentYear-1), key:"ventes.Semaine_20_21_1"},
-        {name:"Ventes 22-23 "+(currentYear), key:"ventes.Semaine_22_23_0"},
-        {name:"Ventes 22-23 "+(currentYear-1), key:"ventes.Semaine_22_23_1"},
-        {name:"Ventes 24-25 "+(currentYear), key:"ventes.Semaine_24_25_0"},
-        {name:"Ventes 24-25 "+(currentYear-1), key:"ventes.Semaine_24_25_1"},
-        {name:"Ventes 26-27 "+(currentYear), key:"ventes.Semaine_26_27_0"},
-        {name:"Ventes 26-27 "+(currentYear-1), key:"ventes.Semaine_26_27_1"},
-        {name:"Ventes 28-30 "+(currentYear), key:"ventes.Semaine_28_30_0"},
-        {name:"Ventes 28-30 "+(currentYear-1), key:"ventes.Semaine_28_30_1"},
-        {name:"Ventes 31-34 "+(currentYear), key:"ventes.Semaine_31_34_0"},
-        {name:"Ventes 31-34 "+(currentYear-1), key:"ventes.Semaine_31_34_1"},
-        {name:"Ventes 35-38 "+(currentYear), key:"ventes.Semaine_35_38_0"},
-        {name:"Ventes 35-38 "+(currentYear-1), key:"ventes.Semaine_35_38_1"},
+        {name:"Ventes 16-17 "+(years[0]), key:"ventes.Semaine_16_17_0"},
+        {name:"Ventes 16-17 "+(years[1]), key:"ventes.Semaine_16_17_1"},
+        {name:"Ventes 18-19 "+(years[0]), key:"ventes.Semaine_18_19_0"},
+        {name:"Ventes 18-19 "+(years[1]), key:"ventes.Semaine_18_19_1"},
+        {name:"Ventes 20-21 "+(years[0]), key:"ventes.Semaine_20_21_0"},
+        {name:"Ventes 20-21 "+(years[1]), key:"ventes.Semaine_20_21_1"},
+        {name:"Ventes 22-23 "+(years[0]), key:"ventes.Semaine_22_23_0"},
+        {name:"Ventes 22-23 "+(years[1]), key:"ventes.Semaine_22_23_1"},
+        {name:"Ventes 24-25 "+(years[0]), key:"ventes.Semaine_24_25_0"},
+        {name:"Ventes 24-25 "+(years[1]), key:"ventes.Semaine_24_25_1"},
+        {name:"Ventes 26-27 "+(years[0]), key:"ventes.Semaine_26_27_0"},
+        {name:"Ventes 26-27 "+(years[1]), key:"ventes.Semaine_26_27_1"},
+        {name:"Ventes 28-30 "+(years[0]), key:"ventes.Semaine_28_30_0"},
+        {name:"Ventes 28-30 "+(years[1]), key:"ventes.Semaine_28_30_1"},
+        {name:"Ventes 31-34 "+(years[0]), key:"ventes.Semaine_31_34_0"},
+        {name:"Ventes 31-34 "+(years[1]), key:"ventes.Semaine_31_34_1"},
+        {name:"Ventes 35-38 "+(years[0]), key:"ventes.Semaine_35_38_0"},
+        {name:"Ventes 35-38 "+(years[1]), key:"ventes.Semaine_35_38_1"},
     ]);
     //ajout des vente semaine
     /*const coli = 16;
@@ -509,7 +512,10 @@ export default defineComponent({
           try{
             if(column['index']>-1){
               const v = value.split(',');
-              return v[column['index']]+unit;
+              if(v[column['index']]){
+                return v[column['index']]+' '+unit;
+              }
+              return '';
             }
             return value+unit;
           }catch {
