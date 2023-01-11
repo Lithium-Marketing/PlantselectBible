@@ -205,6 +205,7 @@ export default defineComponent({
         {name:"Format", key:"oa.MP_Format"},
         {name:"Recep.", key:"oa.Reception"},
         {name:"Four.", key:"oa.Fournisseur", search:"fournisseur"},
+        {name:"Achat "+productionYears[1], key:"oa.Achat_1"},
         {name:"Achat "+years[0], key:"oa.Achat_0"},
         {name:"Achat "+years[0]+" Confirmer", key:"oa.Achat_confirm_0"},
         {name:"Achat "+(years[0]+1), key:"oa.Achat_", search:"Achat_"},
