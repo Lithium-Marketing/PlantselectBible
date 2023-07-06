@@ -117,6 +117,7 @@ export default defineComponent({
       showColorPicker: false,
       selectedColor: '#cccccc',
       focusCell: {},
+      latestArchiveYear: null,
       bible:{},
       bible_notes:{},
       currentPopper:{},
@@ -134,6 +135,11 @@ export default defineComponent({
 	setup() {
 		const store = useStore<StoreState>();
 		const services = useMyServices();
+    let _latestArchiveYear = moment().year();
+
+    const archivage = Object.values(services.data.get("archivage").value);
+    const latestArchiveYear = archivage[0].Annee;
+
     let years = [];
     let productionYears = [];
     years[0] = moment().year();
@@ -175,7 +181,10 @@ export default defineComponent({
     productionYears[0] = years[0];
 
     const productionMonth = moment().month();
-    if(productionMonth>=7){//7 = august
+    /*if(productionMonth>=7){//7 = august
+      productionYears[0] = productionYears[0]+1;
+    }*/
+    if(latestArchiveYear==years[0]){//7 = august
       productionYears[0] = productionYears[0]+1;
     }
     productionYears[1] = productionYears[0]-1;
@@ -398,6 +407,8 @@ export default defineComponent({
     ////console.log('showPopper');
     ////console.log(showPopper.length);
 		return {
+      latestArchiveYear,
+      _latestArchiveYear,
       showOnlyActif,
       _showOnlyActif,
       showOAYears,
@@ -443,6 +454,16 @@ export default defineComponent({
           if(row['Style']){
             this.bible = row['Style'] ? JSON.parse(decodeURIComponent(row['Style'])) : {};
             this.bible_notes = row['Notes'] ? JSON.parse(decodeURIComponent(row['Notes'])) : {};
+          }
+        }
+      },
+      async getLatestArchiveYear(){
+        const conn = await services.data.conn.getConnection();
+        const [rows, metas] = await conn.query(`SELECT MAX(Annee) AS Annee FROM archivage`);
+        if (Array.isArray(rows) && rows.length === 1) {
+          const row = rows[0] as RowDataPacket;
+          if(row['Annee']){
+            this.latestArchiveYear = row['Annee'];
           }
         }
       },

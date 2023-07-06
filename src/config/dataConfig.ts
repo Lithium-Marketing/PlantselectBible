@@ -32,6 +32,9 @@ const tablesConfig = {
 	Archive: {
 		key: "id"
 	},
+	archivage: {
+		key: "id"
+	},
 	bible: {
 		indexes: ["Produit", "OA"]
 	},
@@ -75,7 +78,6 @@ const tablesConfig = {
 	vue_ventes: {},
 } as const;
 export type MyTablesConfig = typeof tablesConfig;
-
 export interface MyTablesDef extends TablesDef {
 	achats_futur: {
 		ID
@@ -85,6 +87,7 @@ export interface MyTablesDef extends TablesDef {
 		color
 	}
 	Archive
+	archivage
 	bible: {
 		ID
 		OA
