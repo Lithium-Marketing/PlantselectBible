@@ -168,18 +168,8 @@ export default defineComponent({
       console.log(showOAYears);
       localStorage.setItem('showOAYears',JSON.stringify(_showOAYears));
     }
-    let _showOAYears = [
-      {year: years[0]+1,checked:true},
-      {year: years[0],checked:true},
-      {year: years[1],checked:true}
-    ];
-    _showOAYears = loadOAYearsSetting(_showOAYears);
-    const showOAYears = ref([]);
-    saveOAYearsSetting();
-
 
     productionYears[0] = years[0];
-
     const productionMonth = moment().month();
     /*if(productionMonth>=7){//7 = august
       productionYears[0] = productionYears[0]+1;
@@ -189,6 +179,16 @@ export default defineComponent({
     }
     productionYears[1] = productionYears[0]-1;
     productionYears[2] = productionYears[0]-2;
+
+    let _showOAYears = [
+      {year: productionYears[0],checked:true},
+      {year: productionYears[1],checked:true},
+      {year: productionYears[2],checked:true}
+    ];
+    _showOAYears = loadOAYearsSetting(_showOAYears);
+    const showOAYears = ref([]);
+    saveOAYearsSetting();
+
 
     let columns = ref([
         {name:"Cul.", key:'product.Variete', search:'variete', notooltip:true},
