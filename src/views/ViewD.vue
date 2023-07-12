@@ -135,10 +135,16 @@ export default defineComponent({
 	setup() {
 		const store = useStore<StoreState>();
 		const services = useMyServices();
-    let _latestArchiveYear = moment().year();
-
+    let _latestArchiveYear = (moment().year() - 1);
     const archivage = Object.values(services.data.get("archivage").value);
-    const latestArchiveYear = archivage[0].Annee;
+    let latestArchiveYear = _latestArchiveYear;
+    if(archivage){
+      latestArchiveYear = archivage[0].Annee;
+    }else{
+      latestArchiveYear = _latestArchiveYear;
+    }
+    console.log('latest archive : '+latestArchiveYear);
+    console.log(archivage);
 
     let years = [];
     let productionYears = [];
@@ -151,6 +157,16 @@ export default defineComponent({
       let showOAYears = localStorage.getItem('showOAYears');
       if(showOAYears&&typeof(showOAYears)=='string'){
         showOAYears = JSON.parse(showOAYears);
+        //compare
+        const has_changed = ini.every((item,i) => {
+          if(item.year!=showOAYears[i]['year']){
+            return true;
+          }
+        });
+        if(has_changed){
+          console.log('OA Years has changed');
+          return ini;
+        }
         return showOAYears;
       }
       return ini;
